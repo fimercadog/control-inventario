@@ -20,18 +20,28 @@ El borrador original (sección 24) dice: "Cada movimiento actualizará automáti
 
 **Ninguna existe.** El borrador original (sección 52, "Acciones → Consultar Kardex", y sección 53) sugiere que Kardex se accede desde la ficha de un producto — consistente con el botón "Ver movimientos" ya presente (pero no conectado) en el menú de acciones de `/productos` (ver `Products.md`).
 
-## Fields (borrador original — a validar)
+## Fields
+
+Reconciliado con el requisito de producto entregado directamente por el product owner (sesión 2026-07-29) para "Historial de Movimientos", que sustituye y amplía el borrador original del master spec:
 
 | Campo | Notas |
 |---|---|
-| Fecha, Hora | |
-| Documento | documento origen del movimiento |
-| Movimiento | tipo (entrada/salida/ajuste/etc.) |
-| Entrada | cantidad, si aplica |
-| Salida | cantidad, si aplica |
-| Saldo | saldo corrido tras este movimiento — corresponde a `stock_nuevo` en `movimientos`, ya persistido hoy |
-| Usuario | |
-| Observación | |
+| Fecha | |
+| Hora | |
+| Usuario | identificador de cuenta autenticada — **nunca nombre propio** (mismo principio de privacidad que `FUTURE/Auditoria.md`) |
+| Rol | rol del usuario al momento del movimiento — mismo campo nuevo (no persistido hoy) que `FUTURE/Auditoria.md` requiere; **no** existe todavía en `movimientos` |
+| Tipo de movimiento | corresponde a `tipo` en `movimientos`, ya persistido hoy (`entrada\|salida\|ajuste\|conteo\|transferencia`) |
+| Producto | |
+| Código | código del producto (`Producto.codigo`, no un campo de `movimientos`) |
+| Cantidad | corresponde a `cantidad`, ya persistido hoy |
+| Stock antes | corresponde a `stock_anterior`, ya persistido hoy |
+| Stock después | corresponde a `stock_nuevo`, ya persistido hoy |
+| Documento relacionado | corresponde a `documento`, ya persistido hoy |
+| Observaciones | corresponde a `observacion`, ya persistido hoy |
+
+**Reconciliación con `movimientos` actual:** de estos 12 campos, 6 ya existen tal cual en el modelo real (`tipo`, `cantidad`, `stock_anterior`, `stock_nuevo`, `documento`, `observacion` — ver `docs/04_TECHNICAL_SPEC/DomainModel.md` §2.6). Producto y Código se resuelven vía la relación `Movimiento belongsTo Producto`, no requieren campo nuevo. El único campo genuinamente nuevo frente al modelo actual es **Rol** — igual que en `FUTURE/Auditoria.md`, queda pendiente de Technical Spec si se guarda como snapshot al momento del movimiento o se resuelve en vivo.
+
+**Nota sobre versiones previas de este requisito:** el product owner entregó primero una lista más extensa (incluía `ID Movimiento`, `Lote`, `Unidad`, `Bodega`) y luego una versión más corta que la reemplaza (la de la tabla arriba). Se usa la versión corta como autoritativa por decisión explícita del product owner al confirmarla — `Lote`, `Unidad` y `Bodega` no forman parte de este alcance a menos que se reintroduzcan explícitamente en una futura revisión (el sistema hoy tampoco maneja lotes ni bodegas múltiples).
 
 ## Validation Rules
 
@@ -68,7 +78,26 @@ Reutiliza `movimientos.ver` (ya existe en el catálogo) — a confirmar en el Te
 - Producto con miles de movimientos históricos — necesidad de paginación, igual que se anticipa para `Movements.md`.
 - **A validar en implementación**: el resto de los edge cases reales.
 
+## Export
+
+Requisito de producto entregado directamente por el product owner (sesión 2026-07-29): todo el historial de un producto debe poder exportarse a **PDF, Excel y CSV**, usando la capacidad compartida de `docs/03_FUNCTIONAL_SPEC/FUTURE/Export.md`.
+
+El PDF de historial por producto debe incluir, específicamente:
+
+- Información del producto (nombre, descripción)
+- Imagen del producto (si existe)
+- Código
+- Categoría
+- Stock actual
+- Tabla cronológica de movimientos (con los 12 campos de "Fields" arriba)
+- Totales de entradas
+- Totales de salidas
+- Balance final
+- Fecha de generación
+- Usuario que generó el reporte (identificador de cuenta — nunca nombre propio)
+
+Esto reemplaza la mención genérica que existía antes en esta sección ("exportación de Kardex, mencionada de forma general en el borrador de `Reports.md`") por un requisito concreto y verificado directamente con el product owner.
+
 ## Future Improvements
 
-- Exportación de Kardex (Excel/CSV/PDF) — mencionada de forma general en el borrador de `Reports.md`.
 - Filtro de Kardex por rango de fechas.

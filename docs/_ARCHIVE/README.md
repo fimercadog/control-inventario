@@ -19,7 +19,7 @@ Todo su contenido fue auditado, dividido y redistribuido durante la migración S
 - Testing/CI-CD (§66-67) → `06_TESTS/` (reescrito: el borrador original no coincidía con la suite real de 94 tests, y no existe pipeline CI/CD)
 - Roadmap original (§69) → superado por `00_VISION/Roadmap.md`, que refleja el historial real de fases
 
-**No usar este archivo para tomar decisiones de implementación.** Cualquier sección que describa Compras/Ventas/Proveedores/Clientes/Kardex/Reportes como si ya existieran es incorrecta respecto al estado real del código — para el estado vigente de esos módulos (planeados, no construidos), ver `03_FUNCTIONAL_SPEC/FUTURE/Purchases.md`, `Suppliers.md`, `Sales.md`, `Customers.md`, `Kardex.md`, `Reports.md`.
+**No usar este archivo para tomar decisiones de implementación.** Cualquier sección que describa Compras/Ventas/Proveedores/Clientes/Kardex/Reportes como si ya existieran es incorrecta respecto al estado real del código — para el estado vigente de esos módulos (planeados, no construidos), ver `03_FUNCTIONAL_SPEC/FUTURE/Purchases.md`, `03_FUNCTIONAL_SPEC/FUTURE/Suppliers.md`, `03_FUNCTIONAL_SPEC/FUTURE/Sales.md`, `03_FUNCTIONAL_SPEC/FUTURE/Customers.md`, `03_FUNCTIONAL_SPEC/FUTURE/Kardex.md`, `03_FUNCTIONAL_SPEC/FUTURE/Reports.md`.
 
 ### `EMPTY_01_PRODUCT_VISION.md`, `EMPTY_02_REQUIREMENTS.md`, `EMPTY_03_USER_STORIES.md`
 Scaffolds vacíos (solo encabezados y placeholders literales como "RF-001", "US-001") que nunca se llenaron. Reemplazados por contenido real y completo en `01_PRD/` y `02_REQUIREMENTS/`.

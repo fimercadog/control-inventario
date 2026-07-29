@@ -27,6 +27,16 @@ Verificación usada: existen controladores para `Auth` y `CapturaIA` únicamente
 | RF-019 | El sistema permitirá registrar proveedores. | **[PLANNED]** — módulo no construido, sin tabla ni controlador. |
 | RF-020 | El sistema permitirá registrar clientes. | **[PLANNED]** — módulo no construido, sin tabla ni controlador. |
 
+## Requisitos funcionales adicionales, entregados directamente por el product owner (sesión 2026-07-29)
+
+No provienen del master spec original ni del RF-001…020. Ninguno tiene código en `backend/` ni `frontend/` a la fecha de este registro.
+
+| ID | Requisito | Estado |
+|---|---|---|
+| RF-021 | El sistema permitirá exportar la información principal de cada módulo a PDF, con formato profesional listo para impresión (título, fecha de generación, usuario generador, tablas, totales, logo, pie de página). Mínimo 14 módulos: Inventario, Productos, Compras, Ventas, Clientes, Proveedores, Kardex, Movimientos, Reportes, Configuración, Usuarios, Roles, Auditoría, Dashboard. | **[PLANNED]** — ver `docs/03_FUNCTIONAL_SPEC/FUTURE/Export.md`. |
+| RF-022 | El sistema registrará toda acción relevante realizada por los usuarios en un módulo centralizado de Auditoría y Trazabilidad, identificando siempre al usuario por cuenta y rol — nunca por nombre propio. | **[PLANNED, parcial]** — infraestructura de datos (`AuditLog`) y permiso (`auditoria.ver`) ya existen; solo Captura IA escribe hoy. Ver `docs/03_FUNCTIONAL_SPEC/FUTURE/Auditoria.md`. |
+| RF-023 | El sistema conservará un historial de movimientos de inventario append-only (sin sobrescritura), exportable a PDF/Excel/CSV por producto, incluyendo el rol del usuario que ejecutó cada movimiento. | **[PLANNED, parcial]** — el registro append-only de movimientos ya existe (RF-015); el campo `rol` y la exportación son nuevos. Ver `docs/03_FUNCTIONAL_SPEC/FUTURE/Kardex.md` y `docs/03_FUNCTIONAL_SPEC/Movements.md`. |
+
 ## Requisitos funcionales adicionales, no numerados en el master spec original, ya construidos
 
 Surgidos durante la implementación de Auth/RBAC y Captura IA, ausentes del RF-001…020 original pero reales y en producción:

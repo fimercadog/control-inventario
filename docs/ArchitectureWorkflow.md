@@ -14,7 +14,7 @@ Cualquier cambio que:
 1. Autor propone el cambio en `05_IMPLEMENTATION/<Modulo>.md` (sección Dependencies + Database Changes + API Changes) y, si aplica, un nuevo `08_ADR/ADR-0XX-titulo.md` en estado borrador.
 2. Se revisa contra `04_TECHNICAL_SPEC/Architecture.md`, `Security.md` y los ADRs existentes — ¿es consistente? ¿contradice una decisión previa? Si contradice una decisión previa, esa decisión previa debe reconsiderarse explícitamente (ADR nuevo que reemplaza al anterior, referenciándolo), no ignorarse.
 3. Aprobación: el ADR pasa a estado `Approved` (ver `09_TEMPLATES/Template_ADR.md`) antes de iniciar implementación.
-4. Solo entonces el módulo puede pasar a `Implementation` según `DevelopmentWorkflow.md`.
+4. Solo entonces el módulo puede pasar a `Implementation` según `10_GOVERNANCE/DevelopmentWorkflow.md`.
 
 ## Principios no negociables (ver `AGENTS.md` y `08_ADR/ADR-001`–`ADR-004`)
 

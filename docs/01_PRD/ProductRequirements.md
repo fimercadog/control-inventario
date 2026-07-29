@@ -32,6 +32,14 @@ Ver `01_PRD/TargetUsers.md` y `01_PRD/UserPersonas.md`. En resumen: PyMEs multi-
 
 Compras, Proveedores, Ventas, Clientes, Kardex, Reportes. Siguen siendo parte de la visión de producto, no descartados — solo no priorizados.
 
+### Planeado, entregado directamente por el product owner (sesión 2026-07-29)
+
+Tres requisitos nuevos, transversales al resto del roadmap, sin código todavía (ver `02_REQUIREMENTS/FunctionalRequirements.md` RF-021 a RF-023 para el detalle reconciliado contra el código real):
+
+- **Exportación universal a PDF/Excel/CSV** (`03_FUNCTIONAL_SPEC/FUTURE/Export.md`) — capacidad compartida por los 14 módulos mínimos listados en RF-021.
+- **Auditoría y Trazabilidad** (`03_FUNCTIONAL_SPEC/FUTURE/Auditoria.md`) — módulo centralizado de registro de acciones; regla de producto no negociable: nunca se registra ni se muestra el nombre real de una persona, solo usuario autenticado + rol asignado.
+- **Extensión del historial de movimientos/Kardex** (`03_FUNCTIONAL_SPEC/FUTURE/Kardex.md`, `03_FUNCTIONAL_SPEC/Movements.md`) — campo `rol` nuevo por movimiento, más exportación por producto a PDF/Excel/CSV.
+
 ## Requisitos
 
 El detalle de requisitos funcionales vive en `02_REQUIREMENTS/FunctionalRequirements.md` (con cada RF marcado `[BUILT]` o `[PLANNED]`). Los requisitos no funcionales, de seguridad, rendimiento y accesibilidad viven en sus respectivos documentos dentro de `02_REQUIREMENTS/`.

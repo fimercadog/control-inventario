@@ -41,4 +41,4 @@ Este proyecto sigue Specification-Driven Development. El flujo exacto (idéntico
 9. Documentar (actualizar los specs afectados, no solo el código)
 10. Release (`docs/ReleaseWorkflow.md`)
 
-No se escribe código sin especificación aprobada — ver "No escribir código sin arquitectura aprobada" arriba y `docs/DefinitionOfReady.md`.
+No se escribe código sin especificación aprobada — ver "No escribir código sin arquitectura aprobada" arriba y `docs/10_GOVERNANCE/DefinitionOfReady.md`.

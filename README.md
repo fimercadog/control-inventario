@@ -45,4 +45,18 @@ Architecture Review → Approval → Implementation → Testing → QA →
 Acceptance → Release
 ```
 
-Detalle completo: `docs/DevelopmentWorkflow.md`. Este es el mismo flujo que describe `AGENTS.md` — no hay dos versiones distintas del proceso.
+Detalle completo: `docs/10_GOVERNANCE/DevelopmentWorkflow.md`. Este es el mismo flujo que describe `AGENTS.md` — no hay dos versiones distintas del proceso.
+
+
+# Governance
+
+## Documents
+
+- DefinitionOfReady.md
+- DefinitionOfDone.md
+- DevelopmentWorkflow.md
+- DocumentationWorkflow.md
+- ArchitectureWorkflow.md
+- ReleaseWorkflow.md
+- MilestoneWorkflow.md
+- AI_OPERATING_PROCEDURE.md

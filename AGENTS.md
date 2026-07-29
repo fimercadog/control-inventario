@@ -28,7 +28,7 @@ Create the specification first.
 
 # Development Workflow
 
-Every feature must follow this exact workflow. Full detail, states, and exceptions: **`docs/DevelopmentWorkflow.md`**.
+Every feature must follow this exact workflow. Full detail, states, and exceptions: **`docs/10_GOVERNANCE/DevelopmentWorkflow.md`**.
 
 ```
 Idea → PRD → Functional Specification → Technical Specification →
@@ -36,13 +36,13 @@ Architecture Review → Approval → Implementation → Testing → QA →
 Acceptance → Release
 ```
 
-Never skip steps, except the narrow proportionality exception documented in `docs/DefinitionOfReady.md`.
+Never skip steps, except the narrow proportionality exception documented in `docs/10_GOVERNANCE/DefinitionOfReady.md`.
 
 ---
 
 # Definition of Ready / Definition of Done
 
-Full checklists: **`docs/DefinitionOfReady.md`** and **`docs/DefinitionOfDone.md`**.
+Full checklists: **`docs/10_GOVERNANCE/DefinitionOfReady.md`** and **`docs/10_GOVERNANCE/DefinitionOfDone.md`**.
 
 A module cannot start implementation until its Definition of Ready is fully checked. A module is not finished until its Definition of Done is fully checked. If any item is missing: **STOP. Ask questions.**
 
@@ -105,7 +105,7 @@ Full strategy and current coverage: **`docs/06_TESTS/MasterTestPlan.md`**.
 
 Documentation is part of the product. Every module must update documentation. Never leave documentation outdated. Architecture decisions must be documented using ADR (`docs/08_ADR/`).
 
-Full rules on where things go: **`docs/DocumentationWorkflow.md`**.
+Full rules on where things go: **`docs/10_GOVERNANCE/DocumentationWorkflow.md`**.
 
 ---
 
@@ -139,17 +139,20 @@ docs/
 ├── 07_RELEASE/
 ├── 08_ADR/
 ├── 09_TEMPLATES/
+├── 10_GOVERNANCE/
+│   ├── GOVERNANCE.md
+│   ├── DefinitionOfReady.md
+│   ├── DefinitionOfDone.md
+│   ├── DevelopmentWorkflow.md
+│   ├── DocumentationWorkflow.md
+│   └── AI_OPERATING_PROCEDURE.md
 ├── _ARCHIVE/                 (historical, superseded — never a source of truth)
-├── DefinitionOfReady.md
-├── DefinitionOfDone.md
-├── DevelopmentWorkflow.md
-├── DocumentationWorkflow.md
 ├── ArchitectureWorkflow.md
 ├── ReleaseWorkflow.md
 └── SDD_MIGRATION_PLAN.md     (audit/history of the migration to this structure)
 ```
 
-See `docs/DocumentationWorkflow.md` for what goes where.
+See `docs/10_GOVERNANCE/DocumentationWorkflow.md` for what goes where.
 
 ---
 

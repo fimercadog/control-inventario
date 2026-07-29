@@ -86,4 +86,5 @@ No implementado — sin llamada de red real, no hay manejo de error de API en es
 - Construir `MovimientoController` con `GET /api/v1/movimientos` (listado paginado, filtrable) y conectar `/movimientos` a datos reales.
 - Kardex por producto (ver `FUTURE/Kardex.md`, spec planificada) como vista derivada de este mismo historial de movimientos, no una tabla paralela.
 - Habilitar los tipos de movimiento no cubiertos por Captura IA (compra, venta, producción, devolución, consumo, corrección) cuando/si se construyen los módulos que los originan (`FUTURE/Purchases.md`, `FUTURE/Sales.md`).
-- Exportación de movimientos (Excel/CSV/PDF) — mencionada en el borrador original de Reportes (`FUTURE/Reports.md`), no construida.
+- Exportación de movimientos (Excel/CSV/PDF) — requisito de producto concreto entregado 2026-07-29, ver capacidad compartida `FUTURE/Export.md` y el detalle específico de exportación por producto en `FUTURE/Kardex.md`.
+- Campo `rol` del usuario al momento del movimiento — no existe hoy en `movimientos` (solo `usuario_id`); requerido por el mismo requisito de producto que introduce `FUTURE/Auditoria.md`, para exhibir usuario+rol sin nunca exponer el nombre real de la persona. A resolver en Technical Spec si se guarda como snapshot o se resuelve en vivo contra `model_has_roles`.

@@ -10,7 +10,7 @@ Nunca se libera código con:
 
 ## Proceso
 
-1. Confirmar que cada módulo incluido en la release cumple `DefinitionOfDone.md`.
+1. Confirmar que cada módulo incluido en la release cumple `10_GOVERNANCE/DefinitionOfDone.md`.
 2. Ejecutar `07_RELEASE/ReleaseChecklist.md` completo.
 3. Actualizar `07_RELEASE/ReleaseNotes.md` con el contenido real de la release.
 4. Revisar `07_RELEASE/KnownIssues.md` — toda limitación conocida debe estar documentada antes de liberar, no descubierta después.

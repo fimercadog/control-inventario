@@ -33,7 +33,7 @@
 | **Umbral de confianza** | Valor (`confidence`, default 0.85) que determina si una detección de IA se aplica automáticamente o queda en cola de revisión manual |
 | **Idempotency Key** | Clave enviada por el cliente para evitar procesar dos veces la misma captura ante reintentos de red; única por `empresa_id` en `capturas_ia` |
 | **Stock exclusivo (`InventoryService`)** | Regla de dominio: `productos.stock_actual` solo puede modificarse a través de `InventoryService::registrarMovimiento()`, nunca directamente por Captura IA ni ningún otro componente |
-| **Kardex** | Registro histórico de movimientos de un producto (entradas/salidas). En este proyecto, `movimientos` cumple una función de kardex simplificado (append-only); no existe un módulo de Kardex dedicado con reportes — ver `docs/_ARCHIVE/pre-pivot-erp-scope.md` |
+| **Kardex** | Registro histórico de movimientos de un producto (entradas/salidas). En este proyecto, `movimientos` cumple una función de kardex simplificado (append-only); no existe un módulo de Kardex dedicado con reportes — no descartado, especificado como planeado en `03_FUNCTIONAL_SPEC/FUTURE/Kardex.md` |
 
 ## Referencias
 

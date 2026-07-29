@@ -1,6 +1,6 @@
 # Frontend — Technical Spec
 
-> Reemplaza `docs/07_FRONTEND.md` (19 líneas, nunca fue desarrollado). Describe la carpeta `frontend/` tal como existe hoy, verificada contra el código. Consistente con `Architecture.md` (sección "Frontend" del Módulo Auth) y `API.md`.
+> Reemplaza `docs/_ARCHIVE/EMPTY_07_FRONTEND_DRAFT.md` (19 líneas, nunca fue desarrollado). Describe la carpeta `frontend/` tal como existe hoy, verificada contra el código. Consistente con `Architecture.md` (sección "Frontend" del Módulo Auth) y `API.md`.
 
 ## 1. Stack real (verificado contra `frontend/package.json`)
 
@@ -124,7 +124,7 @@ Patrones verificados en el código real:
 
 ## 9. Responsive
 
-Captura IA es explícitamente mobile/tablet-first (cámara/micrófono nativo, sin formularios largos — ver `docs/07_FRONTEND.md` original y master spec §74). El resto de la UI (Dashboard, Productos, Movimientos) usa el sidebar colapsable de shadcn (`collapsible="icon"`, `use-mobile.ts` para breakpoint) — mismo patrón en toda la app, no hay una implementación de responsive distinta por pantalla.
+Captura IA es explícitamente mobile/tablet-first (cámara/micrófono nativo, sin formularios largos — ver `docs/_ARCHIVE/EMPTY_07_FRONTEND_DRAFT.md` original y `docs/_ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md` §74). El resto de la UI (Dashboard, Productos, Movimientos) usa el sidebar colapsable de shadcn (`collapsible="icon"`, `use-mobile.ts` para breakpoint) — mismo patrón en toda la app, no hay una implementación de responsive distinta por pantalla.
 
 ## 10. Brechas conocidas frente a lo documentado en otras fuentes
 
