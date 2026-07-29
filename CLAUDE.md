@@ -28,11 +28,17 @@ Backend:
 
 ## Flujo
 
-1. Analizar
-2. Diseñar
-3. Aprobar
-4. Backend
-5. Frontend
-6. QA
-7. Documentar
-8. Deploy
+Este proyecto sigue Specification-Driven Development. El flujo exacto (idéntico al de `AGENTS.md`, no una versión distinta) es:
+
+1. PRD (`docs/01_PRD/`)
+2. Functional Specification (`docs/03_FUNCTIONAL_SPEC/`)
+3. Technical Specification (`docs/04_TECHNICAL_SPEC/` + `docs/05_IMPLEMENTATION/<Modulo>.md`)
+4. Architecture Review (`docs/ArchitectureWorkflow.md`)
+5. Approval
+6. Backend
+7. Frontend
+8. Testing / QA (`docs/06_TESTS/`)
+9. Documentar (actualizar los specs afectados, no solo el código)
+10. Release (`docs/ReleaseWorkflow.md`)
+
+No se escribe código sin especificación aprobada — ver "No escribir código sin arquitectura aprobada" arriba y `docs/DefinitionOfReady.md`.

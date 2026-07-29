@@ -1,0 +1,90 @@
+# 06 API
+
+## Autenticación
+
+POST /login
+
+## Recursos
+
+- Productos
+- Inventario
+- Compras
+- Ventas
+- Usuarios
+- Captura IA
+
+Para cada endpoint documentar:
+
+- Método
+- URL
+- Request
+- Response
+- Errores
+
+## Módulo Captura IA
+
+Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md. Backend (Fase 3) completado e implementado en `backend/`; frontend pendiente.
+
+- POST /api/v1/captura-ia/foto
+- POST /api/v1/captura-ia/voz
+- POST /api/v1/captura-ia/foto-voz
+- GET /api/v1/captura-ia
+- GET /api/v1/captura-ia/{uuid}
+- PATCH /api/v1/captura-ia/{uuid}/detalle/{detalleId}
+- POST /api/v1/captura-ia/{uuid}/confirmar
+- POST /api/v1/captura-ia/{uuid}/descartar
+
+`{uuid}` identifica la captura externamente (no el id numérico interno). Desde el **Módulo 1 (Authentication)** estos endpoints ya exigen `Authorization: Bearer <access_token>` — sin excepción, sin ventana de acceso anónimo. El permiso específico (`captura-ia.usar`, `captura-ia.revisar`, `captura-ia.confirmar`) se agrega en el **Módulo 3 (Authorization/RBAC)**.
+
+## Módulo Auth & RBAC (Fase 5)
+
+Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitación/reset/verificación con token firmado) exige `Authorization: Bearer <access_token>`; toda acción de negocio valida un permiso específico, nunca un nombre de rol. Entre paréntesis, el módulo donde se construye.
+
+### Sesión (Módulo 1 — Authentication)
+
+- POST `/auth/login` — `{email, password, remember_me?}` → access token (body) + refresh token (cookie httpOnly). Registra intento en `security_logs` sea éxito o fallo. Actualiza `last_login_ip`, `last_user_agent`, `last_activity_at`.
+- POST `/auth/logout` — revoca la sesión actual y hace blacklist del JWT.
+- POST `/auth/refresh` — sin body (cookie httpOnly); rota el refresh token, emite nuevo access token; actualiza `last_activity_at`.
+- GET `/auth/me` — usuario actual + permisos efectivos (para hidratar `PermissionContext`).
+- POST `/auth/password/olvide` — `{email}` → siempre responde genérico (sin enumeración de usuarios).
+- POST `/auth/password/restablecer` — `{token, email, password}` → revoca todas las `auth_sessions` del usuario.
+
+### Usuarios (Módulo 4 — User Management)
+
+- GET `/usuarios` — lista usuarios de la empresa actual, requiere `usuarios.ver`.
+- GET `/usuarios/{id}` — requiere `usuarios.ver`.
+- PATCH `/usuarios/{id}` — requiere `usuarios.editar`.
+- PATCH `/usuarios/{id}/desactivar` / `/activar` — requiere `usuarios.editar`.
+
+### Roles y permisos (Módulo 5 — Role Management)
+
+- GET `/roles` / POST `/roles` / PATCH `/roles/{id}` / DELETE `/roles/{id}` — requiere `roles.gestionar`; siempre acotado a la empresa del usuario (Teams de Spatie).
+- GET `/permisos` — catálogo global de solo lectura (para la UI de asignación de permisos a un rol).
+
+### Invitaciones (Módulo 6)
+
+- POST `/usuarios/invitar` — requiere `usuarios.invitar`. `{email, role_id}` (el rol ya debe existir — depende de Módulo 5).
+- GET `/invitaciones/{token}` — valida el token firmado, devuelve email/empresa para el formulario de aceptación.
+- POST `/invitaciones/{token}/aceptar` — `{name, password}` → crea el usuario, marca la invitación aceptada, dispara verificación de email.
+- GET `/auth/email/verificar/{id}/{hash}` — URL firmada, marca `email_verified_at`.
+- POST `/auth/email/reenviar` — reenvía el correo de verificación.
+
+### Sesiones activas (Módulo 7)
+
+- GET `/auth/sesiones` — sesiones no revocadas del usuario actual (o de otro usuario de la misma empresa con `usuarios.editar`).
+- DELETE `/auth/sesiones/{id}` — revoca esa sesión puntual (cierra esa sesión de forma remota).
+
+### Seguridad y auditoría (Módulo 8)
+
+- GET `/auditoria` — requiere `auditoria.ver`; lista `audit_logs` de la empresa.
+- GET `/seguridad/intentos-login` — requiere `auditoria.ver`; lista `security_logs` de la empresa.
+
+### Perfil (Módulo 9)
+
+- GET `/perfil` / PATCH `/perfil` — `{name, theme, language, timezone}`.
+- POST `/perfil/avatar` — sube y reemplaza el avatar.
+
+### Plataforma (Platform Super Admin, sin empresa_id)
+
+- GET `/plataforma/empresas` — requiere `plataforma.empresas.ver`. Única superficie que cruza el límite de tenant, y solo para `is_platform_admin = true`.
+- GET `/plataforma/empresas/{id}/usuarios` — requiere `plataforma.usuarios.ver`.

@@ -35,4 +35,15 @@ return [
         ],
     ],
 
+    // Módulo Captura IA (docs/00_MASTER_SPECIFICATION.md sección 74).
+    // Los Services/AI/* son los únicos consumidores de esta config.
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'vision_model' => env('OPENAI_VISION_MODEL', 'gpt-4o'),
+        'speech_model' => env('OPENAI_SPEECH_MODEL', 'whisper-1'),
+        'responses_model' => env('OPENAI_RESPONSES_MODEL', 'gpt-4o'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+    ],
+
 ];

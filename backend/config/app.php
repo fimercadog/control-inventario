@@ -54,6 +54,10 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Módulo Auth (Fase 5): links de notificación (reset de contraseña,
+    // invitaciones, verificación de email) apuntan al frontend, no a esta API.
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
