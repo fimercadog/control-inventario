@@ -3,6 +3,7 @@
 namespace Tests\Unit\CapturaIA;
 
 use App\Models\Empresa;
+use App\Models\Marca;
 use App\Models\Producto;
 use App\Repositories\ProductRepository;
 use App\Services\Auth\TenantContext;
@@ -23,11 +24,12 @@ class ProductServiceMatchingTest extends TestCase
     {
         $empresa = Empresa::create(['nombre' => 'Fidel OS']);
         app(TenantContext::class)->setEmpresaId($empresa->id);
+        $marca = Marca::create(['empresa_id' => $empresa->id, 'nombre' => 'Purina']);
 
         $producto = Producto::create([
             'empresa_id' => $empresa->id,
             'nombre' => 'Dog Chow Adultos',
-            'marca' => 'Purina',
+            'marca_id' => $marca->id,
             'presentacion' => '20 kg',
         ]);
 
@@ -55,10 +57,11 @@ class ProductServiceMatchingTest extends TestCase
         $context = app(TenantContext::class);
 
         $context->setEmpresaId($empresaA->id);
+        $marcaA = Marca::create(['empresa_id' => $empresaA->id, 'nombre' => 'Purina']);
         Producto::create([
             'empresa_id' => $empresaA->id,
             'nombre' => 'Dog Chow Adultos',
-            'marca' => 'Purina',
+            'marca_id' => $marcaA->id,
             'presentacion' => '20 kg',
         ]);
 

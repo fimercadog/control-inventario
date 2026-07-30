@@ -22,12 +22,12 @@ class Producto extends Model
         'codigo',
         'codigo_barras',
         'nombre',
-        'marca',
+        'marca_id',
         'descripcion',
         'presentacion',
         'costo',
         'precio',
-        'unidad_medida',
+        'unidad_medida_id',
         'stock_minimo',
         'stock_maximo',
         'imagen',
@@ -55,8 +55,35 @@ class Producto extends Model
         return $this->belongsTo(Categoria::class);
     }
 
+    /** RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Brands.md) — reemplaza el campo de texto libre `marca`. */
+    public function marca(): BelongsTo
+    {
+        return $this->belongsTo(Marca::class);
+    }
+
+    /** RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md) — reemplaza el campo de texto libre `unidad_medida`. */
+    public function unidadMedida(): BelongsTo
+    {
+        return $this->belongsTo(UnidadMedida::class, 'unidad_medida_id');
+    }
+
     public function movimientos(): HasMany
     {
         return $this->hasMany(Movimiento::class);
+    }
+
+    /** FEATURE-005 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). */
+    public function proveedoresAsociados(): HasMany
+    {
+        return $this->hasMany(ProductoProveedor::class);
+    }
+
+    public function proveedorPrincipal(): ?ProductoProveedor
+    {
+        return $this->proveedoresAsociados()
+            ->where('estado', 'activo')
+            ->where('es_principal', true)
+            ->with('proveedor')
+            ->first();
     }
 }

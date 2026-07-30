@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
+use App\Http\Controllers\Api\ProductoController;
+use App\Http\Controllers\Api\ProductoProveedorController;
+use App\Http\Controllers\Api\ProveedorController;
 use Illuminate\Support\Facades\Route;
 
 // Módulo Auth (Fase 5, docs/06_API.md). login/refresh/olvide/restablecer no
@@ -37,4 +40,38 @@ Route::prefix('v1/captura-ia')->name('captura-ia.')->middleware(['auth:api', 'te
     Route::patch('{captura}/detalle/{detalleId}', [CapturaIAController::class, 'actualizarDetalle'])->name('detalle.actualizar');
     Route::post('{captura}/confirmar', [CapturaIAController::class, 'confirmar'])->name('confirmar');
     Route::post('{captura}/descartar', [CapturaIAController::class, 'descartar'])->name('descartar');
+});
+
+// Ficha de producto (docs/03_FUNCTIONAL_SPEC/Products.md, adenda "Ficha de
+// Producto"). Alcance acotado a detalle + edición de catálogo + historial
+// de movimientos de ESE producto — nunca stock_actual, nunca el módulo
+// Kardex/Auditoría/Exportaciones completos (siguen sin construir en
+// docs/03_FUNCTIONAL_SPEC/FUTURE/).
+Route::prefix('v1/productos')->name('productos.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [ProductoController::class, 'index'])->name('index');
+    Route::post('/', [ProductoController::class, 'store'])->name('store');
+    Route::get('{producto}', [ProductoController::class, 'show'])->name('show');
+    Route::patch('{producto}', [ProductoController::class, 'update'])->name('update');
+    Route::get('{producto}/movimientos', [ProductoController::class, 'movimientos'])->name('movimientos');
+    Route::post('{producto}/movimientos', [ProductoController::class, 'registrarIngreso'])->name('movimientos.ingreso');
+
+    // FEATURE-005: "Suppliers" tab de la Ficha de Producto.
+    Route::get('{producto}/proveedores', [ProductoProveedorController::class, 'index'])->name('proveedores.index');
+    Route::post('{producto}/proveedores', [ProductoProveedorController::class, 'store'])->name('proveedores.store');
+    Route::patch('{producto}/proveedores/{asociacion}', [ProductoProveedorController::class, 'update'])->name('proveedores.update');
+    Route::post('{producto}/proveedores/{asociacion}/deshabilitar', [ProductoProveedorController::class, 'disable'])->name('proveedores.disable');
+});
+
+// FEATURE-003 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). Borrado siempre
+// lógico — 'disable'/'enable' son los únicos mecanismos de "eliminar"/
+// restaurar, nunca un DELETE físico (GLOBAL RULE de la sesión 2026-07-29).
+Route::prefix('v1/proveedores')->name('proveedores.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [ProveedorController::class, 'index'])->name('index');
+    Route::post('/', [ProveedorController::class, 'store'])->name('store');
+    Route::get('{proveedor}', [ProveedorController::class, 'show'])->name('show');
+    Route::patch('{proveedor}', [ProveedorController::class, 'update'])->name('update');
+    Route::post('{proveedor}/deshabilitar', [ProveedorController::class, 'disable'])->name('disable');
+    Route::post('{proveedor}/habilitar', [ProveedorController::class, 'enable'])->name('enable');
+    // FEATURE-005: "Products" tab de la Ficha de Proveedor.
+    Route::get('{proveedor}/productos', [ProveedorController::class, 'productos'])->name('productos');
 });

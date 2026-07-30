@@ -21,8 +21,11 @@ class ProductRepository
             ->whereRaw('LOWER(nombre) = ?', [mb_strtolower(trim($nombre))])
             ->when(
                 $marca !== null,
-                fn ($query) => $query->whereRaw('LOWER(marca) = ?', [mb_strtolower(trim($marca))]),
-                fn ($query) => $query->whereNull('marca'),
+                fn ($query) => $query->whereHas(
+                    'marca',
+                    fn ($q) => $q->whereRaw('LOWER(nombre) = ?', [mb_strtolower(trim($marca))])
+                ),
+                fn ($query) => $query->whereNull('marca_id'),
             )
             ->when(
                 $presentacion !== null,

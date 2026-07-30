@@ -28,6 +28,26 @@ Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md para el dicciona
 `capturas_ia` tiene `uuid` (identificador externo) además del id numérico.
 `audit_logs` es genérica (no exclusiva de Captura IA) e inmutable — sin update/delete.
 
+## Módulo Catálogos — Categorías, Marcas, Unidades de Medida (RC1 Fase 1, docs/05_IMPLEMENTATION/CatalogModules.md)
+
+### Nuevas entidades
+
+- `marcas` — `id, empresa_id (FK), nombre, estado (default activo), timestamps`.
+- `unidades_medida` — `id, empresa_id (FK), nombre, abreviatura (nullable), estado (default activo), timestamps`.
+- `categorias` — ya existía (Fase 3 original), sin cambios de esquema; solo gana controller/UI.
+
+### Relaciones
+
+- `productos.marca_id` → `marcas.id` (nullable, `nullOnDelete`).
+- `productos.unidad_medida_id` → `unidades_medida.id` (nullable, `nullOnDelete`).
+- `productos.categoria_id` → `categorias.id` (ya existente).
+
+### Reglas de negocio
+
+- `productos.marca` y `productos.unidad_medida` (columnas string) se eliminan tras un backfill case-insensitive: cada valor distinto por empresa se convierte en una fila de `Marca`/`UnidadMedida`, y `productos.marca_id`/`unidad_medida_id` apunta a ella.
+- El matching de identidad de producto de Captura IA (`nombre + marca + presentación`) pasa a comparar contra `marcas.nombre` vía relación, preservando exactamente la misma semántica case-insensitive/trim que antes.
+- Borrado siempre lógico (`estado`) en las tres entidades — nunca DELETE físico.
+
 ## Módulo Auth & RBAC (Fase 5)
 
 ### Nuevas entidades

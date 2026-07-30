@@ -36,6 +36,16 @@ Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md. Backend (Fase 3
 
 `{uuid}` identifica la captura externamente (no el id numérico interno). Desde el **Módulo 1 (Authentication)** estos endpoints ya exigen `Authorization: Bearer <access_token>` — sin excepción, sin ventana de acceso anónimo. El permiso específico (`captura-ia.usar`, `captura-ia.revisar`, `captura-ia.confirmar`) se agrega en el **Módulo 3 (Authorization/RBAC)**.
 
+## Módulo Catálogos — Categorías, Marcas, Unidades de Medida (RC1 Fase 1, docs/05_IMPLEMENTATION/CatalogModules.md)
+
+Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-model-binding + `TenantScope` automático + Policy como segunda capa). Borrado siempre lógico — `deshabilitar`/`habilitar`, nunca DELETE físico.
+
+- GET/POST `/api/v1/categorias`, GET/PATCH `/api/v1/categorias/{id}`, POST `/api/v1/categorias/{id}/deshabilitar`, POST `/api/v1/categorias/{id}/habilitar`.
+- GET/POST `/api/v1/marcas`, GET/PATCH `/api/v1/marcas/{id}`, POST `/api/v1/marcas/{id}/deshabilitar`, POST `/api/v1/marcas/{id}/habilitar`.
+- GET/POST `/api/v1/unidades-medida`, GET/PATCH `/api/v1/unidades-medida/{id}`, POST `/api/v1/unidades-medida/{id}/deshabilitar`, POST `/api/v1/unidades-medida/{id}/habilitar`.
+
+`POST/PATCH /api/v1/productos`: `marca`/`unidad_medida` (string libre) reemplazados por `marca_id`/`marca_nuevo` y `unidad_medida_id`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente ya usado para `proveedor_id`/`proveedor_nuevo`).
+
 ## Módulo Auth & RBAC (Fase 5)
 
 Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitación/reset/verificación con token firmado) exige `Authorization: Bearer <access_token>`; toda acción de negocio valida un permiso específico, nunca un nombre de rol. Entre paréntesis, el módulo donde se construye.

@@ -37,6 +37,13 @@ El master spec no contenía historias de usuario formales (§9 solo listaba role
 - **[PLANNED]** Como supervisor, quiero importar/exportar productos en lote.
 - **[PLANNED]** Como usuario, quiero consultar productos con bajo stock para anticipar quiebres de inventario (RF-018).
 
+## Catálogos (Categorías, Marcas, Unidades de Medida)
+
+- **[PLANNED — en desarrollo, RC1 Fase 1]** Como administrador, quiero gestionar el catálogo de categorías de producto (crear, editar, deshabilitar) desde su propia pantalla, en vez de que solo exista implícitamente como `categoria_id`.
+- **[PLANNED — en desarrollo, RC1 Fase 1]** Como administrador, quiero gestionar el catálogo de marcas de producto, para no depender de texto libre inconsistente.
+- **[PLANNED — en desarrollo, RC1 Fase 1]** Como administrador, quiero gestionar el catálogo de unidades de medida de producto, por la misma razón.
+- **[PLANNED — en desarrollo, RC1 Fase 1]** Como usuario creando o editando un producto, quiero seleccionar categoría/marca/unidad de medida de un catálogo (con opción de crear una nueva al vuelo), en vez de escribir texto libre.
+
 ## Dashboard
 
 - **[BUILT — con datos de demostración]** Como usuario, quiero ver un dashboard con indicadores clave (productos, movimientos recientes, etc.) al iniciar sesión. Nota: hoy el dashboard usa datos mock, no datos reales de la empresa — ver `03_FUNCTIONAL_SPEC/Dashboard.md` (propiedad de otro documento) para el detalle exacto de qué está mockeado.
