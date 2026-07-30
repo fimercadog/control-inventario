@@ -19,6 +19,16 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// BUG-007: /auth/logout se deja FUERA de esta lista a propósito (no se
+// excluye), aunque parezca lo intuitivo. Si el access token expiró
+// (JWT_TTL=15 min) al hacer clic en logout, el reintento automático con
+// un token refrescado es lo que permite que el logout llegue de verdad al
+// controller y revoque la sesión server-side (AuthenticationService::logout,
+// $this->tokens->revoke()) — excluirlo dejaría sesiones sin revocar cada
+// vez que el access token expiró justo antes del logout. El 401 transitorio
+// que aparece en Network durante ese reintento es esperado y benigno; lo
+// que sí se corrigió es que, si el refresh TAMBIÉN falla, el error nunca
+// llegue a mostrarse al usuario (ver auth-slice.ts, logoutThunk).
 const AUTH_ENDPOINTS_WITHOUT_RETRY = ["/auth/login", "/auth/refresh"];
 
 let refreshPromise: Promise<string | null> | null = null;

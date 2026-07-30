@@ -13,6 +13,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// BUG-004: mismo logotipo oficial (public/brand/logo.png) en todos los
+// puntos de la app donde se muestra una marca — favicon/app icon/Apple
+// Touch Icon vienen de app/icon.png y app/apple-icon.png (convención de
+// Next.js), manifest de app/manifest.ts, y Open Graph de
+// app/opengraph-image.png (misma convención, genera el meta tag solo).
 export const metadata: Metadata = {
   title: "AI Inventory Agent",
   description: "Control de inventario con fotografía y voz, impulsado por IA.",

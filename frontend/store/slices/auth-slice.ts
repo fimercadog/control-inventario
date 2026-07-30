@@ -50,9 +50,20 @@ export const loginThunk = createAsyncThunk(
   }
 );
 
+/**
+ * BUG-007: si el access token ya expiró (JWT_TTL=15 min) al momento del
+ * click, el backend responde 401 a /auth/logout — correcto desde su
+ * perspectiva (no hay sesión válida que cerrar), pero irrelevante para el
+ * usuario: su intención (terminar la sesión) ya se cumple limpiando el
+ * token localmente. No se relanza el error — un logout nunca debe
+ * mostrarle un error al usuario, illustrado explícitamente en el reporte
+ * de este bug.
+ */
 export const logoutThunk = createAsyncThunk("auth/logout", async () => {
   try {
     await authApi.logout();
+  } catch {
+    // Silenciado a propósito — ver comentario de la función.
   } finally {
     setAccessToken(null);
   }
