@@ -218,6 +218,22 @@ export type StoreCategoriaPayload = Partial<Pick<Categoria, "descripcion" | "est
 
 export type UpdateCategoriaPayload = Partial<StoreCategoriaPayload>;
 
+/** Espejo de App\Http\Resources\Marca\MarcaResource (RC1, docs/03_FUNCTIONAL_SPEC/Brands.md). */
+export interface Marca {
+  id: number;
+  nombre: string;
+  estado: "activo" | "inactivo";
+  productos_count?: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type StoreMarcaPayload = Partial<Pick<Marca, "estado">> & {
+  nombre: string;
+};
+
+export type UpdateMarcaPayload = Partial<StoreMarcaPayload>;
+
 /**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación

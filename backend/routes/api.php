@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
+use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
@@ -91,4 +92,17 @@ Route::prefix('v1/categorias')->name('categorias.')->middleware(['auth:api', 'te
     Route::post('{categoria}/habilitar', [CategoriaController::class, 'enable'])->name('enable');
     // Ficha de Categoría — pestaña "Productos".
     Route::get('{categoria}/productos', [CategoriaController::class, 'productos'])->name('productos');
+});
+
+// RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Brands.md). Borrado siempre lógico —
+// mismo patrón exacto que Categorías/Proveedores.
+Route::prefix('v1/marcas')->name('marcas.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [MarcaController::class, 'index'])->name('index');
+    Route::post('/', [MarcaController::class, 'store'])->name('store');
+    Route::get('{marca}', [MarcaController::class, 'show'])->name('show');
+    Route::patch('{marca}', [MarcaController::class, 'update'])->name('update');
+    Route::post('{marca}/deshabilitar', [MarcaController::class, 'disable'])->name('disable');
+    Route::post('{marca}/habilitar', [MarcaController::class, 'enable'])->name('enable');
+    // Ficha de Marca — pestaña "Productos".
+    Route::get('{marca}/productos', [MarcaController::class, 'productos'])->name('productos');
 });

@@ -15,7 +15,7 @@
 | 2 | Captura IA | 🟢 Completo | 90% |
 | 3 | Productos | 🟢 Completo (corregido 2026-07-30) | 85% |
 | 4 | Categorías | 🟢 Completo (implementado 2026-07-30) | 90% |
-| 5 | Marcas | 🔴 No Implementado | 8% |
+| 5 | Marcas | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 6 | Unidades de Medida | 🔴 No Implementado | 8% |
 | 7 | Stock | 🔴 No Implementado | 5% |
 | 8 | Movimientos | ⚫ Mock | 20% |
@@ -37,7 +37,7 @@
 - [x] Captura IA (completo)
 - [x] Productos (completo, corregido 2026-07-30)
 - [x] Categorías (completo, implementado 2026-07-30)
-- [ ] Marcas
+- [x] Marcas (completo, implementado 2026-07-30)
 - [ ] Unidades de Medida
 - [ ] Stock
 - [x] Movimientos (mock, backend fragmentario)
@@ -124,22 +124,28 @@
 
 **Funcionalidades:** ✔ Crear ✔ Editar ✔ Ver detalle ✔ Buscar ✔ Filtrar por estado ✔ Logical Delete/Activar-Desactivar con confirmación ✔ Ver productos asociados (pestaña) ✘ Selector de categoría en el formulario de Producto (gap conocido, documentado)
 
-### 5. Marcas — 🔴 No Implementado
+### 5. Marcas — 🟢 Completo (implementado 2026-07-30)
 
 | Capa | Ítem | Estado |
 |---|---|:---:|
-| Backend | Migración | ⚠️ escrita, **Pending** (no ejecutada) |
-| Backend | Modelo/Policy/FormRequest | ✔ escritos, sin tabla real detrás todavía |
-| Backend | Resource/Controller/Rutas | ✘ |
-| Frontend | Todo | ✘ |
-| Tests | Todo | ✘ |
-| Docs | Functional/Technical/Implementation | ✔ `Brands.md`, `CatalogModules.md` |
+| Backend | Migración/Modelo | ✔ (ya existían desde RC1 Fase 1 — Catalog Normalization) |
+| Backend | Policy/FormRequest | ✔ |
+| Backend | Resource/Controller/Rutas | ✔ `MarcaController` (index/store/show/update/disable/enable/productos), mismo patrón que Categorías/Proveedores |
+| Frontend | Listado (búsqueda, filtro estado, badge, paginación heredada) | ✔ |
+| Frontend | Crear/Editar/Ver detalle | ✔ |
+| Frontend | Logical Delete + Activar/Desactivar con confirmación | ✔ |
+| Frontend | Refresco automático (`useCrudList`) | ✔ |
+| Frontend | Pestaña "Productos" en la ficha (relación bidireccional) | ✔ |
+| Frontend | Selector de Marca en el formulario de Producto | ⚠️ existe un input de texto libre (`marca_nuevo`, find-or-create), no un `Select` real con las marcas ya existentes — gap pre-existente, no cerrado por esta unidad (ver `Brands.md`) |
+| Tests | Feature | ✔ `MarcaControllerTest` (13 casos, incluye integridad referencial con Productos) |
+| Tests | Browser | ✔ verificado en navegador real: CRUD, filtros, confirmación, relación con Productos, responsive |
+| Docs | Functional/Technical/Implementation | ✔ `Brands.md` (Built), `API.md`, `docs/05_IMPLEMENTATION/MarcasModule.md` |
 
-**Funcionalidades:** ✘ Todo.
+**Funcionalidades:** ✔ Crear ✔ Editar ✔ Ver detalle ✔ Buscar ✔ Filtrar por estado ✔ Logical Delete/Activar-Desactivar con confirmación ✔ Ver productos asociados (pestaña) ✘ Selector de marca (`Select` de catálogo) en el formulario de Producto (gap conocido, documentado)
 
 ### 6. Unidades de Medida — 🔴 No Implementado
 
-Mismo estado exacto que Marcas (migración `Pending`, modelo/policy/requests escritos, sin resource/controller/rutas/frontend/tests). Docs: `UnitsOfMeasure.md`.
+Migración/Modelo/Policy/FormRequests ya existen desde RC1 Fase 1, sin resource/controller/rutas/frontend/tests todavía — mismo punto de partida que tenían Categorías y Marcas antes de sus respectivas unidades de trabajo. Docs: `UnitsOfMeasure.md`.
 
 ### 7. Stock — 🔴 No Implementado
 
@@ -242,39 +248,39 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 3 (Captura IA, Productos, Categorías — implementado 2026-07-30)
+- **Completos (🟢):** 4 (Captura IA, Productos, Categorías, Marcas — Marcas implementado 2026-07-30)
 - **Parciales (🟡):** 2 (Proveedores, Configuración)
 - **Mock (⚫):** 2 (Dashboard, Movimientos)
-- **No implementados (🔴):** 10 (Marcas, Unidades de Medida, Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Categorías): **~35%**
+- **No implementados (🔴):** 9 (Unidades de Medida, Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Marcas): **~40%**
 
 ---
 
 ## Gaps
 
 ### Módulos faltantes
-Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil, Stock, Categorías/Marcas/Unidades de Medida (como módulos alcanzables — el código de Fase 1 existe pero no está conectado).
+Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil, Stock, Unidades de Medida (como módulo alcanzable — el código de Fase 1 existe pero no está conectado; Categorías y Marcas ya se cerraron el 2026-07-30).
 
 ### Funcionalidades faltantes
-Logical Delete de Productos; refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit); selectores de catálogo (categoría/marca/unidad) en formularios de Producto; CRUD completo de Movimientos; persistencia real de Configuración.
+Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existe un input de texto libre find-or-create para marca/unidad y ningún campo de categoría; CRUD completo de Movimientos; persistencia real de Configuración.
 
 ### APIs faltantes
-`/api/v1/categorias`, `/marcas`, `/unidades-medida`, `/stock`, `/movimientos` (CRUD real), `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`, `/productos/{id}/deshabilitar` y `/habilitar`.
+`/api/v1/unidades-medida`, `/stock`, `/movimientos` (CRUD real), `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias` y `/marcas` ya se implementaron el 2026-07-30.)
 
 ### Pantallas faltantes
-`/categorias`, `/marcas`, `/unidades-medida`, `/stock`, `/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`.
+`/unidades-medida`, `/stock`, `/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias` y `/marcas` ya se implementaron el 2026-07-30.)
 
 ### CRUD incompletos
-Productos (falta Logical Delete), Movimientos (solo existe la "C" de Entrada, indirecta), Configuración (no es CRUD real, es un formulario decorativo).
+Movimientos (solo existe la "C" de Entrada, indirecta), Configuración (no es CRUD real, es un formulario decorativo).
 
 ### Permisos faltantes
-Policies para Marca/UnidadMedida/Categoria ya escritas pero sin controller que las invoque; no existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte.
+Policy para UnidadMedida ya escrita pero sin controller que la invoque (mismo estado que tenían Categoria/Marca antes de cerrarse); no existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte.
 
 ### Relaciones faltantes
-`productos.marca_id`/`unidad_medida_id` escritas en migración pero no aplicadas (`Pending`).
+Ninguna pendiente para Categoría/Marca — `productos.categoria_id`/`marca_id` aplicadas y en uso desde RC1 Fase 1. `productos.unidad_medida_id` sigue aplicada pero sin controller propio que la exponga.
 
 ### Tests faltantes
-`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest`, `MovimientoControllerTest`, `StockControllerTest`, `UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen).
+`UnidadMedidaControllerTest`, `MovimientoControllerTest`, `StockControllerTest`, `UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest` y `MarcaControllerTest` ya existen desde el 2026-07-30.)
 
 ### Documentación faltante
 `Suppliers.md` real sigue en `FUTURE/` marcado `Planned` pese a estar construido — nunca se actualizó su estado. `Stock.md` propio no escrito todavía (solo existe como decisión de diseño en memoria de conversación). `TestExecutionReport.md` no refleja FEATURE-005/008 todavía.

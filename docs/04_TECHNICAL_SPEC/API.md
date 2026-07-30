@@ -40,8 +40,8 @@ Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md. Backend (Fase 3
 
 Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-model-binding + `TenantScope` automático + Policy como segunda capa). Borrado siempre lógico — `deshabilitar`/`habilitar`, nunca DELETE físico.
 
-- GET/POST `/api/v1/categorias`, GET/PATCH `/api/v1/categorias/{id}`, POST `/api/v1/categorias/{id}/deshabilitar`, POST `/api/v1/categorias/{id}/habilitar`, GET `/api/v1/categorias/{id}/productos` (Built 2026-07-30 — `CategoriaController`, ver `docs/05_IMPLEMENTATION/CategoriasModule.md`; Marcas/Unidades de Medida siguen sin controller propio todavía).
-- GET/POST `/api/v1/marcas`, GET/PATCH `/api/v1/marcas/{id}`, POST `/api/v1/marcas/{id}/deshabilitar`, POST `/api/v1/marcas/{id}/habilitar`.
+- GET/POST `/api/v1/categorias`, GET/PATCH `/api/v1/categorias/{id}`, POST `/api/v1/categorias/{id}/deshabilitar`, POST `/api/v1/categorias/{id}/habilitar`, GET `/api/v1/categorias/{id}/productos` (Built 2026-07-30 — `CategoriaController`, ver `docs/05_IMPLEMENTATION/CategoriasModule.md`).
+- GET/POST `/api/v1/marcas`, GET/PATCH `/api/v1/marcas/{id}`, POST `/api/v1/marcas/{id}/deshabilitar`, POST `/api/v1/marcas/{id}/habilitar`, GET `/api/v1/marcas/{id}/productos` (Built 2026-07-30 — `MarcaController`, ver `docs/05_IMPLEMENTATION/MarcasModule.md`; Unidades de Medida sigue sin controller propio todavía).
 - GET/POST `/api/v1/unidades-medida`, GET/PATCH `/api/v1/unidades-medida/{id}`, POST `/api/v1/unidades-medida/{id}/deshabilitar`, POST `/api/v1/unidades-medida/{id}/habilitar`.
 
 `POST/PATCH /api/v1/productos`: `marca`/`unidad_medida` (string libre) reemplazados por `marca_id`/`marca_nuevo` y `unidad_medida_id`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente ya usado para `proveedor_id`/`proveedor_nuevo`).

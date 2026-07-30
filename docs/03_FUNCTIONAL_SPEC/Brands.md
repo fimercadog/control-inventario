@@ -1,7 +1,11 @@
 # Marcas
 
-**Status: Approved** (aprobado 2026-07-29 junto con `RC1_GAP_ANALYSIS.md` — Fase 0 de `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`; implementación en curso, Fase 1 del roadmap de 8 fases aprobado, ver `docs/05_IMPLEMENTATION/CatalogModules.md`)
+**Status: Built** (implementado 2026-07-30 — Unidad de Trabajo "Implementación Completa del Módulo Marcas (RC1)", mismo nivel de funcionalidad que Productos/Proveedores/Categorías)
 
+> Verificado contra `backend/app/Http/Controllers/Api/MarcaController.php`, `frontend/app/(app)/marcas/page.tsx`, `frontend/components/marca-detail-screen.tsx`, `backend/tests/Feature/MarcaControllerTest.php` (13 casos). Reemplaza la página stub "pendiente de implementación" que existía desde la Unidad de Trabajo "Sidebar RC1".
+>
+> La tabla `marcas` y el modelo `Marca` ya existían desde RC1 Fase 1 (Catalog Normalization, `marca_id` en `productos`), pero nunca tuvieron controller, rutas, ni pantalla propia hasta esta unidad de trabajo.
+>
 > Decisión arquitectónica aprobada explícitamente por el usuario 2026-07-29 ("Catalog Normalization"): `marca` **dejó de ser un campo de texto libre** en `productos` y se convierte en una entidad de catálogo real (`marcas`), referenciada por `productos.marca_id`. Requiere migración de datos (backfill) — ver Risks/Edge Cases abajo.
 
 ## Purpose
@@ -22,8 +26,8 @@ Catálogo administrable de marcas de producto. Reemplaza el campo `productos.mar
 
 ## Screens
 
-- **`/marcas`**: listado (Nombre, Productos asociados, Estado). Botón "Nueva Marca".
-- **`/marcas/{id}`**: detalle + edición inline.
+- **`/marcas`**: listado (Nombre, Productos asociados, Estado). Botón "Nueva Marca", búsqueda por nombre, filtro de Estado (Activas/Todas).
+- **`/marcas/{id}`**: detalle + edición inline (mismo patrón que `categoria-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta marca (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 - Selector de Marca en "Nuevo Producto"/edición de producto: mismo componente `Select` + "+ Crear marca nueva" ya usado para Proveedor en `registrar-ingreso-dialog.tsx`.
 
 ## Fields
@@ -54,10 +58,11 @@ Mismos componentes reutilizables que Categorías/Proveedores.
 
 ## Acceptance Criteria
 
-- [ ] `MarcaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría.
-- [ ] `ProductServiceMatchingTest`, `ApplyInventoryMovementActionTest`, `ArchitectureReviewTest` (Captura IA) siguen pasando sin cambiar su contrato público, solo sus fixtures internos.
-- [ ] Migración de backfill verificada: ningún producto con `marca` no nula pre-migración queda sin `marca_id` post-migración.
-- [ ] Verificación real en navegador.
+- [x] `MarcaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría, integridad referencial con Productos (13 casos).
+- [x] `ProductServiceMatchingTest`, `ApplyInventoryMovementActionTest`, `ArchitectureReviewTest` (Captura IA) siguen pasando sin cambiar su contrato público, solo sus fixtures internos — verificado, ninguno se tocó en esta unidad de trabajo.
+- [x] Migración de backfill verificada: ningún producto con `marca` no nula pre-migración queda sin `marca_id` post-migración (verificado en Fase 1, RC1_GAP_ANALYSIS.md; no re-tocado aquí).
+- [x] Verificación real en navegador (agent-browser): crear, editar, buscar, filtrar por estado, eliminar lógico, re-habilitar, relación bidireccional con Productos, responsive.
+- [ ] El selector de marca en "Nuevo Producto"/edición de producto usa un `Select` real con "+ Crear marca nueva" (como especifica la sección Screens) — **todavía no implementado así**: el formulario de Producto solo tiene un input de texto libre (`marca_nuevo`, siempre find-or-create por nombre), sin un dropdown que liste las marcas ya existentes en el catálogo. Gap pre-existente (heredado de la migración de Fase 1), no introducido ni cerrado por esta unidad de trabajo — mismo tipo de gap ya documentado en `Categories.md` para el selector de categoría.
 
 ## Edge Cases
 

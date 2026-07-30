@@ -4,6 +4,14 @@ Formato libre, orden cronológico inverso (más reciente arriba). Referenciado p
 
 ## [Unreleased]
 
+### Feature — Módulo Marcas completo (RC1, 2026-07-30)
+- Implementación completa del módulo Marcas al mismo nivel funcional que Productos/Proveedores/Categorías, reemplazando la página stub "pendiente de implementación".
+- Backend: `MarcaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `Marca`/`MarcaPolicy`/`StoreMarcaRequest`/`UpdateMarcaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /marcas/{id}/productos` para la pestaña de relación.
+- Frontend: listado con búsqueda/filtro de estado/badge de color, diálogo de creación, ficha con edición inline + pestaña "Productos" (relación bidireccional con Productos, verificada), Logical Delete/Activar-Desactivar con `ConfirmDialog`, refresco automático vía `useCrudList`.
+- Integridad referencial: deshabilitar una marca nunca rompe `productos.marca_id` (verificado por test dedicado) — mismo principio ya aplicado a Categorías/Proveedores.
+- Tests: 13 casos nuevos en `MarcaControllerTest`, suite completa 167/167 en verde. Verificación real en navegador: CRUD completo, filtros, confirmación, relación con Productos (marca "Orijen", 23 productos), responsive.
+- Gap conocido y documentado, no cerrado por esta unidad: el formulario de creación/edición de Producto solo tiene un input de texto libre para Marca (`marca_nuevo`, find-or-create), no un selector real de catálogo (ver `docs/03_FUNCTIONAL_SPEC/Brands.md`).
+
 ### Feature — Módulo Categorías completo (RC1, 2026-07-30)
 - Implementación completa del módulo Categorías al mismo nivel funcional que Productos/Proveedores, reemplazando la página stub "pendiente de implementación".
 - Backend: `CategoriaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `Categoria`/`CategoriaPolicy`/`StoreCategoriaRequest`/`UpdateCategoriaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /categorias/{id}/productos` para la pestaña de relación.
