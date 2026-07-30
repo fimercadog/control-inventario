@@ -88,11 +88,11 @@ Ninguno — la tabla `marcas` ya existía desde RC1 Fase 1, sin cambios de esque
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** ver confirmación abajo — se actualiza inmediatamente después de ejecutar `git push`.
+- **Commit:** `d41fc12` — `feat(brands): implement complete CRUD module (RC1)`.
 
 ## Confirmación de push
 
-Pendiente — se actualiza inmediatamente después de ejecutar `git push`.
+✅ Ejecutado correctamente: `636f2b7..d41fc12  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
