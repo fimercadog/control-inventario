@@ -292,17 +292,43 @@ No se permite acumular funcionalidades parcialmente terminadas.
 
 Para cada funcionalidad o módulo se debe seguir obligatoriamente el siguiente ciclo:
 
-1. Especificación
-2. Desarrollo
-3. Actualización de documentación
-4. Generación de datos de prueba
-5. Ejecución de pruebas
-6. Corrección de errores encontrados
-7. Commit
-8. Push
-9. Generación del informe final
-10. Revisión y aprobación
-11. Inicio de la siguiente funcionalidad
+Especificación
+
+↓
+
+Desarrollo
+
+↓
+
+Documentación
+
+↓
+
+Datos Demo
+
+↓
+
+Pruebas
+
+↓
+
+Correcciones
+
+↓
+
+Git
+
+↓
+
+Informe
+
+↓
+
+Aprobación
+
+↓
+
+Siguiente funcionalidad
 
 No se puede pasar al siguiente punto mientras el anterior no esté finalizado.
 
@@ -496,3 +522,47 @@ Aprobación
 ↓
 
 Siguiente funcionalidad
+
+
+## Stop Rule
+
+El agente de IA debe detener inmediatamente el desarrollo cuando ocurra cualquiera de las siguientes situaciones:
+
+- Falta una especificación.
+- Existe una ambigüedad funcional.
+- Existen conflictos entre documentos.
+- Una prueba obligatoria falla.
+- La documentación no coincide con el código.
+- No puede generar el informe final.
+- No puede realizar el commit.
+- No puede ejecutar el push.
+
+En cualquiera de estos casos deberá presentar un informe explicando el motivo y esperar aprobación antes de continuar.
+
+Nunca debe asumir, inventar o continuar ignorando estos bloqueos.
+
+
+## Definición de Funcionalidad
+
+Una funcionalidad es una unidad mínima de trabajo que agrega, modifica o corrige un comportamiento del sistema.
+
+Ejemplos:
+
+- Crear Producto
+- Editar Producto
+- Eliminar Producto
+- Cambiar Estado
+- Buscar Productos
+
+Cada funcionalidad debe completar el mismo ciclo de calidad que un módulo:
+
+- Desarrollo
+- Documentación
+- Datos Demo
+- Pruebas
+- Commit
+- Push
+- Informe
+- Aprobación
+
+No podrá iniciarse otra funcionalidad hasta cerrar la anterior.

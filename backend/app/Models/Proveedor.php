@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToEmpresa;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Proveedor extends Model
 {
     use BelongsToEmpresa;
+    use HasFactory;
 
     // Eloquent pluraliza "Proveedor" como "proveedors" (regla inglesa) —
     // la tabla real es "proveedores" (migración create_proveedores_table).
