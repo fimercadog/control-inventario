@@ -92,11 +92,11 @@ Con este módulo, la **Fase 1 del roadmap RC1 queda oficialmente completa**. La 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** ver confirmación abajo — se actualiza inmediatamente después de ejecutar `git push`.
+- **Commit:** `854b40d` — `feat(units-of-measure): implement complete CRUD module (RC1)`.
 
 ## Confirmación de push
 
-Pendiente — se actualiza inmediatamente después de ejecutar `git push`.
+✅ Ejecutado correctamente: `c5240c2..854b40d  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
