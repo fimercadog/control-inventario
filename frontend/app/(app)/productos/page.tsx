@@ -1,7 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Package, Search, SearchX, MoreHorizontal, Pencil, History } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Package, Search, SearchX, MoreHorizontal, Pencil, History, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -28,25 +31,43 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
-import { MOCK_PRODUCTS } from "@/lib/mock/data";
+import { NewProductDialog } from "@/components/new-product-dialog";
+import { listProductos } from "@/lib/api/productos";
+import type { Producto } from "@/lib/api/types";
+import { colorFromString } from "@/lib/color-from-string";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
-const CATEGORIES = ["Todas", ...Array.from(new Set(MOCK_PRODUCTS.map((p) => p.categoria)))];
-
 export default function ProductsPage() {
+  const router = useRouter();
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
 
+  useEffect(() => {
+    listProductos()
+      .then((result) => setProductos(result.items))
+      .catch((error) =>
+        toast.error(error instanceof Error ? error.message : "No pudimos cargar los productos.")
+      )
+      .finally(() => setLoading(false));
+  }, []);
+
+  const categories = useMemo(
+    () => ["Todas", ...Array.from(new Set(productos.map((p) => p.categoria).filter((c): c is string => Boolean(c))))],
+    [productos]
+  );
+
   const filtered = useMemo(() => {
-    return MOCK_PRODUCTS.filter((product) => {
+    return productos.filter((product) => {
       const matchesSearch =
         search.trim() === "" ||
         product.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        product.marca.toLowerCase().includes(search.toLowerCase());
+        (product.marca ?? "").toLowerCase().includes(search.toLowerCase());
       const matchesCategory = category === "Todas" || product.categoria === category;
       return matchesSearch && matchesCategory;
     });
-  }, [search, category]);
+  }, [search, category, productos]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -54,11 +75,14 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Productos</h1>
           <p className="text-sm text-muted-foreground">
-            {filtered.length === MOCK_PRODUCTS.length
-              ? `${formatNumber(MOCK_PRODUCTS.length)} productos en tu catálogo.`
-              : `${formatNumber(filtered.length)} de ${formatNumber(MOCK_PRODUCTS.length)} productos.`}
+            {loading
+              ? "Cargando catálogo..."
+              : filtered.length === productos.length
+                ? `${formatNumber(productos.length)} productos en tu catálogo.`
+                : `${formatNumber(filtered.length)} de ${formatNumber(productos.length)} productos.`}
           </p>
         </div>
+        <NewProductDialog />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -72,7 +96,7 @@ export default function ProductsPage() {
           />
         </div>
         <Select
-          items={Object.fromEntries(CATEGORIES.map((c) => [c, c]))}
+          items={Object.fromEntries(categories.map((c) => [c, c]))}
           value={category}
           onValueChange={(value) => setCategory(value ?? "Todas")}
         >
@@ -80,7 +104,7 @@ export default function ProductsPage() {
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
               </SelectItem>
@@ -91,104 +115,123 @@ export default function ProductsPage() {
 
       <Card className="border-border/60 py-0">
         <CardContent className="px-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Producto</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Presentación</TableHead>
-                <TableHead className="text-right">Stock</TableHead>
-                <TableHead className="text-right">Precio</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((product) => {
-                const low = product.stock_actual <= product.stock_minimo;
-                return (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
-                          style={{ backgroundColor: product.imagenColor }}
-                        >
-                          <Package className="size-4" />
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Cargando productos...
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Presentación</TableHead>
+                  <TableHead className="text-right">Stock</TableHead>
+                  <TableHead className="text-right">Precio</TableHead>
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((product) => {
+                  const low = product.stock_actual <= product.stock_minimo;
+                  return (
+                    <TableRow
+                      key={product.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/productos/${product.id}`)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
+                            style={{ backgroundColor: colorFromString(product.nombre) }}
+                          >
+                            <Package className="size-4" />
+                          </div>
+                          <div className="flex min-w-0 flex-col">
+                            <Link
+                              href={`/productos/${product.id}`}
+                              className="truncate font-medium hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {product.nombre}
+                            </Link>
+                            <span className="text-xs text-muted-foreground">{product.marca}</span>
+                          </div>
                         </div>
-                        <div className="flex min-w-0 flex-col">
-                          <span className="truncate font-medium">{product.nombre}</span>
-                          <span className="text-xs text-muted-foreground">{product.marca}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{product.categoria}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{product.presentacion}</TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={
-                          low
-                            ? "font-medium tabular-nums text-destructive"
-                            : "font-medium tabular-nums"
-                        }
-                      >
-                        {formatNumber(product.stock_actual)} {product.unidad_medida.toLowerCase()}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(product.precio)}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button variant="ghost" size="icon-sm" aria-label="Acciones">
-                              <MoreHorizontal />
-                            </Button>
+                      </TableCell>
+                      <TableCell>
+                        {product.categoria && <Badge variant="secondary">{product.categoria}</Badge>}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{product.presentacion}</TableCell>
+                      <TableCell className="text-right">
+                        <span
+                          className={
+                            low
+                              ? "font-medium tabular-nums text-destructive"
+                              : "font-medium tabular-nums"
                           }
-                        />
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Pencil />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <History />
-                            Ver movimientos
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        >
+                          {formatNumber(product.stock_actual)} {product.unidad_medida?.toLowerCase()}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(product.precio)}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={
+                              <Button variant="ghost" size="icon-sm" aria-label="Acciones">
+                                <MoreHorizontal />
+                              </Button>
+                            }
+                          />
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => router.push(`/productos/${product.id}?editar=1`)}>
+                              <Pencil />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/productos/${product.id}?tab=movimientos`)}
+                            >
+                              <History />
+                              Ver movimientos
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-0">
+                      <EmptyState
+                        icon={SearchX}
+                        title="No encontramos productos"
+                        description="Prueba con otro nombre, marca o categoría."
+                        action={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSearch("");
+                              setCategory("Todas");
+                            }}
+                          >
+                            Limpiar filtros
+                          </Button>
+                        }
+                      />
                     </TableCell>
                   </TableRow>
-                );
-              })}
-
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="p-0">
-                    <EmptyState
-                      icon={SearchX}
-                      title="No encontramos productos"
-                      description="Prueba con otro nombre, marca o categoría."
-                      action={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSearch("");
-                            setCategory("Todas");
-                          }}
-                        >
-                          Limpiar filtros
-                        </Button>
-                      }
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

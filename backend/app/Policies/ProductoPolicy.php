@@ -14,6 +14,18 @@ use App\Models\User;
  */
 class ProductoPolicy
 {
+    /**
+     * FEATURE-001 (docs/03_FUNCTIONAL_SPEC/Products.md, Adenda 2): sin
+     * instancia de Producto todavía que verificar por pertenencia — solo
+     * exige empresa resuelta (usuario de empresa, o Platform Super Admin
+     * operando explícitamente en nombre de una). `empresa_id` real del
+     * nuevo producto lo fuerza igualmente `BelongsToEmpresa` al crear.
+     */
+    public function create(User $user): bool
+    {
+        return $user->is_platform_admin || $user->empresa_id !== null;
+    }
+
     public function view(User $user, Producto $producto): bool
     {
         return $this->ownedBy($user, $producto);

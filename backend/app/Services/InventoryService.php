@@ -34,11 +34,15 @@ class InventoryService
         ?int $usuarioId = null,
         ?float $costo = null,
         ?float $precio = null,
+        ?string $proveedor = null,
+        ?string $lote = null,
+        ?string $vencimiento = null,
+        ?int $proveedorId = null,
     ): Movimiento {
         $cantidad = abs($cantidad);
         $delta = $cantidad * $this->direccion($tipo);
 
-        return DB::transaction(function () use ($producto, $tipo, $cantidad, $delta, $documento, $observacion, $usuarioId, $costo, $precio) {
+        return DB::transaction(function () use ($producto, $tipo, $cantidad, $delta, $documento, $observacion, $usuarioId, $costo, $precio, $proveedor, $lote, $vencimiento, $proveedorId) {
             /** @var Producto $productoBloqueado */
             $productoBloqueado = Producto::query()
                 ->whereKey($producto->getKey())
@@ -69,6 +73,10 @@ class InventoryService
                 'costo' => $costo,
                 'precio' => $precio,
                 'observacion' => $observacion,
+                'proveedor' => $proveedor,
+                'proveedor_id' => $proveedorId,
+                'lote' => $lote,
+                'vencimiento' => $vencimiento,
             ]);
 
             // afterCommit: si este movimiento es parte de una transacción más

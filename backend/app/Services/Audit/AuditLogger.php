@@ -38,4 +38,40 @@ class AuditLogger
             'user_agent' => $userAgent,
         ]);
     }
+
+    /**
+     * Registro de auditoría genérico para acciones manuales fuera de
+     * Captura IA (docs/03_FUNCTIONAL_SPEC/Products.md, Adenda 2 —
+     * FEATURE-001/002). Reutiliza la misma tabla `audit_logs` ya
+     * existente e inmutable; no construye el módulo de Auditoría
+     * genérica (`docs/03_FUNCTIONAL_SPEC/FUTURE/Auditoria.md`), que
+     * sigue `Status: Planned`.
+     *
+     * @param array<string, mixed> $valoresNuevos
+     */
+    public function registrarAccionManual(
+        int $empresaId,
+        ?int $usuarioId,
+        string $modulo,
+        string $accion,
+        string $auditableType,
+        int $auditableId,
+        array $valoresNuevos,
+        string $resultado = 'exitoso',
+        ?string $ip = null,
+        ?string $userAgent = null,
+    ): AuditLog {
+        return AuditLog::create([
+            'empresa_id' => $empresaId,
+            'usuario_id' => $usuarioId,
+            'modulo' => $modulo,
+            'accion' => $accion,
+            'auditable_type' => $auditableType,
+            'auditable_id' => $auditableId,
+            'valores_nuevos' => $valoresNuevos,
+            'resultado' => $resultado,
+            'ip' => $ip,
+            'user_agent' => $userAgent,
+        ]);
+    }
 }

@@ -3,8 +3,11 @@
 namespace App\Services;
 
 use App\Events\ProductCreated;
+use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\UnidadMedida;
 use App\Repositories\ProductRepository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -51,12 +54,12 @@ class ProductService
             'codigo' => $datos['codigo'] ?? null,
             'codigo_barras' => $datos['codigo_barras'] ?? null,
             'nombre' => $datos['nombre'],
-            'marca' => $datos['marca'] ?? null,
+            'marca_id' => $this->resolverMarcaId($datos),
             'descripcion' => $datos['descripcion'] ?? null,
             'presentacion' => $datos['presentacion'] ?? null,
             'costo' => $datos['costo'] ?? 0,
             'precio' => $datos['precio'] ?? 0,
-            'unidad_medida' => $datos['unidad_medida'] ?? null,
+            'unidad_medida_id' => $this->resolverUnidadMedidaId($datos),
             'stock_minimo' => $datos['stock_minimo'] ?? 0,
             'stock_maximo' => $datos['stock_maximo'] ?? null,
             'imagen' => $datos['imagen'] ?? null,
@@ -70,5 +73,70 @@ class ProductService
         DB::afterCommit(fn () => event(new ProductCreated($producto)));
 
         return $producto;
+    }
+
+    /**
+     * RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Brands.md): `marca` dejó de ser
+     * texto libre. Resuelve, en orden: `marca_id` explícito (selección
+     * manual de catálogo), `marca_nuevo` (quick-create manual) o `marca`
+     * (texto libre que sigue mandando Captura IA sin cambios en su
+     * contrato — ver `App\Actions\CapturaIA\ApplyInventoryMovementAction`).
+     *
+     * @param array<string, mixed> $datos
+     */
+    public function resolverMarcaId(array $datos): ?int
+    {
+        if (! empty($datos['marca_id'])) {
+            return (int) $datos['marca_id'];
+        }
+
+        $nombre = $datos['marca_nuevo'] ?? $datos['marca'] ?? null;
+
+        if (empty($nombre)) {
+            return null;
+        }
+
+        return $this->buscarOCrearCatalogo(Marca::class, (int) $datos['empresa_id'], $nombre)->id;
+    }
+
+    /**
+     * Mismo tratamiento que resolverMarcaId() para `unidad_medida`
+     * (docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md).
+     *
+     * @param array<string, mixed> $datos
+     */
+    public function resolverUnidadMedidaId(array $datos): ?int
+    {
+        if (! empty($datos['unidad_medida_id'])) {
+            return (int) $datos['unidad_medida_id'];
+        }
+
+        $nombre = $datos['unidad_medida_nuevo'] ?? $datos['unidad_medida'] ?? null;
+
+        if (empty($nombre)) {
+            return null;
+        }
+
+        return $this->buscarOCrearCatalogo(UnidadMedida::class, (int) $datos['empresa_id'], $nombre)->id;
+    }
+
+    /**
+     * Find-or-create case-insensitive por (empresa_id, nombre) — mismo
+     * criterio que ya usaba `ProductRepository::buscarPorNombreMarcaPresentacion()`
+     * antes de esta migración, para no cambiar el comportamiento observable
+     * del matching de Captura IA.
+     *
+     * @param class-string<Model> $modelo
+     */
+    private function buscarOCrearCatalogo(string $modelo, int $empresaId, string $nombre): Model
+    {
+        $nombre = trim($nombre);
+
+        $existente = $modelo::query()
+            ->where('empresa_id', $empresaId)
+            ->whereRaw('LOWER(nombre) = ?', [mb_strtolower($nombre)])
+            ->first();
+
+        return $existente ?? $modelo::create(['empresa_id' => $empresaId, 'nombre' => $nombre]);
     }
 }

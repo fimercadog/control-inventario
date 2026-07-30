@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Package, Pencil, Save, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,7 +69,22 @@ export function ReviewProductCard({
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="truncate font-medium leading-tight" title={product.name}>{product.name}</h3>
+              {/* BUG-001: una vez aplicado, este producto ya existe de verdad
+                  (product.producto_id) — el nombre navega a su ficha, misma
+                  ruta que cualquier otro listado (docs/03_FUNCTIONAL_SPEC/Products.md,
+                  adenda "Ficha de Producto"). Antes de aplicarse no hay
+                  producto_id todavía, así que no hay destino real al que enlazar. */}
+              {product.estado === "aplicado" && product.producto_id ? (
+                <Link
+                  href={`/productos/${product.producto_id}`}
+                  className="truncate font-medium leading-tight hover:underline"
+                  title={product.name}
+                >
+                  {product.name}
+                </Link>
+              ) : (
+                <h3 className="truncate font-medium leading-tight" title={product.name}>{product.name}</h3>
+              )}
               {editable && !editing && (
                 <Button size="icon-sm" variant="ghost" onClick={() => setEditing(true)} aria-label="Editar">
                   <Pencil className="size-3.5" />
