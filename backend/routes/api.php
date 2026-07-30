@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
+use App\Http\Controllers\Api\UnidadMedidaController;
 use Illuminate\Support\Facades\Route;
 
 // Módulo Auth (Fase 5, docs/06_API.md). login/refresh/olvide/restablecer no
@@ -105,4 +106,17 @@ Route::prefix('v1/marcas')->name('marcas.')->middleware(['auth:api', 'tenant'])-
     Route::post('{marca}/habilitar', [MarcaController::class, 'enable'])->name('enable');
     // Ficha de Marca — pestaña "Productos".
     Route::get('{marca}/productos', [MarcaController::class, 'productos'])->name('productos');
+});
+
+// RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md). Borrado siempre
+// lógico — mismo patrón exacto que Categorías/Marcas/Proveedores.
+Route::prefix('v1/unidades-medida')->name('unidades-medida.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [UnidadMedidaController::class, 'index'])->name('index');
+    Route::post('/', [UnidadMedidaController::class, 'store'])->name('store');
+    Route::get('{unidadMedida}', [UnidadMedidaController::class, 'show'])->name('show');
+    Route::patch('{unidadMedida}', [UnidadMedidaController::class, 'update'])->name('update');
+    Route::post('{unidadMedida}/deshabilitar', [UnidadMedidaController::class, 'disable'])->name('disable');
+    Route::post('{unidadMedida}/habilitar', [UnidadMedidaController::class, 'enable'])->name('enable');
+    // Ficha de Unidad de Medida — pestaña "Productos".
+    Route::get('{unidadMedida}/productos', [UnidadMedidaController::class, 'productos'])->name('productos');
 });

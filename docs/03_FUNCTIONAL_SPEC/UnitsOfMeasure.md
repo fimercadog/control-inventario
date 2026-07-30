@@ -1,7 +1,11 @@
 # Unidades de Medida
 
-**Status: Approved** (aprobado 2026-07-29 junto con `RC1_GAP_ANALYSIS.md` — Fase 0 de `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`; implementación en curso, Fase 1 del roadmap de 8 fases aprobado, ver `docs/05_IMPLEMENTATION/CatalogModules.md`)
+**Status: Built** (implementado 2026-07-30 — Unidad de Trabajo "Implementación Completa del Módulo Unidades de Medida (RC1)", mismo nivel de funcionalidad que Productos/Proveedores/Categorías/Marcas — cierra la Fase 1 del roadmap de 8 fases aprobado)
 
+> Verificado contra `backend/app/Http/Controllers/Api/UnidadMedidaController.php`, `frontend/app/(app)/unidades-medida/page.tsx`, `frontend/components/unidad-medida-detail-screen.tsx`, `backend/tests/Feature/UnidadMedidaControllerTest.php` (13 casos). Reemplaza la página stub "pendiente de implementación" que existía desde la Unidad de Trabajo "Sidebar RC1".
+>
+> La tabla `unidades_medida` y el modelo `UnidadMedida` ya existían desde RC1 Fase 1 (Catalog Normalization, `unidad_medida_id` en `productos`), pero nunca tuvieron controller, rutas, ni pantalla propia hasta esta unidad de trabajo.
+>
 > Mismo tratamiento que Marcas: `unidad_medida` deja de ser texto libre en `productos` y se convierte en una entidad de catálogo (`unidades_medida`), referenciada por `productos.unidad_medida_id`.
 
 ## Purpose
@@ -22,8 +26,8 @@ Catálogo administrable de unidades de medida (ej. "Unidad", "Caja", "Kg", "Litr
 
 ## Screens
 
-- **`/unidades-medida`**: listado (Nombre, Abreviatura, Productos asociados, Estado). Botón "Nueva Unidad".
-- **`/unidades-medida/{id}`**: detalle + edición inline.
+- **`/unidades-medida`**: listado (Nombre, Abreviatura, Productos asociados, Estado). Botón "Nueva Unidad de Medida", búsqueda por nombre/abreviatura, filtro de Estado (Activas/Todas).
+- **`/unidades-medida/{id}`**: detalle + edición inline (mismo patrón que `categoria-detail-screen.tsx`/`marca-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta unidad (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 - Selector de Unidad en "Nuevo Producto"/edición: mismo componente `Select` + "+ Crear unidad nueva".
 
 ## Fields
@@ -56,9 +60,10 @@ Mismos componentes reutilizables que Categorías/Marcas.
 
 ## Acceptance Criteria
 
-- [ ] `UnidadMedidaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría.
-- [ ] Migración de backfill verificada: ningún producto con `unidad_medida` no nula pre-migración queda sin `unidad_medida_id` post-migración.
-- [ ] Verificación real en navegador.
+- [x] `UnidadMedidaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría, integridad referencial con Productos (13 casos).
+- [x] Migración de backfill verificada: ningún producto con `unidad_medida` no nula pre-migración queda sin `unidad_medida_id` post-migración (verificado en Fase 1, RC1_GAP_ANALYSIS.md; no re-tocado aquí).
+- [x] Verificación real en navegador (agent-browser): crear, editar, buscar, filtrar por estado, eliminar lógico, re-habilitar, relación bidireccional con Productos, responsive.
+- [ ] El selector de unidad de medida en "Nuevo Producto"/edición de producto usa un `Select` real con "+ Crear unidad nueva" (como especifica la sección Screens) — **todavía no implementado así**: el formulario de Producto solo tiene un input de texto libre (`unidad_medida_nuevo`, siempre find-or-create por nombre), sin un dropdown que liste las unidades ya existentes en el catálogo. Gap pre-existente (heredado de la migración de Fase 1), no introducido ni cerrado por esta unidad de trabajo — mismo tipo de gap ya documentado en `Categories.md`/`Brands.md`.
 
 ## Edge Cases
 

@@ -4,6 +4,14 @@ Formato libre, orden cronológico inverso (más reciente arriba). Referenciado p
 
 ## [Unreleased]
 
+### Feature — Módulo Unidades de Medida completo (RC1, 2026-07-30) — cierra Fase 1
+- Implementación completa del módulo Unidades de Medida al mismo nivel funcional que Productos/Proveedores/Categorías/Marcas, reemplazando la página stub "pendiente de implementación". Con esto se cierra por completo la **Fase 1 (Catalog Normalization)** del roadmap RC1 de 8 fases.
+- Backend: `UnidadMedidaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `UnidadMedida`/`UnidadMedidaPolicy`/`StoreUnidadMedidaRequest`/`UpdateUnidadMedidaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /unidades-medida/{id}/productos` para la pestaña de relación.
+- Frontend: listado con búsqueda por nombre/abreviatura, filtro de estado/badge de color, diálogo de creación (nombre + abreviatura), ficha con edición inline + pestaña "Productos" (relación bidireccional con Productos, verificada), Logical Delete/Activar-Desactivar con `ConfirmDialog`, refresco automático vía `useCrudList`.
+- Integridad referencial: deshabilitar una unidad de medida nunca rompe `productos.unidad_medida_id` (verificado por test dedicado) — mismo principio ya aplicado a Categorías/Marcas/Proveedores.
+- Tests: 13 casos nuevos en `UnidadMedidaControllerTest`, suite completa 179/179 en verde. Verificación real en navegador: CRUD completo, filtros, confirmación, relación con Productos (unidad "Kilogramo", 40 productos), responsive.
+- Gap conocido y documentado, no cerrado por esta unidad: el formulario de creación/edición de Producto solo tiene un input de texto libre para Unidad de Medida (`unidad_medida_nuevo`, find-or-create), no un selector real de catálogo (ver `docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md`) — mismo tipo de gap ya documentado para Categoría/Marca.
+
 ### Feature — Módulo Marcas completo (RC1, 2026-07-30)
 - Implementación completa del módulo Marcas al mismo nivel funcional que Productos/Proveedores/Categorías, reemplazando la página stub "pendiente de implementación".
 - Backend: `MarcaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `Marca`/`MarcaPolicy`/`StoreMarcaRequest`/`UpdateMarcaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /marcas/{id}/productos` para la pestaña de relación.

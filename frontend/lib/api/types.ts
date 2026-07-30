@@ -234,6 +234,23 @@ export type StoreMarcaPayload = Partial<Pick<Marca, "estado">> & {
 
 export type UpdateMarcaPayload = Partial<StoreMarcaPayload>;
 
+/** Espejo de App\Http\Resources\UnidadMedida\UnidadMedidaResource (RC1, docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md). */
+export interface UnidadMedida {
+  id: number;
+  nombre: string;
+  abreviatura: string | null;
+  estado: "activo" | "inactivo";
+  productos_count?: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type StoreUnidadMedidaPayload = Partial<Pick<UnidadMedida, "abreviatura" | "estado">> & {
+  nombre: string;
+};
+
+export type UpdateUnidadMedidaPayload = Partial<StoreUnidadMedidaPayload>;
+
 /**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación
