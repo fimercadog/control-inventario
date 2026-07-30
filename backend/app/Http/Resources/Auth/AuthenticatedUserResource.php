@@ -27,6 +27,7 @@ class AuthenticatedUserResource extends JsonResource
             'theme' => $this->theme,
             'language' => $this->language,
             'timezone' => $this->timezone,
+            'role' => $this->getRoleNames()->first(),
             'permissions' => $this->getAllPermissions()->pluck('name')->values(),
         ];
     }

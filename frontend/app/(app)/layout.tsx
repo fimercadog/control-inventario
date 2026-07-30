@@ -1,6 +1,7 @@
 "use client";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { AppBreadcrumb } from "@/components/app-breadcrumb";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { useRequireAuth } from "@/hooks/use-require-auth";
@@ -24,9 +25,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-5" />
-          <span className="text-sm font-medium text-muted-foreground">
-            Fidel OS &middot; Inventario Inteligente
-          </span>
+          <AppBreadcrumb />
         </header>
         <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">{children}</main>
       </SidebarInset>

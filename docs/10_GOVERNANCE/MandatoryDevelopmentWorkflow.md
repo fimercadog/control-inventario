@@ -150,17 +150,35 @@ Cuando RC1 sea aprobado se realizará la migración oficial a MySQL.
 
 Un módulo solamente puede marcarse como completado cuando:
 
-- Backend terminado.
-- Frontend terminado.
-- CRUD funcionando.
-- API funcionando.
-- Base de datos funcionando.
-- Tests pasando.
-- Browser tests aprobados.
-- Documentación actualizada.
-- Commit realizado.
-- Push realizado.
+Un módulo solamente puede marcarse como completado cuando:
 
+✔ Backend terminado
+
+✔ Frontend terminado
+
+✔ CRUD funcionando
+
+✔ API funcionando
+
+✔ Base de datos funcionando
+
+✔ Datos demo generados
+
+✔ Tests aprobados
+
+✔ Browser Tests aprobados
+
+✔ Auditoría funcional realizada
+
+✔ Documentación actualizada
+
+✔ Commit realizado
+
+✔ Push realizado
+
+✔ Informe generado
+
+✔ Estado Aprobado
 No se permite continuar con otro módulo dejando el anterior incompleto.
 
 ---

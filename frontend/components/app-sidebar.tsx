@@ -6,8 +6,20 @@ import {
   LayoutDashboard,
   Sparkles,
   Package,
+  Tags,
+  Award,
+  Ruler,
+  Warehouse,
   ArrowLeftRight,
+  Truck,
+  Contact,
+  UserCog,
+  ShieldCheck,
+  ScrollText,
   Settings,
+  FileBarChart2,
+  UserCircle,
+  KeyRound,
   LogOut,
   Boxes,
 } from "lucide-react";
@@ -23,20 +35,83 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutThunk } from "@/store/slices/auth-slice";
 import { useIsMobile } from "@/hooks/use-mobile";
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import type { AuthenticatedUser } from "@/lib/api/types";
 
-const NAV_ITEMS = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  /** Si no hay permiso en el catálogo para este módulo, es visible siempre. */
+  permission?: string;
+}
+
+/**
+ * Sidebar Oficial RC1 (2026-07-30). Agrupado en Inventario/Terceros/
+ * Administración según lo aprobado — no es una reorganización estética,
+ * es la navegación oficial del release. Módulos sin backend/frontend
+ * completo todavía apuntan a una página real de "pendiente de
+ * implementación" (`components/pending-module.tsx`), nunca a datos mock.
+ */
+const TOP_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/captura", label: "Captura IA", icon: Sparkles },
-  { href: "/productos", label: "Productos", icon: Package },
-  { href: "/movimientos", label: "Movimientos", icon: ArrowLeftRight },
+  { href: "/captura", label: "Captura IA", icon: Sparkles, permission: "captura-ia.usar" },
 ];
+
+const INVENTARIO_ITEMS: NavItem[] = [
+  { href: "/productos", label: "Productos", icon: Package, permission: "productos.ver" },
+  { href: "/categorias", label: "Categorías", icon: Tags },
+  { href: "/marcas", label: "Marcas", icon: Award },
+  { href: "/unidades-medida", label: "Unidades de Medida", icon: Ruler },
+  { href: "/stock", label: "Stock", icon: Warehouse },
+  { href: "/movimientos", label: "Movimientos", icon: ArrowLeftRight, permission: "movimientos.ver" },
+];
+
+const TERCEROS_ITEMS: NavItem[] = [
+  { href: "/proveedores", label: "Proveedores", icon: Truck },
+  { href: "/clientes", label: "Clientes", icon: Contact },
+];
+
+const ADMINISTRACION_ITEMS: NavItem[] = [
+  { href: "/usuarios", label: "Usuarios", icon: UserCog, permission: "usuarios.ver" },
+  { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver" },
+  { href: "/auditoria", label: "Auditoría", icon: ScrollText, permission: "auditoria.ver" },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
+];
+
+const BOTTOM_ITEMS: NavItem[] = [
+  { href: "/reportes", label: "Reportes", icon: FileBarChart2 },
+  { href: "/perfil", label: "Perfil", icon: UserCircle },
+];
+
+/**
+ * El catálogo de permisos hoy no cubre todos los módulos (p. ej. los
+ * permisos de proveedores o categorías no están sembrados todavía), y
+ * ningún módulo tiene enforcement de ruta real (docs/03_FUNCTIONAL_SPEC/Roles.md). Si el
+ * usuario no tiene NINGÚN permiso asignado (rol sin permisos, o enforcement
+ * simplemente no activo para esta cuenta todavía), se trata como "no
+ * aplica todavía" y el módulo queda visible — nunca se oculta el sidebar
+ * completo por un catálogo de permisos incompleto o sin usar.
+ */
+function puedeVerModulo(permiso: string | undefined, user: AuthenticatedUser | null): boolean {
+  if (!permiso) return true;
+  if (!user) return false;
+  if (user.is_platform_admin) return true;
+  if (user.permissions.length === 0) return true;
+  return user.permissions.includes(permiso);
+}
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -60,6 +135,29 @@ export function AppSidebar() {
         .toUpperCase()
     : "U";
 
+  function renderItems(items: NavItem[]) {
+    return items
+      .filter((item) => puedeVerModulo(item.permission, user))
+      .map((item) => {
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        return (
+          <SidebarMenuItem key={item.href}>
+            <SidebarMenuButton
+              size={menuButtonSize}
+              isActive={isActive}
+              tooltip={item.label}
+              render={
+                <Link href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </Link>
+              }
+            />
+          </SidebarMenuItem>
+        );
+      });
+  }
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -79,29 +177,35 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  pathname === item.href || pathname.startsWith(`${item.href}/`);
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      size={menuButtonSize}
-                      isActive={isActive}
-                      tooltip={item.label}
-                      render={
-                        <Link href={item.href}>
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </Link>
-                      }
-                    />
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <SidebarMenu>{renderItems(TOP_ITEMS)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Inventario</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderItems(INVENTARIO_ITEMS)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Terceros</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderItems(TERCEROS_ITEMS)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Administración</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderItems(ADMINISTRACION_ITEMS)}</SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>{renderItems(BOTTOM_ITEMS)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
@@ -109,31 +213,50 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size={menuButtonSize}
-              tooltip="Configuración"
-              isActive={pathname === "/configuracion"}
-              render={
-                <Link href="/configuracion">
-                  <Settings />
-                  <span>Configuración</span>
-                </Link>
-              }
-            />
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton size={menuButtonSize} tooltip={user?.name ?? "Cuenta"}>
-              <Avatar className="size-5">
-                <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-              </Avatar>
-              <span className="truncate">{user?.name ?? "Invitado"}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton size={menuButtonSize} onClick={handleLogout} tooltip="Cerrar sesión">
-              <LogOut />
-              <span>Cerrar sesión</span>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton size={menuButtonSize} className="h-auto py-2">
+                    <Avatar className="size-8">
+                      <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex min-w-0 flex-col items-start group-data-[collapsible=icon]:hidden">
+                      <span className="truncate text-sm font-medium">
+                        {user?.name ?? "Invitado"}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {user?.role ?? "Sin rol asignado"}
+                      </span>
+                    </div>
+                  </SidebarMenuButton>
+                }
+              />
+              <DropdownMenuContent align="end" side="top" className="w-56">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="flex flex-col gap-0.5 font-normal">
+                    <span className="text-sm font-medium">{user?.name ?? "Invitado"}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.role ?? "Sin rol asignado"}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push("/perfil")}>
+                  <UserCircle />
+                  Mi Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/perfil/cambiar-contrasena")}>
+                  <KeyRound />
+                  Cambiar contraseña
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut />
+                  Cerrar sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

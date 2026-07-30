@@ -8,9 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\Auth\AuthenticatedUserResource;
 use App\Http\Support\ApiResponse;
+use App\Models\User;
 use App\Services\Auth\AuthenticationService;
+use App\Services\Auth\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Cookie;
 
 /**
@@ -71,6 +74,15 @@ class AuthController extends Controller
 
     private function respuestaConTokens(AuthResultDTO $result): JsonResponse
     {
+        // `login`/`refresh` viven fuera de ['auth:api', 'tenant'] a propósito
+        // (no existe token todavía al empezar la request) — así que
+        // `IdentifyTenant` nunca corre para fijar el contexto antes de esta
+        // respuesta. Sin este paso, `AuthenticatedUserResource` siempre
+        // mostraría `role: null` y `permissions: []`, sin importar los
+        // roles/permisos reales del usuario (docs/04_ARCHITECTURE.md,
+        // Módulo 2 — Company Isolation).
+        $this->fijarContextoDeTenant($result->user);
+
         $data = new AuthenticatedUserResource($result->user);
 
         return ApiResponse::success([
@@ -79,6 +91,21 @@ class AuthController extends Controller
             'expires_in' => $result->tokens->accessTokenExpiresInSeconds,
             'user' => $data,
         ])->withCookie($this->cookieDeSesion($result->tokens->refreshToken));
+    }
+
+    /** Mismo criterio que App\Http\Middleware\IdentifyTenant, aplicado a mano. */
+    private function fijarContextoDeTenant(User $user): void
+    {
+        $context = app(TenantContext::class);
+        $registrar = app(PermissionRegistrar::class);
+
+        if ($user->is_platform_admin) {
+            $context->bypass();
+            $registrar->setPermissionsTeamId(null);
+        } else {
+            $context->setEmpresaId($user->empresa_id);
+            $registrar->setPermissionsTeamId($user->empresa_id);
+        }
     }
 
     private function cookieDeSesion(string $rawRefreshToken): Cookie
