@@ -16,16 +16,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createProducto } from "@/lib/api/productos";
-import type { StoreProductoPayload } from "@/lib/api/types";
+import type { Producto, StoreProductoPayload } from "@/lib/api/types";
 
 const EMPTY_FORM: StoreProductoPayload = {
   nombre: "",
   codigo: "",
-  marca: "",
+  marca_nuevo: "",
   presentacion: "",
   costo: 0,
   precio: 0,
-  unidad_medida: "",
+  unidad_medida_nuevo: "",
   stock_minimo: 0,
 };
 
@@ -34,8 +34,15 @@ const EMPTY_FORM: StoreProductoPayload = {
  * redirige a la ficha del producto recién creado — el mismo destino que
  * cualquier otro origen de navegación hacia un producto (Adenda 1,
  * navegación unificada).
+ *
+ * Corrección de auditoría funcional (docs/06_TESTS/DemoDataAudit.md,
+ * 2026-07-30): el campo Stock se muestra siempre deshabilitado en 0 —
+ * nunca se envía desde el frontend, el backend lo asigna automáticamente
+ * (ProductService::crear(), stock_actual fuera de $fillable). El único
+ * proceso autorizado para modificar stock es un movimiento de inventario
+ * (Entrada/Salida/Ajuste), nunca este formulario.
  */
-export function NewProductDialog() {
+export function NewProductDialog({ onCreated }: { onCreated?: (producto: Producto) => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -52,6 +59,7 @@ export function NewProductDialog() {
       toast.success("Producto creado correctamente");
       setOpen(false);
       setForm(EMPTY_FORM);
+      onCreated?.(creado);
       router.push(`/productos/${creado.id}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No pudimos crear el producto.");
@@ -91,8 +99,8 @@ export function NewProductDialog() {
             </Field>
             <Field label="Marca">
               <Input
-                value={form.marca ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, marca: e.target.value }))}
+                value={form.marca_nuevo ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, marca_nuevo: e.target.value }))}
               />
             </Field>
           </div>
@@ -123,8 +131,8 @@ export function NewProductDialog() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Unidad de medida">
               <Input
-                value={form.unidad_medida ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, unidad_medida: e.target.value }))}
+                value={form.unidad_medida_nuevo ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, unidad_medida_nuevo: e.target.value }))}
               />
             </Field>
             <Field label="Stock mínimo">
@@ -136,9 +144,13 @@ export function NewProductDialog() {
               />
             </Field>
           </div>
+          <Field label="Stock inicial">
+            <Input type="number" value={0} disabled />
+          </Field>
           <p className="text-xs text-muted-foreground">
-            El producto se crea con stock 0 — usa &quot;Registrar ingreso&quot; en su ficha para
-            asignarle stock inicial.
+            El producto siempre se crea con stock 0 — nunca se envía desde este formulario. Usa
+            &quot;Registrar ingreso&quot; en su ficha para asignarle stock inicial mediante un
+            movimiento de inventario real.
           </p>
         </div>
         <DialogFooter>

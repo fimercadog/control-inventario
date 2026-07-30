@@ -54,6 +54,9 @@ Route::prefix('v1/productos')->name('productos.')->middleware(['auth:api', 'tena
     Route::patch('{producto}', [ProductoController::class, 'update'])->name('update');
     Route::get('{producto}/movimientos', [ProductoController::class, 'movimientos'])->name('movimientos');
     Route::post('{producto}/movimientos', [ProductoController::class, 'registrarIngreso'])->name('movimientos.ingreso');
+    // Corrección de auditoría funcional (docs/06_TESTS/DemoDataAudit.md) — borrado siempre lógico.
+    Route::post('{producto}/deshabilitar', [ProductoController::class, 'disable'])->name('disable');
+    Route::post('{producto}/habilitar', [ProductoController::class, 'enable'])->name('enable');
 
     // FEATURE-005: "Suppliers" tab de la Ficha de Producto.
     Route::get('{producto}/proveedores', [ProductoProveedorController::class, 'index'])->name('proveedores.index');

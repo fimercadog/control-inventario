@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Package, Search, SearchX, MoreHorizontal, Pencil, History, Loader2 } from "lucide-react";
+import { Package, Search, SearchX, MoreHorizontal, Pencil, History, Loader2, Ban, CheckCircle2 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -31,27 +31,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { NewProductDialog } from "@/components/new-product-dialog";
-import { listProductos } from "@/lib/api/productos";
+import { useCrudList } from "@/hooks/use-crud-list";
+import { listProductos, disableProducto, enableProducto } from "@/lib/api/productos";
 import type { Producto } from "@/lib/api/types";
 import { colorFromString } from "@/lib/color-from-string";
 import { formatCurrency, formatNumber } from "@/lib/format";
 
+const ESTADO_FILTROS: Record<string, string> = {
+  activo: "Activos",
+  todos: "Todos (incluye inactivos)",
+};
+
+/**
+ * Corrección de auditoría funcional (docs/06_TESTS/DemoDataAudit.md,
+ * 2026-07-30): agrega Estado (badge) + Activar/Desactivar (Logical
+ * Delete) al listado — el módulo Productos no los tenía, a diferencia de
+ * Proveedores, que ya cumplía el Global CRUD Standard. Usa `useCrudList`
+ * (Global UI Standard) en vez de parchear el arreglo local a mano.
+ */
 export default function ProductsPage() {
   const router = useRouter();
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
+  const [estadoFiltro, setEstadoFiltro] = useState("activo");
+  const [productoAConfirmar, setProductoAConfirmar] = useState<Producto | null>(null);
 
-  useEffect(() => {
-    listProductos()
-      .then((result) => setProductos(result.items))
-      .catch((error) =>
-        toast.error(error instanceof Error ? error.message : "No pudimos cargar los productos.")
-      )
-      .finally(() => setLoading(false));
-  }, []);
+  const {
+    items: productos,
+    loading,
+    refetch,
+  } = useCrudList(() => listProductos({ estado: estadoFiltro }), [estadoFiltro]);
 
   const categories = useMemo(
     () => ["Todas", ...Array.from(new Set(productos.map((p) => p.categoria).filter((c): c is string => Boolean(c))))],
@@ -69,6 +80,22 @@ export default function ProductsPage() {
     });
   }, [search, category, productos]);
 
+  async function confirmarCambioEstado() {
+    if (!productoAConfirmar) return;
+    try {
+      if (productoAConfirmar.estado === "activo") {
+        await disableProducto(productoAConfirmar.id);
+        toast.success("Producto deshabilitado correctamente");
+      } else {
+        await enableProducto(productoAConfirmar.id);
+        toast.success("Producto habilitado correctamente");
+      }
+      await refetch();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No pudimos actualizar el estado.");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -82,7 +109,7 @@ export default function ProductsPage() {
                 : `${formatNumber(filtered.length)} de ${formatNumber(productos.length)} productos.`}
           </p>
         </div>
-        <NewProductDialog />
+        <NewProductDialog onCreated={() => refetch()} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -111,6 +138,22 @@ export default function ProductsPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select
+          items={ESTADO_FILTROS}
+          value={estadoFiltro}
+          onValueChange={(value) => setEstadoFiltro(value ?? "activo")}
+        >
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.entries(ESTADO_FILTROS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card className="border-border/60 py-0">
@@ -129,6 +172,7 @@ export default function ProductsPage() {
                   <TableHead>Presentación</TableHead>
                   <TableHead className="text-right">Stock</TableHead>
                   <TableHead className="text-right">Precio</TableHead>
+                  <TableHead>Estado</TableHead>
                   <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
@@ -179,6 +223,17 @@ export default function ProductsPage() {
                       <TableCell className="text-right tabular-nums">
                         {formatCurrency(product.precio)}
                       </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            product.estado === "activo"
+                              ? "bg-emerald-600 text-white dark:bg-emerald-500"
+                              : "bg-red-600 text-white dark:bg-red-500"
+                          }
+                        >
+                          {product.estado === "activo" ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger
@@ -199,6 +254,19 @@ export default function ProductsPage() {
                               <History />
                               Ver movimientos
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setProductoAConfirmar(product)}>
+                              {product.estado === "activo" ? (
+                                <>
+                                  <Ban />
+                                  Eliminar (deshabilitar)
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 />
+                                  Habilitar
+                                </>
+                              )}
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -208,7 +276,7 @@ export default function ProductsPage() {
 
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="p-0">
+                    <TableCell colSpan={7} className="p-0">
                       <EmptyState
                         icon={SearchX}
                         title="No encontramos productos"
@@ -234,6 +302,20 @@ export default function ProductsPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={productoAConfirmar !== null}
+        onOpenChange={(open) => !open && setProductoAConfirmar(null)}
+        title={productoAConfirmar?.estado === "activo" ? "¿Eliminar este producto?" : "¿Habilitar este producto?"}
+        description={
+          productoAConfirmar?.estado === "activo"
+            ? `"${productoAConfirmar?.nombre}" se marcará como inactivo. No se elimina físicamente ni se pierde su historial de movimientos — puedes habilitarlo de nuevo en cualquier momento.`
+            : `"${productoAConfirmar?.nombre}" volverá a estar activo y visible en el catálogo.`
+        }
+        confirmLabel={productoAConfirmar?.estado === "activo" ? "Eliminar" : "Habilitar"}
+        destructive={productoAConfirmar?.estado === "activo"}
+        onConfirm={confirmarCambioEstado}
+      />
     </div>
   );
 }

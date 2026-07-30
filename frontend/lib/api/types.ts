@@ -93,6 +93,8 @@ export interface Producto {
   codigo: string | null;
   codigo_barras: string | null;
   nombre: string;
+  marca_id: number | null;
+  /** Nombre resuelto desde la relación — solo lectura, ver marca_id/marca_nuevo para escritura. */
   marca: string | null;
   descripcion: string | null;
   presentacion: string | null;
@@ -100,6 +102,8 @@ export interface Producto {
   categoria: string | null;
   costo: number;
   precio: number;
+  unidad_medida_id: number | null;
+  /** Nombre resuelto desde la relación — solo lectura, ver unidad_medida_id/unidad_medida_nuevo para escritura. */
   unidad_medida: string | null;
   stock_actual: number;
   stock_minimo: number;
@@ -110,22 +114,28 @@ export interface Producto {
   updated_at: string | null;
 }
 
-/** Campos editables vía PATCH /productos/{id} — nunca stock_actual. */
+/**
+ * Campos editables vía PATCH /productos/{id} — nunca stock_actual.
+ * `marca_id`/`unidad_medida_id` seleccionan catálogo existente;
+ * `marca_nuevo`/`unidad_medida_nuevo` crean uno al vuelo (RC1 Fase 1,
+ * docs/03_FUNCTIONAL_SPEC/Brands.md, UnitsOfMeasure.md) — mismo patrón
+ * mutuamente excluyente que proveedor_id/proveedor_nuevo.
+ */
 export type UpdateProductoPayload = Partial<
   Pick<
     Producto,
     | "nombre"
-    | "marca"
+    | "marca_id"
     | "descripcion"
     | "presentacion"
     | "categoria_id"
     | "costo"
     | "precio"
-    | "unidad_medida"
+    | "unidad_medida_id"
     | "stock_minimo"
     | "stock_maximo"
     | "estado"
-  >
+  > & { marca_nuevo: string; unidad_medida_nuevo: string }
 >;
 
 /** FEATURE-001 (docs/03_FUNCTIONAL_SPEC/Products.md, Adenda 2) — POST /productos. */
@@ -134,17 +144,17 @@ export type StoreProductoPayload = Partial<
     Producto,
     | "codigo"
     | "codigo_barras"
-    | "marca"
+    | "marca_id"
     | "descripcion"
     | "presentacion"
     | "categoria_id"
     | "costo"
     | "precio"
-    | "unidad_medida"
+    | "unidad_medida_id"
     | "stock_minimo"
     | "stock_maximo"
     | "estado"
-  >
+  > & { marca_nuevo: string; unidad_medida_nuevo: string }
 > & { nombre: string };
 
 /**

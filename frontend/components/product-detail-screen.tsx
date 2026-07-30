@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Ban,
+  CheckCircle2,
   Loader2,
   Package,
   PackageX,
@@ -22,12 +23,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MovementTypeBadge } from "@/components/movement-type-badge";
 import { RegistrarIngresoDialog } from "@/components/registrar-ingreso-dialog";
 import { ProductSupplierDialog } from "@/components/product-supplier-dialog";
 import {
   getProducto,
   updateProducto,
+  disableProducto,
+  enableProducto,
   getMovimientosDeProducto,
   listProveedoresDeProducto,
   deshabilitarAsociacionProveedor,
@@ -60,6 +64,7 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
   const [editing, setEditing] = useState(searchParams.get("editar") === "1");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<UpdateProductoPayload>({});
+  const [confirmandoCambioEstado, setConfirmandoCambioEstado] = useState(false);
 
   useEffect(() => {
     if (!Number.isFinite(productId)) {
@@ -79,12 +84,12 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
         setProveedoresAsociados(proveedoresResult);
         setForm({
           nombre: productoResult.nombre,
-          marca: productoResult.marca ?? "",
+          marca_nuevo: productoResult.marca ?? "",
           descripcion: productoResult.descripcion ?? "",
           presentacion: productoResult.presentacion ?? "",
           costo: productoResult.costo,
           precio: productoResult.precio,
-          unidad_medida: productoResult.unidad_medida ?? "",
+          unidad_medida_nuevo: productoResult.unidad_medida ?? "",
           stock_minimo: productoResult.stock_minimo,
           stock_maximo: productoResult.stock_maximo,
           estado: productoResult.estado,
@@ -145,6 +150,20 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
     });
   }
 
+  async function cambiarEstado() {
+    if (!producto) return;
+    try {
+      const actualizado =
+        producto.estado === "activo"
+          ? await disableProducto(producto.id)
+          : await enableProducto(producto.id);
+      setProducto(actualizado);
+      toast.success(actualizado.estado === "activo" ? "Producto habilitado" : "Producto deshabilitado");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No pudimos actualizar el estado.");
+    }
+  }
+
   async function handleDeshabilitarAsociacion(asociacion: ProductoProveedorAsociacion) {
     if (!producto) return;
     try {
@@ -195,6 +214,24 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
               proveedorPrincipal={proveedoresAsociados.find((a) => a.es_principal)}
               onRegistered={handleIngresoRegistrado}
             />
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => setConfirmandoCambioEstado(true)}
+            >
+              {producto.estado === "activo" ? (
+                <>
+                  <Ban className="size-4" />
+                  Eliminar
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-4" />
+                  Habilitar
+                </>
+              )}
+            </Button>
             <Button size="sm" className="gap-2" onClick={() => setEditing(true)}>
               <Pencil className="size-4" />
               Editar
@@ -215,7 +252,13 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {producto.codigo && <span>Código: {producto.codigo}</span>}
             {producto.categoria && <Badge variant="secondary">{producto.categoria}</Badge>}
-            <Badge variant={producto.estado === "activo" ? "outline" : "secondary"}>
+            <Badge
+              className={
+                producto.estado === "activo"
+                  ? "bg-emerald-600 text-white dark:bg-emerald-500"
+                  : "bg-red-600 text-white dark:bg-red-500"
+              }
+            >
               {producto.estado === "activo" ? "Activo" : "Inactivo"}
             </Badge>
           </div>
@@ -243,8 +286,8 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
                   <div className="grid grid-cols-2 gap-3">
                     <Field label="Marca">
                       <Input
-                        value={form.marca ?? ""}
-                        onChange={(e) => setForm((f) => ({ ...f, marca: e.target.value }))}
+                        value={form.marca_nuevo ?? ""}
+                        onChange={(e) => setForm((f) => ({ ...f, marca_nuevo: e.target.value }))}
                       />
                     </Field>
                     <Field label="Presentación">
@@ -305,13 +348,17 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
                   </div>
                   <Field label="Unidad de medida">
                     <Input
-                      value={form.unidad_medida ?? ""}
-                      onChange={(e) => setForm((f) => ({ ...f, unidad_medida: e.target.value }))}
+                      value={form.unidad_medida_nuevo ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, unidad_medida_nuevo: e.target.value }))}
                     />
                   </Field>
+                  <Field label="Stock actual">
+                    <Input type="text" value={formatNumber(producto.stock_actual)} disabled />
+                  </Field>
                   <p className="text-xs text-muted-foreground">
-                    El stock actual ({formatNumber(producto.stock_actual)}) no es editable aquí —
-                    solo se modifica a través de movimientos de inventario (Captura IA).
+                    El stock actual no es editable aquí — solo se modifica mediante un movimiento
+                    de inventario real (Entrada/Salida/Ajuste desde &quot;Registrar ingreso&quot; o
+                    Captura IA), nunca desde este formulario.
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -467,6 +514,20 @@ export function ProductDetailScreen({ productId }: { productId: number }) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={confirmandoCambioEstado}
+        onOpenChange={setConfirmandoCambioEstado}
+        title={producto.estado === "activo" ? "¿Eliminar este producto?" : "¿Habilitar este producto?"}
+        description={
+          producto.estado === "activo"
+            ? `"${producto.nombre}" se marcará como inactivo. No se elimina físicamente ni se pierde su historial de movimientos — puedes habilitarlo de nuevo en cualquier momento.`
+            : `"${producto.nombre}" volverá a estar activo y visible en el catálogo.`
+        }
+        confirmLabel={producto.estado === "activo" ? "Eliminar" : "Habilitar"}
+        destructive={producto.estado === "activo"}
+        onConfirm={cambiarEstado}
+      />
     </div>
   );
 }

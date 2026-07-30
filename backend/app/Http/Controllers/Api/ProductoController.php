@@ -79,14 +79,20 @@ class ProductoController extends Controller
     /**
      * Listado real del catálogo — reemplaza el consumo de datos mock
      * (`lib/mock/data.ts`) que tenía hoy `frontend/app/(app)/productos/page.tsx`.
-     * Sin filtros server-side deliberadamente: el volumen actual es
-     * pequeño y el frontend ya filtra client-side; agregar filtros de
-     * servidor es una mejora futura, no parte de este alcance.
+     *
+     * Corrección de auditoría funcional (docs/06_TESTS/DemoDataAudit.md,
+     * "Corrección del Módulo Productos", 2026-07-30): por defecto solo
+     * activos — inactivos visibles únicamente vía filtro explícito
+     * `estado=todos` (GLOBAL UI STANDARD, mismo criterio que Proveedores).
      */
     public function index(Request $request): JsonResponse
     {
         $productos = Producto::query()
             ->with(['categoria', 'marca', 'unidadMedida'])
+            ->when(
+                $request->query('estado') !== 'todos',
+                fn ($query) => $query->where('estado', $request->query('estado', 'activo'))
+            )
             ->orderBy('nombre')
             ->paginate(100);
 
@@ -229,6 +235,61 @@ class ProductoController extends Controller
         }
 
         return [null, null];
+    }
+
+    /**
+     * GLOBAL RULE: "Physical DELETE is NEVER allowed from the UI." Único
+     * mecanismo de "eliminar" un producto — deshabilita, nunca borra la
+     * fila. Preserva movimientos, asociaciones con proveedores y
+     * auditoría (mismo patrón que ProveedorController::disable()).
+     * Corrección de auditoría funcional, docs/06_TESTS/DemoDataAudit.md.
+     */
+    public function disable(Request $request, Producto $producto): JsonResponse
+    {
+        $this->authorize('delete', $producto);
+
+        $producto->update(['estado' => 'inactivo']);
+
+        $this->auditoria->registrarAccionManual(
+            empresaId: $producto->empresa_id,
+            usuarioId: $request->user()->id,
+            modulo: 'productos',
+            accion: 'productos.deshabilitar',
+            auditableType: Producto::class,
+            auditableId: $producto->id,
+            valoresNuevos: ['estado' => 'inactivo'],
+            ip: $request->ip(),
+            userAgent: $request->userAgent(),
+        );
+
+        return ApiResponse::success(
+            new ProductoResource($producto->fresh()->load(['categoria', 'marca', 'unidadMedida'])),
+            'Producto deshabilitado correctamente'
+        );
+    }
+
+    public function enable(Request $request, Producto $producto): JsonResponse
+    {
+        $this->authorize('update', $producto);
+
+        $producto->update(['estado' => 'activo']);
+
+        $this->auditoria->registrarAccionManual(
+            empresaId: $producto->empresa_id,
+            usuarioId: $request->user()->id,
+            modulo: 'productos',
+            accion: 'productos.habilitar',
+            auditableType: Producto::class,
+            auditableId: $producto->id,
+            valoresNuevos: ['estado' => 'activo'],
+            ip: $request->ip(),
+            userAgent: $request->userAgent(),
+        );
+
+        return ApiResponse::success(
+            new ProductoResource($producto->fresh()->load(['categoria', 'marca', 'unidadMedida'])),
+            'Producto habilitado correctamente'
+        );
     }
 
     public function movimientos(Producto $producto): JsonResponse

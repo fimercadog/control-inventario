@@ -12,9 +12,9 @@ import type {
   UpdateProductoProveedorPayload,
 } from "@/lib/api/types";
 
-export function listProductos(): Promise<PaginatedItems<Producto>> {
+export function listProductos(params?: { estado?: string }): Promise<PaginatedItems<Producto>> {
   return unwrap<PaginatedItems<Producto>>(
-    apiClient.get<ApiSuccessResponse<PaginatedItems<Producto>>>("/productos")
+    apiClient.get<ApiSuccessResponse<PaginatedItems<Producto>>>("/productos", { params })
   );
 }
 
@@ -32,6 +32,22 @@ export function getProducto(id: number): Promise<Producto> {
 export function updateProducto(id: number, payload: UpdateProductoPayload): Promise<Producto> {
   return unwrap<Producto>(
     apiClient.patch<ApiSuccessResponse<Producto>>(`/productos/${id}`, payload)
+  );
+}
+
+/**
+ * Borrado siempre lógico — nunca un DELETE físico (GLOBAL RULE, sesión
+ * 2026-07-29). Corrección de auditoría funcional, docs/06_TESTS/DemoDataAudit.md.
+ */
+export function disableProducto(id: number): Promise<Producto> {
+  return unwrap<Producto>(
+    apiClient.post<ApiSuccessResponse<Producto>>(`/productos/${id}/deshabilitar`)
+  );
+}
+
+export function enableProducto(id: number): Promise<Producto> {
+  return unwrap<Producto>(
+    apiClient.post<ApiSuccessResponse<Producto>>(`/productos/${id}/habilitar`)
   );
 }
 

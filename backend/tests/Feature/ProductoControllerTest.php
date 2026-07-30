@@ -302,4 +302,75 @@ class ProductoControllerTest extends TestCase
 
         $this->assertDatabaseMissing('movimientos', ['producto_id' => $this->productoA->id]);
     }
+
+    // Corrección de auditoría funcional (docs/06_TESTS/DemoDataAudit.md) — Eliminación lógica
+
+    public function test_disabling_a_product_is_logical_never_physical(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'inactivo');
+
+        // La fila sigue existiendo — nunca un DELETE físico.
+        $this->assertDatabaseHas('productos', ['id' => $this->productoA->id, 'estado' => 'inactivo']);
+        $this->assertDatabaseHas('audit_logs', ['modulo' => 'productos', 'accion' => 'productos.deshabilitar']);
+    }
+
+    public function test_disabled_product_is_hidden_from_default_listing_but_visible_via_filter(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar");
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/productos')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 0);
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/productos?estado=todos')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
+    public function test_a_disabled_product_can_be_re_enabled(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar");
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/habilitar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'activo');
+
+        $this->assertDatabaseHas('audit_logs', ['modulo' => 'productos', 'accion' => 'productos.habilitar']);
+    }
+
+    public function test_disabling_a_product_never_touches_its_stock(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/movimientos", ['cantidad' => 25]);
+
+        $stockAntes = (float) $this->productoA->fresh()->stock_actual;
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar")
+            ->assertOk();
+
+        $this->assertSame($stockAntes, (float) $this->productoA->fresh()->stock_actual);
+        $this->assertDatabaseCount('movimientos', 1);
+    }
+
+    public function test_company_b_cannot_disable_or_enable_company_as_product(): void
+    {
+        $this->actingAs($this->userB, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar")
+            ->assertNotFound();
+
+        $this->actingAs($this->userB, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/habilitar")
+            ->assertNotFound();
+
+        $this->assertSame('activo', $this->productoA->fresh()->estado);
+    }
 }

@@ -4,6 +4,24 @@ Formato libre, orden cronológico inverso (más reciente arriba). Referenciado p
 
 ## [Unreleased]
 
+### Corrección — Módulo Productos: Logical Delete y badge de Estado (2026-07-30)
+- **Productos era el único módulo construido sin Logical Delete ni columna Estado visible**, detectado por auditoría funcional (`docs/06_TESTS/DemoDataAudit.md`, `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`). Corregido con el mismo patrón ya usado en Proveedores.
+- Backend: `ProductoController::disable()`/`enable()` (borrado siempre lógico, nunca DELETE físico, auditado), filtro `estado` en `index()`.
+- Frontend: columna Estado (badge verde/rojo) y filtro de Estado en `/productos`; acción Eliminar/Habilitar con confirmación obligatoria (`components/confirm-dialog.tsx`, nuevo componente reutilizable); refresco automático vía `hooks/use-crud-list.ts` (primer consumidor real de ese hook); mismo botón en la ficha de producto.
+- Corrección adicional encontrada en el mismo trabajo: los formularios de Crear/Editar Producto seguían enviando `marca`/`unidad_medida` como texto libre — claves que el backend ya no acepta desde la normalización de catálogos (RC1 Fase 1) y descartaba en silencio. Corregido a `marca_nuevo`/`unidad_medida_nuevo`.
+- Campo Stock ahora visible pero deshabilitado (mostrando 0 en creación, el valor real en edición) en ambos formularios — nunca se envía desde el frontend, el backend lo asigna/protege siempre.
+- Tests: 22 casos en `ProductoControllerTest` (antes 17), suite completa 143/143 en verde. Verificación real en navegador de todo el flujo (badge, filtro, confirmación, refresco automático, campo Stock deshabilitado).
+
+### Datos de prueba — Demo Data RC1 (2026-07-30)
+- Factory por modelo implementado + seeder independiente por módulo, orquestados en `DatabaseSeeder` sobre dos empresas (una a volumen completo, otra al 15% para probar aislamiento multi-tenant con datos reales). Comando único: `php artisan migrate:fresh --seed`.
+- Volumen generado: 575 productos, 115 proveedores, 1.410 asociaciones producto-proveedor, 10.783 movimientos (generados exclusivamente vía `InventoryService::registrarMovimiento()`, nunca un insert directo), 5.750 registros de auditoría, entre otros. Ver `docs/06_TESTS/DemoDataAudit.md` para el detalle completo, incluyendo 3 errores reales encontrados y corregidos durante el seeding, y 2 bugs de paginación pre-existentes (Productos/Proveedores) encontrados por tener volumen real de datos, documentados para su propia corrección futura.
+
+### RC1 — Sidebar oficial, catálogos y auditoría funcional (2026-07-29/30)
+- Gap analysis y auditoría funcional completa de los 17 módulos del sistema (`docs/03_FUNCTIONAL_SPEC/RC1_GAP_ANALYSIS.md`, `RC1_FUNCTIONAL_MODULE_AUDIT.md`), aprobados por el propietario del proyecto como base del roadmap de 8 fases de RC1.
+- Normalización de catálogo (Fase 1): `Marca`/`UnidadMedida` como entidades reales reemplazando texto libre en `productos`, con migración de datos que preserva cada valor existente.
+- Sidebar oficial reestructurado en grupos (Inventario/Terceros/Administración), con páginas reales de "pendiente de implementación" para todo módulo sin backend/frontend completo (nunca datos mock), bloque de usuario con rol/email y menú desplegable, breadcrumb en el header.
+- Suppliers (FEATURE-003), creación manual de producto e ingreso manual (FEATURE-001/002), y asociación Producto-Proveedor (FEATURE-005) — construidos en sesiones previas, comiteados formalmente en esta unidad de trabajo junto con el resto del backlog acumulado.
+
 ### Documentación — Auditoría final y consolidación definitiva (Documentation Baseline v1.0, segunda pasada)
 - **Cierre de los dos últimos gaps de organización** dejados abiertos deliberadamente por la auditoría anterior (`docs/DOCUMENTATION_BASELINE_REPORT.md`), sin tocar `backend/` ni `frontend/`.
   - `docs/ArchitectureWorkflow.md`, `docs/ReleaseWorkflow.md`, `docs/SessionWorkflow.md` **movidos** a `docs/10_GOVERNANCE/` — los 10 documentos de gobernanza de proceso viven ahora en una única carpeta. 14 referencias activas actualizadas en 8 documentos (`AGENTS.md`, `README.md`, `CLAUDE.md`, `docs/README.md`, `docs/10_GOVERNANCE/EngineeringManual.md`, `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`, `docs/07_RELEASE/README.md`, este changelog). Contenido de los 3 archivos: sin cambios.

@@ -1,8 +1,8 @@
 # Productos
 
-**Status: Built (esqueleto delgado — sin CRUD propio)**
+**Status: Built — cumple el Global CRUD Standard completo (List/View/Create/Edit/Status/Logical Delete)**
 
-> Verificado contra `backend/app/Models/Producto.php`, `backend/database/migrations/2026_07_28_015312_create_productos_table.php`, `backend/app/Services/ProductService.php`, `frontend/app/(app)/productos/page.tsx`, `frontend/lib/mock/data.ts`. **No existe `ProductoController`, ni rutas `GET/POST/PATCH/DELETE /api/v1/productos` en `backend/routes/api.php`.** El único punto de escritura real sobre `productos` es `ProductService`, consumido internamente por el pipeline de Captura IA (ver `AI_Capture.md`) — no hay un formulario de alta/edición de producto en ningún lugar del sistema. La pantalla `/productos` del frontend es una tabla de solo lectura sobre datos simulados (`lib/mock/data.ts`), no sobre la API real. Reemplaza el borrador de la sección 21 del master spec, que describía un CRUD completo (búsquedas avanzadas, acciones masivas) nunca construido.
+> Verificado contra `backend/app/Http/Controllers/Api/ProductoController.php`, `backend/app/Models/Producto.php`, `backend/app/Services/ProductService.php`, `frontend/app/(app)/productos/page.tsx`, `frontend/components/product-detail-screen.tsx`. Esta sección estuvo desactualizada por varias fases de esta sesión (describía el estado previo a FEATURE-001/002: sin `ProductoController`, sin rutas, datos mock) — corregida 2026-07-30 junto con la corrección de auditoría funcional que agregó Logical Delete y la columna Estado (ver "Adenda 3" al final de este documento). `marca`/`unidad_medida` ya no son texto libre — son catálogos reales (`Marca`/`UnidadMedida`, RC1 Fase 1) referenciados por `marca_id`/`unidad_medida_id`.
 
 ## Purpose
 
@@ -139,11 +139,11 @@ No implementado — sin llamada de red real, no hay manejo de error de API en es
 **Error States:** producto inexistente o de otra empresa → 404 (mismo patrón que Captura IA, nunca filtrar existencia entre empresas — ver `Security.md`).
 
 **Acceptance Criteria:**
-- [ ] El nombre del producto en `/productos` navega a `/productos/[id]`.
-- [ ] Cualquier referencia a producto en Captura IA navega al mismo destino.
-- [ ] "Editar" persiste cambios reales vía el nuevo endpoint, respetando que `stock_actual` nunca es editable.
-- [ ] "Ver movimientos" muestra el historial real (no mock) de movimientos de ese producto específico.
-- [ ] Acceder a la ficha de un producto de otra empresa devuelve 404, nunca los datos.
+- [x] El nombre del producto en `/productos` navega a `/productos/[id]`.
+- [x] Cualquier referencia a producto en Captura IA navega al mismo destino.
+- [x] "Editar" persiste cambios reales vía el nuevo endpoint, respetando que `stock_actual` nunca es editable.
+- [x] "Ver movimientos" muestra el historial real (no mock) de movimientos de ese producto específico.
+- [x] Acceder a la ficha de un producto de otra empresa devuelve 404, nunca los datos.
 
 ### Technical Spec — nuevos endpoints (ver `04_TECHNICAL_SPEC/API.md` para el contrato completo una vez implementado)
 
@@ -183,9 +183,31 @@ No implementado — sin llamada de red real, no hay manejo de error de API en es
 **Technical Spec:** `POST /api/v1/productos/{id}/movimientos` — nuevo `StoreIngresoRequest`, autorizado por `movimientos.crear` (ya en el catálogo). `InventoryService::registrarMovimiento()` extendido con parámetros opcionales `proveedor`, `lote`, `vencimiento`.
 
 **Acceptance Criteria:**
-- [ ] "Nuevo Producto" crea un producto real, con `stock_actual = 0`, y redirige a su ficha.
-- [ ] Cada creación manual y cada ingreso manual generan una fila real en `audit_logs`.
-- [ ] "Registrar ingreso" actualiza `stock_actual` y crea un `Movimiento` real; la pestaña Movimientos de la ficha lo refleja sin recargar manualmente el endpoint de movimientos por separado.
-- [ ] Ningún endpoint nuevo permite a otra empresa crear/ver productos o movimientos ajenos (mismo aislamiento que el resto del sistema).
+- [x] "Nuevo Producto" crea un producto real, con `stock_actual = 0`, y redirige a su ficha.
+- [x] Cada creación manual y cada ingreso manual generan una fila real en `audit_logs`.
+- [x] "Registrar ingreso" actualiza `stock_actual` y crea un `Movimiento` real; la pestaña Movimientos de la ficha lo refleja sin recargar manualmente el endpoint de movimientos por separado.
+- [x] Ningún endpoint nuevo permite a otra empresa crear/ver productos o movimientos ajenos (mismo aislamiento que el resto del sistema).
 
 **Aprobado por el product owner (sesión 2026-07-29) como bloqueante de release, con el alcance exacto de los 4 puntos de arriba** — explícitamente NO incluye construir `FUTURE/Auditoria.md` ni `FUTURE/Kardex.md` como módulos propios, ni inventario por lote real.
+
+---
+
+## Adenda 3 — Logical Delete y Badge de Estado (Status: Approved e implementado, 2026-07-30)
+
+**Origen:** auditoría funcional (`docs/06_TESTS/DemoDataAudit.md`, `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`) detectó que Productos era el único módulo construido sin Logical Delete ni columna Estado visible, a diferencia de Proveedores — inconsistente con el Global CRUD Standard ya exigido a todos los módulos administrativos.
+
+**Cambios:**
+- `ProductoController::disable()`/`enable()` — mismo patrón exacto que `ProveedorController`: `estado = inactivo/activo`, nunca DELETE físico, auditado (`productos.deshabilitar`/`productos.habilitar`).
+- `ProductoController::index()` — filtro `estado` (activo por defecto, `estado=todos` para ver inactivos), mismo criterio que Proveedores.
+- Frontend `/productos`: columna Estado con badge de color (verde/rojo), filtro de Estado, acción "Eliminar (deshabilitar)"/"Habilitar" en el menú de fila con `ConfirmDialog` (confirmación obligatoria antes de ejecutar), refresco automático vía `useCrudList` preservando búsqueda/filtros.
+- Ficha de producto: mismo botón Eliminar/Habilitar junto a Editar, mismo `ConfirmDialog`.
+- Corrección adicional encontrada en el mismo archivo: el formulario de creación/edición enviaba `marca`/`unidad_medida` como texto libre — claves que el backend ya no acepta desde la normalización de catálogos (RC1 Fase 1) y descartaba silenciosamente. Corregido a `marca_nuevo`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente que `proveedor_nuevo`).
+- Campo "Stock inicial"/"Stock actual" ahora visible pero deshabilitado en ambos formularios (antes solo era texto descriptivo) — refuerza visualmente que el stock nunca se envía desde Crear/Editar Producto.
+
+**Acceptance Criteria:**
+- [x] Botón Eliminar funciona mediante eliminación lógica (nunca DELETE físico).
+- [x] Columna Estado visible con badges de color en el listado.
+- [x] El estado puede activarse y desactivarse, con confirmación previa.
+- [x] El stock inicial siempre es 0, campo deshabilitado en Crear y Editar.
+- [x] El stock únicamente se modifica desde Movimientos de Inventario.
+- [x] Tests backend (22 casos en `ProductoControllerTest`) y verificación real en navegador, ambos en verde.

@@ -13,7 +13,7 @@
 |---|--------|:---:|---:|
 | 1 | Dashboard | ⚫ Mock | 15% |
 | 2 | Captura IA | 🟢 Completo | 90% |
-| 3 | Productos | 🟡 Parcial | 55% |
+| 3 | Productos | 🟢 Completo (corregido 2026-07-30) | 85% |
 | 4 | Categorías | 🔴 No Implementado | 10% |
 | 5 | Marcas | 🔴 No Implementado | 8% |
 | 6 | Unidades de Medida | 🔴 No Implementado | 8% |
@@ -35,7 +35,7 @@
 
 - [x] Dashboard (mock)
 - [x] Captura IA (completo)
-- [x] Productos (parcial)
+- [x] Productos (completo, corregido 2026-07-30)
 - [ ] Categorías
 - [ ] Marcas
 - [ ] Unidades de Medida
@@ -83,27 +83,27 @@
 **Funcionalidades:**
 ✔ Captura por foto ✔ Captura por voz ✔ Captura foto+voz ✔ Matching de identidad de producto ✔ Confirmar manual ✔ Descartar ✔ Corrección de detalle ✔ Idempotencia ✔ Eventos de dominio ✔ Auditoría real ✘ Validación end-to-end con imágenes reales (bloqueada, no por código)
 
-### 3. Productos — 🟡 Parcial
+### 3. Productos — 🟢 Completo (corregido 2026-07-30)
 
 | Capa | Ítem | Estado |
 |---|---|:---:|
 | Backend | Migración/Modelo/Service/Controller/FormRequest/Policy | ✔ |
-| Backend | Logical Delete (disable/enable) | ✘ — no existe ruta ni acción |
+| Backend | Logical Delete (disable/enable) | ✔ corregido 2026-07-30 — mismo patrón que Proveedores, auditado |
 | Frontend | Sidebar/Ruta/Listado/Detalle/Crear/Editar | ✔ |
-| Frontend | Columna Estado en listado / acción Activar-Desactivar | ✘ |
+| Frontend | Columna Estado en listado / acción Activar-Desactivar | ✔ corregido 2026-07-30 — badge de color + `ConfirmDialog` |
 | Frontend | Búsqueda | ✔ (cliente, por nombre/marca) |
-| Frontend | Filtros | ✔ (categoría, cliente) |
-| Frontend | Paginación | ✘ (backend pagina a 100, frontend no expone pager) |
+| Frontend | Filtros | ✔ (categoría, estado) |
+| Frontend | Paginación | ✘ (backend pagina a 100, frontend no expone pager — bug real, ver `DemoDataAudit.md`, fuera de alcance de esta corrección) |
 | Frontend | Notificaciones (toast) / manejo de errores / loading | ✔ |
-| Frontend | Refresco automático (Global UI Standard) | ✘ — todavía no usa `useCrudList` |
-| Frontend | Selector de Categoría en "Nuevo Producto" | ✘ (ausente del diálogo hoy) |
-| Frontend | Selectores de Marca/Unidad de Medida basados en catálogo | ✘ (siguen siendo texto libre — Fase 1 en curso, no terminada) |
-| Tests | Feature | ✔ `ProductoControllerTest` (17 casos) |
-| Tests | Browser | ✔ parcial (verificado en fases anteriores para BUG-001/002/005/006/009) |
-| Docs | Functional Spec | ✔ `Products.md` |
+| Frontend | Refresco automático (Global UI Standard) | ✔ corregido 2026-07-30 — retrofit a `useCrudList` |
+| Frontend | Selector de Categoría en "Nuevo Producto" | ✘ (ausente del diálogo — depende de que exista `CategoriaController`, todavía no construido) |
+| Frontend | Selectores de Marca/Unidad de Medida basados en catálogo | ⚠️ siguen siendo texto libre por diseño (quick-create, `marca_nuevo`/`unidad_medida_nuevo`) — pero ahora correctamente conectados al catálogo real (antes se descartaban silenciosamente, bug corregido 2026-07-30) |
+| Tests | Feature | ✔ `ProductoControllerTest` (22 casos, incluye disable/enable/filtro/auditoría/aislamiento) |
+| Tests | Browser | ✔ verificado en navegador real: badge, filtro, eliminar/habilitar con confirmación, refresco automático, campo Stock deshabilitado en Crear y Editar |
+| Docs | Functional Spec | ✔ `Products.md` (Adenda 3) |
 
 **Funcionalidades:**
-✔ Crear ✔ Editar ✔ Buscar ✔ Filtrar por categoría ✔ Ver detalle ✔ Asociar proveedor (FEATURE-005) ✔ Registrar ingreso manual ✔ Ver movimientos ✘ Logical Delete/Status ✘ Imagen (campo existe, sin UI de carga) ✘ Kardex dedicado ✘ Auditoría visible en UI (se escribe, no se muestra)
+✔ Crear ✔ Editar ✔ Buscar ✔ Filtrar por categoría/estado ✔ Ver detalle ✔ Asociar proveedor (FEATURE-005) ✔ Registrar ingreso manual ✔ Ver movimientos ✔ Logical Delete/Status (corregido 2026-07-30) ✘ Imagen (campo existe, sin UI de carga) ✘ Kardex dedicado ✘ Auditoría visible en UI (se escribe, no se muestra) ✘ Paginación real (bug pre-existente, documentado en `DemoDataAudit.md`)
 
 ### 4. Categorías — 🔴 No Implementado
 
@@ -236,11 +236,11 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 1 (Captura IA)
-- **Parciales (🟡):** 3 (Productos, Proveedores, Configuración)
+- **Completos (🟢):** 2 (Captura IA, Productos — corregido 2026-07-30)
+- **Parciales (🟡):** 2 (Proveedores, Configuración)
 - **Mock (⚫):** 2 (Dashboard, Movimientos)
 - **No implementados (🔴):** 11 (Categorías, Marcas, Unidades de Medida, Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos): **~28%**
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras la corrección de Productos): **~30%**
 
 ---
 
