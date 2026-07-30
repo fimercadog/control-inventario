@@ -4,6 +4,15 @@ Formato libre, orden cronológico inverso (más reciente arriba). Referenciado p
 
 ## [Unreleased]
 
+### Feature — Módulo Stock completo (RC1, 2026-07-30) — cierra Fase 2
+- Implementación completa del módulo Stock, reemplazando la página stub "pendiente de implementación". Con esto se cierra la **Fase 2** del roadmap RC1 de 8 fases.
+- **Decisión arquitectónica confirmada explícitamente con el propietario del proyecto antes de codificar**: Stock NO es una entidad independiente — no existe tabla ni modelo `Stock`. Este módulo es una vista/editor especializado sobre los campos de stock que ya viven en `Producto` (`stock_actual`/`stock_minimo`/`stock_maximo`/`stock_estado`). Sin acción "Crear" (no aplica); "Editar" solo puede tocar `stock_minimo`/`stock_maximo` — `stock_actual` permanece siempre de solo lectura, modificable únicamente vía Entrada/Salida/Ajuste (Movimientos).
+- Backend: `StockController` (index/show/update/disable/enable) sobre `Producto`, reutilizando `ProductoPolicy`. `stock_estado` agregado a `$fillable` de `Producto` (ningún FormRequest de Producto lo declara — solo este controller lo escribe).
+- Frontend: listado con búsqueda por nombre/código, filtro de estado, filtro "Solo bajo mínimo" con aviso visual, ficha con Stock actual de solo lectura + edición de umbrales, Logical Delete/Activar-Desactivar administrativo con `ConfirmDialog`, enlace directo a la Ficha de Producto para Movimientos/ajustes reales, refresco automático vía `useCrudList`.
+- Regla de negocio (heredada de la definición de FEATURE-008 en esta misma sesión, aplicada literalmente): deshabilitar un registro de Stock nunca modifica `stock_actual`, nunca genera un movimiento, y nunca afecta el `estado` de catálogo del producto — verificado por test dedicado que compara el conteo de Movimientos antes/después.
+- Tests: 12 casos nuevos en `StockControllerTest` (incluye verificación de ausencia de endpoint de creación — 405 — y rechazo silencioso de `stock_actual`/`estado` en el payload de edición), suite completa 191/191 en verde. Verificación real en navegador: listado sin botón de creación, solo-lectura de stock actual, edición de umbrales persistente, deshabilitar/habilitar, verificación cruzada explícita de que el ciclo no afecta el producto ni genera movimientos, responsive.
+- Documentación nueva: `docs/03_FUNCTIONAL_SPEC/Stock.md` (no existía — solo era una decisión de diseño verbal de sesiones anteriores).
+
 ### Feature — Módulo Unidades de Medida completo (RC1, 2026-07-30) — cierra Fase 1
 - Implementación completa del módulo Unidades de Medida al mismo nivel funcional que Productos/Proveedores/Categorías/Marcas, reemplazando la página stub "pendiente de implementación". Con esto se cierra por completo la **Fase 1 (Catalog Normalization)** del roadmap RC1 de 8 fases.
 - Backend: `UnidadMedidaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `UnidadMedida`/`UnidadMedidaPolicy`/`StoreUnidadMedidaRequest`/`UpdateUnidadMedidaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /unidades-medida/{id}/productos` para la pestaña de relación.

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
+use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\UnidadMedidaController;
 use Illuminate\Support\Facades\Route;
 
@@ -119,4 +120,16 @@ Route::prefix('v1/unidades-medida')->name('unidades-medida.')->middleware(['auth
     Route::post('{unidadMedida}/habilitar', [UnidadMedidaController::class, 'enable'])->name('enable');
     // Ficha de Unidad de Medida — pestaña "Productos".
     Route::get('{unidadMedida}/productos', [UnidadMedidaController::class, 'productos'])->name('productos');
+});
+
+// RC1 Fase 2 (docs/03_FUNCTIONAL_SPEC/Stock.md). Stock NO es una entidad
+// independiente — opera directamente sobre Producto, acotado a sus
+// campos de stock. Sin ruta POST '/' a propósito: no existe "crear un
+// Stock", cada producto ya nace con sus propios campos de stock.
+Route::prefix('v1/stock')->name('stock.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [StockController::class, 'index'])->name('index');
+    Route::get('{producto}', [StockController::class, 'show'])->name('show');
+    Route::patch('{producto}', [StockController::class, 'update'])->name('update');
+    Route::post('{producto}/deshabilitar', [StockController::class, 'disable'])->name('disable');
+    Route::post('{producto}/habilitar', [StockController::class, 'enable'])->name('enable');
 });

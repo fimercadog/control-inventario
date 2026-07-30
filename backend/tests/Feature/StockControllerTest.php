@@ -1,0 +1,220 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Empresa;
+use App\Models\Producto;
+use App\Models\User;
+use App\Services\Auth\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * RC1 Fase 2 (docs/03_FUNCTIONAL_SPEC/Stock.md). Stock NO es una entidad
+ * independiente — opera sobre Producto. Reglas confirmadas explícitamente
+ * por el propietario del proyecto antes de esta unidad de trabajo: sin
+ * `store()` (no existe "crear Stock"), `update()` solo toca umbrales
+ * (`stock_minimo`/`stock_maximo`, nunca `stock_actual`), y
+ * `disable()`/`enable()` solo tocan `stock_estado` — nunca `stock_actual`
+ * ni `productos.estado`, nunca generan un movimiento.
+ */
+class StockControllerTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private Empresa $empresaA;
+
+    private Empresa $empresaB;
+
+    private User $userA;
+
+    private User $userB;
+
+    private Producto $productoA;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
+        $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
+        $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+
+        app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        $this->productoA = Producto::create([
+            'codigo' => 'TEST-001',
+            'nombre' => 'Producto con stock',
+            'stock_minimo' => 5,
+            'stock_maximo' => 100,
+        ]);
+        // stock_actual no es fillable (propiedad exclusiva de
+        // InventoryService) — se fuerza directamente para el fixture,
+        // simulando un producto con movimientos previos ya reflejados.
+        $this->productoA->forceFill(['stock_actual' => 42])->save();
+    }
+
+    public function test_there_is_no_create_endpoint_for_stock(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/stock', ['codigo' => 'X', 'nombre' => 'No debería poder crearse'])
+            ->assertStatus(405);
+    }
+
+    public function test_a_user_can_view_and_list_their_own_companys_stock(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->getJson("/api/v1/stock/{$this->productoA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.nombre', 'Producto con stock')
+            ->assertJsonPath('data.stock_actual', fn ($v) => (float) $v === 42.0)
+            ->assertJsonPath('data.stock_minimo', fn ($v) => (float) $v === 5.0)
+            ->assertJsonPath('data.stock_maximo', fn ($v) => (float) $v === 100.0)
+            ->assertJsonPath('data.estado', 'activo');
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
+    public function test_search_filters_by_nombre_or_codigo(): void
+    {
+        app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        Producto::create(['codigo' => 'X-999', 'nombre' => 'Otro producto distinto']);
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock?busqueda=TEST-001')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.codigo', 'TEST-001');
+    }
+
+    public function test_bajo_minimo_filter_only_returns_products_under_their_threshold(): void
+    {
+        app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        $productoBajo = Producto::create(['codigo' => 'BAJO-001', 'nombre' => 'Producto bajo mínimo', 'stock_minimo' => 10]);
+        $productoBajo->forceFill(['stock_actual' => 1])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock?bajo_minimo=1')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.codigo', 'BAJO-001')
+            ->assertJsonPath('data.items.0.bajo_minimo', true);
+    }
+
+    public function test_updating_thresholds_persists_and_writes_audit(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/stock/{$this->productoA->id}", [
+                'stock_minimo' => 20,
+                'stock_maximo' => 200,
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.stock_minimo', fn ($v) => (float) $v === 20.0)
+            ->assertJsonPath('data.stock_maximo', fn ($v) => (float) $v === 200.0);
+
+        $this->productoA->refresh();
+        $this->assertEquals(20, $this->productoA->stock_minimo);
+        $this->assertEquals(200, $this->productoA->stock_maximo);
+        $this->assertDatabaseHas('audit_logs', ['modulo' => 'stock', 'accion' => 'stock.editar']);
+    }
+
+    public function test_stock_actual_is_rejected_even_if_sent_in_the_payload(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/stock/{$this->productoA->id}", [
+                'stock_actual' => 999,
+                'stock_minimo' => 10,
+            ])
+            ->assertOk();
+
+        // stock_actual nunca es un campo aceptado por este formulario —
+        // solo InventoryService puede modificarlo.
+        $this->assertEquals(42, $this->productoA->fresh()->stock_actual);
+    }
+
+    public function test_producto_estado_is_rejected_even_if_sent_in_the_update_payload(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/stock/{$this->productoA->id}", [
+                'estado' => 'inactivo',
+                'stock_minimo' => 10,
+            ])
+            ->assertOk();
+
+        // El estado de catálogo del producto nunca se toca desde Stock.
+        $this->assertEquals('activo', $this->productoA->fresh()->estado);
+    }
+
+    public function test_disabling_stock_is_logical_never_touches_stock_actual_or_product_catalog_state(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/deshabilitar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'inactivo');
+
+        $fresco = $this->productoA->fresh();
+        // Nunca revierte cantidad, nunca crea movimiento, nunca afecta el
+        // estado de catálogo del producto (sigue siendo válido en
+        // Productos/Captura IA/Proveedores/Movimientos).
+        $this->assertEquals(42, $fresco->stock_actual);
+        $this->assertSame('activo', $fresco->estado);
+        $this->assertSame('inactivo', $fresco->stock_estado);
+        $this->assertDatabaseCount('movimientos', 0);
+        $this->assertDatabaseHas('audit_logs', ['modulo' => 'stock', 'accion' => 'stock.deshabilitar']);
+    }
+
+    public function test_disabled_stock_is_hidden_from_default_listing_but_visible_via_filter(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/deshabilitar");
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 0);
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock?estado=todos')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
+    public function test_a_disabled_stock_can_be_re_enabled(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/deshabilitar");
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/habilitar")
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'activo');
+
+        $this->assertEquals(42, $this->productoA->fresh()->stock_actual);
+    }
+
+    public function test_company_b_cannot_view_update_or_disable_company_as_stock(): void
+    {
+        $this->actingAs($this->userB, 'api')
+            ->getJson("/api/v1/stock/{$this->productoA->id}")
+            ->assertNotFound();
+
+        $this->actingAs($this->userB, 'api')
+            ->patchJson("/api/v1/stock/{$this->productoA->id}", ['stock_minimo' => 999])
+            ->assertNotFound();
+
+        $this->actingAs($this->userB, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/deshabilitar")
+            ->assertNotFound();
+
+        $this->assertEquals(5, $this->productoA->fresh()->stock_minimo);
+        $this->assertSame('activo', $this->productoA->fresh()->stock_estado);
+    }
+
+    public function test_unauthenticated_request_is_rejected(): void
+    {
+        $this->getJson('/api/v1/stock')->assertUnauthorized();
+    }
+}

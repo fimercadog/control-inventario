@@ -46,6 +46,12 @@ Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-mode
 
 `POST/PATCH /api/v1/productos`: `marca`/`unidad_medida` (string libre) reemplazados por `marca_id`/`marca_nuevo` y `unidad_medida_id`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente ya usado para `proveedor_id`/`proveedor_nuevo`).
 
+## Módulo Stock (RC1 Fase 2, docs/03_FUNCTIONAL_SPEC/Stock.md)
+
+Stock NO es una entidad independiente — opera directamente sobre `Producto` (route-model-binding sobre `{producto}`, mismo `ProductoPolicy` que ya protegía el modelo). Sin `POST /` a propósito: no existe "crear un Stock".
+
+- GET `/api/v1/stock` (con `busqueda`, `estado`, `bajo_minimo`), GET `/api/v1/stock/{id}`, PATCH `/api/v1/stock/{id}` (solo `stock_minimo`/`stock_maximo`), POST `/api/v1/stock/{id}/deshabilitar`, POST `/api/v1/stock/{id}/habilitar` (Built 2026-07-30 — `StockController`, ver `docs/05_IMPLEMENTATION/StockModule.md`). `deshabilitar`/`habilitar` tocan únicamente `productos.stock_estado` — nunca `stock_actual` ni `productos.estado` (catálogo).
+
 ## Módulo Auth & RBAC (Fase 5)
 
 Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitación/reset/verificación con token firmado) exige `Authorization: Bearer <access_token>`; toda acción de negocio valida un permiso específico, nunca un nombre de rol. Entre paréntesis, el módulo donde se construye.

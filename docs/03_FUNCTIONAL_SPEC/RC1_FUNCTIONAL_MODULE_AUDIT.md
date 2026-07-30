@@ -17,7 +17,7 @@
 | 4 | Categorías | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 5 | Marcas | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 6 | Unidades de Medida | 🟢 Completo (implementado 2026-07-30) | 90% |
-| 7 | Stock | 🔴 No Implementado | 5% |
+| 7 | Stock | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 8 | Movimientos | ⚫ Mock | 20% |
 | 9 | Proveedores | 🟡 Parcial | 85% |
 | 10 | Clientes | 🔴 No Implementado | 0% |
@@ -39,7 +39,7 @@
 - [x] Categorías (completo, implementado 2026-07-30)
 - [x] Marcas (completo, implementado 2026-07-30)
 - [x] Unidades de Medida (completo, implementado 2026-07-30 — cierra Fase 1)
-- [ ] Stock
+- [x] Stock (completo, implementado 2026-07-30 — cierra Fase 2)
 - [x] Movimientos (mock, backend fragmentario)
 - [x] Proveedores (parcial — falta retrofit + verificación en navegador de tabs nuevas)
 - [ ] Clientes
@@ -164,17 +164,27 @@
 
 Con esta unidad de trabajo se cierra por completo la **Fase 1 (Catalog Normalization)** del roadmap de 8 fases aprobado: Categorías, Marcas y Unidades de Medida ahora tienen el mismo nivel funcional que Productos/Proveedores.
 
-### 7. Stock — 🔴 No Implementado
+### 7. Stock — 🟢 Completo (implementado 2026-07-30)
+
+Stock **no es una entidad independiente** — no existe tabla ni modelo `Stock`; este módulo es una vista/editor especializado sobre los campos de stock que ya viven en `Producto`. Antes de escribir código, se confirmó explícitamente con el propietario del proyecto el alcance exacto de "Crear"/"Editar" (el brief genérico de CRUD entraba en conflicto directo con la regla de negocio ya acordada el 2026-07-29) — ver `docs/03_FUNCTIONAL_SPEC/Stock.md`, sección "Decisiones confirmadas".
 
 | Capa | Ítem | Estado |
 |---|---|:---:|
-| Backend | Migración `stock_estado` en `productos` | ✔ ejecutada, pero **inerte** (ningún código la lee/escribe) |
-| Backend | Resource/Controller/Rutas/Service | ✘ |
-| Frontend | Todo | ✘ |
-| Tests | Todo | ✘ |
-| Docs | Diseño acordado con el usuario (2026-07-29): vista sobre Producto + movimientos correctivos, sin reversión automática al deshabilitar | ✔ (decisión documentada en memoria de sesión, no en un `.md` de spec todavía) |
+| Backend | Migración `stock_estado` en `productos` | ✔ ya existía, ahora activa |
+| Backend | Resource/Controller/Rutas | ✔ `StockController` (index/show/update/disable/enable) sobre `Producto`, reutiliza `ProductoPolicy` — **sin `store()` a propósito**, no existe "crear un Stock" |
+| Backend | `stock_estado` agregado a `$fillable` de `Producto` | ✔ (ningún FormRequest de Producto lo declara — solo `StockController` lo escribe) |
+| Frontend | Listado (búsqueda, filtro estado, filtro "bajo mínimo", badge) | ✔ — **sin botón "Nuevo"** a propósito |
+| Frontend | Ver detalle / Editar (solo `stock_minimo`/`stock_maximo`, `stock_actual` de solo lectura) | ✔ |
+| Frontend | Logical Delete + Activar/Desactivar con confirmación (solo `stock_estado`, nunca cantidad ni `productos.estado`) | ✔ |
+| Frontend | Refresco automático (`useCrudList`) | ✔ |
+| Frontend | Enlace directo a Ficha de Producto (para Movimientos/ajustes reales) | ✔ |
+| Tests | Feature | ✔ `StockControllerTest` (12 casos: sin endpoint de creación, umbrales, rechazo silencioso de `stock_actual`/`estado` en el payload, disable/enable sin tocar cantidad ni catálogo ni generar movimientos, aislamiento multi-tenant) |
+| Tests | Browser | ✔ verificado en navegador real: sin botón de creación, solo-lectura de stock actual, edición de umbrales persistente, deshabilitar/habilitar, verificación cruzada de que el ciclo no afecta el producto en `/productos/{id}` ni su conteo de Movimientos, responsive |
+| Docs | Functional/Technical/Implementation | ✔ `Stock.md` (nuevo, Built), `API.md`, `docs/05_IMPLEMENTATION/StockModule.md` |
 
-**Funcionalidades:** ✘ Todo.
+**Funcionalidades:** ✔ Listar (búsqueda, filtro estado, filtro bajo mínimo) ✔ Ver detalle ✔ Editar umbrales (mínimo/máximo) ✔ Logical Delete/Activar-Desactivar administrativo con confirmación ✘ Crear (deliberadamente no aplica) ✘ `stock_actual` editable desde aquí (deliberadamente no aplica — vive en Movimientos)
+
+Con esto se cierra la **Fase 2** del roadmap de 8 fases aprobado.
 
 ### 8. Movimientos — ⚫ Mock (pantalla) / fragmentario (backend)
 
@@ -265,42 +275,42 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 5 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida — Unidades de Medida implementado 2026-07-30, cierra Fase 1 completa)
+- **Completos (🟢):** 6 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida, Stock — Stock implementado 2026-07-30, cierra Fase 2 completa)
 - **Parciales (🟡):** 2 (Proveedores, Configuración)
 - **Mock (⚫):** 2 (Dashboard, Movimientos)
-- **No implementados (🔴):** 8 (Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Unidades de Medida): **~45%**
+- **No implementados (🔴):** 7 (Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Stock): **~50%**
 
 ---
 
 ## Gaps
 
 ### Módulos faltantes
-Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil, Stock. (Categorías, Marcas y Unidades de Medida — Fase 1 completa — ya se cerraron el 2026-07-30.)
+Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil. (Categorías, Marcas, Unidades de Medida — Fase 1 — y Stock — Fase 2 — ya se cerraron el 2026-07-30.)
 
 ### Funcionalidades faltantes
-Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; CRUD completo de Movimientos; persistencia real de Configuración.
+Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; CRUD completo de Movimientos (Fase 3, sin empezar); persistencia real de Configuración.
 
 ### APIs faltantes
-`/stock`, `/movimientos` (CRUD real), `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas` y `/unidades-medida` ya se implementaron el 2026-07-30 — Fase 1 completa.)
+`/movimientos` (CRUD real), `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida` y `/stock` ya se implementaron el 2026-07-30 — Fases 1 y 2 completas.)
 
 ### Pantallas faltantes
-`/stock`, `/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas` y `/unidades-medida` ya se implementaron el 2026-07-30.)
+`/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida` y `/stock` ya se implementaron el 2026-07-30.)
 
 ### CRUD incompletos
 Movimientos (solo existe la "C" de Entrada, indirecta), Configuración (no es CRUD real, es un formulario decorativo).
 
 ### Permisos faltantes
-No existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte. (Categoria/Marca/UnidadMedida ya tienen Policy + controller que la invoca desde el 2026-07-30.)
+No existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte. (Categoria/Marca/UnidadMedida ya tienen Policy + controller propio; Stock reutiliza `ProductoPolicy` — los cuatro desde el 2026-07-30.)
 
 ### Relaciones faltantes
-Ninguna pendiente en Fase 1 — `productos.categoria_id`/`marca_id`/`unidad_medida_id` aplicadas, en uso, y expuestas por sus respectivos controllers desde el 2026-07-30.
+Ninguna pendiente en Fases 1-2 — `productos.categoria_id`/`marca_id`/`unidad_medida_id`/`stock_estado` aplicadas, en uso, y expuestas por sus respectivos controllers desde el 2026-07-30.
 
 ### Tests faltantes
-`MovimientoControllerTest`, `StockControllerTest`, `UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest` y `UnidadMedidaControllerTest` ya existen desde el 2026-07-30.)
+`MovimientoControllerTest`, `UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest` y `StockControllerTest` ya existen desde el 2026-07-30.)
 
 ### Documentación faltante
-`Suppliers.md` real sigue en `FUTURE/` marcado `Planned` pese a estar construido — nunca se actualizó su estado. `Stock.md` propio no escrito todavía (solo existe como decisión de diseño en memoria de conversación). `TestExecutionReport.md` no refleja FEATURE-005/008 todavía.
+`Suppliers.md` real sigue en `FUTURE/` marcado `Planned` pese a estar construido — nunca se actualizó su estado. `TestExecutionReport.md` no refleja FEATURE-005/008 todavía. (`Stock.md` ya se escribió el 2026-07-30, cerrando el gap que esta misma sección señalaba.)
 
 ---
 

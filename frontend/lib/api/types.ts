@@ -252,6 +252,35 @@ export type StoreUnidadMedidaPayload = Partial<Pick<UnidadMedida, "abreviatura" 
 export type UpdateUnidadMedidaPayload = Partial<StoreUnidadMedidaPayload>;
 
 /**
+ * Espejo de App\Http\Resources\Stock\StockResource (RC1 Fase 2,
+ * docs/03_FUNCTIONAL_SPEC/Stock.md). Stock NO es una entidad
+ * independiente — es una vista sobre los campos de stock de Producto.
+ * `estado` aquí es `stock_estado` (bandera administrativa propia de este
+ * módulo), nunca el `estado` de catálogo del producto.
+ */
+export interface Stock {
+  id: number;
+  codigo: string | null;
+  nombre: string;
+  categoria: string | null;
+  marca: string | null;
+  unidad_medida: string | null;
+  stock_actual: number;
+  stock_minimo: number;
+  stock_maximo: number | null;
+  bajo_minimo: boolean;
+  estado: "activo" | "inactivo";
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+/** Solo umbrales de alerta — stock_actual nunca es editable desde aquí. */
+export interface UpdateStockPayload {
+  stock_minimo?: number;
+  stock_maximo?: number | null;
+}
+
+/**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación
  * Producto↔Proveedor con atributos propios (precio de compra, código del

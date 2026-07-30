@@ -16,7 +16,10 @@ class Producto extends Model
     /**
      * stock_actual queda fuera de $fillable a propósito: solo InventoryService
      * puede modificarlo (ver docs/00_MASTER_SPECIFICATION.md sección 74,
-     * "Propiedad exclusiva del stock").
+     * "Propiedad exclusiva del stock"). `stock_estado` sí es fillable, pero
+     * ningún FormRequest de Producto lo declara en sus reglas — solo
+     * `StockController::disable()`/`enable()` (docs/03_FUNCTIONAL_SPEC/Stock.md)
+     * lo escriben, nunca el formulario de catálogo del producto.
      */
     protected $fillable = [
         'empresa_id',
@@ -34,6 +37,7 @@ class Producto extends Model
         'stock_maximo',
         'imagen',
         'estado',
+        'stock_estado',
     ];
 
     protected function casts(): array
