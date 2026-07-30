@@ -62,11 +62,11 @@ Ver "Resumen" arriba — los 2 bugs de `marca`/`unidad_medida` y el campo Stock 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** pendiente de push al momento de escribir este informe — ver confirmación abajo, se actualiza inmediatamente después de ejecutar `git push`.
+- **Commit:** `4af9fad` — `feat(products): implement logical delete and status badge`.
 
 ## Confirmación de push
 
-Ver el mensaje de cierre de esta Unidad de Trabajo para el hash exacto del commit y la confirmación de que `git push` se ejecutó correctamente contra `origin/main`.
+✅ Ejecutado correctamente: `169b4bf..4af9fad  main -> main` contra `origin` (GitHub).
 
 ## Estado
 
