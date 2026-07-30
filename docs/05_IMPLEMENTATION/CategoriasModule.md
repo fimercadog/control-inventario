@@ -86,11 +86,11 @@ Ninguno — la tabla `categorias` ya existía desde la Fase 3 original del proye
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** ver confirmación abajo.
+- **Commit:** `50dc3c7` — `feat(categories): implement complete CRUD module (RC1)`.
 
 ## Confirmación de push
 
-Ver el mensaje de cierre de esta Unidad de Trabajo para el hash exacto del commit y la confirmación de `git push` contra `origin/main`.
+✅ Ejecutado correctamente: `aee14e5..50dc3c7  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
