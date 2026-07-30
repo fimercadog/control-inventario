@@ -257,3 +257,224 @@ Ningún módulo podrá considerarse terminado hasta que exista un informe de aud
 ---
 
 Toda tabla perteneciente a un módulo implementado debe contar con datos de prueba suficientes y coherentes. No se aceptan módulos con tablas vacías, salvo aquellas cuya naturaleza requiera permanecer vacías inicialmente. Los datos de prueba deben permitir validar búsquedas, filtros, paginación, relaciones, integridad referencial, rendimiento y pruebas de usuario. Debe existir un proceso reproducible para reconstruir el entorno completo mediante un único comando (por ejemplo, migrate:fresh --seed).
+
+
+
+# Regla de Cierre de Funcionalidades y Módulos
+
+## Objetivo
+
+Toda funcionalidad o módulo debe completarse completamente antes de iniciar el siguiente.
+
+No se permite acumular funcionalidades parcialmente terminadas.
+
+---
+
+## Flujo Obligatorio
+
+Para cada funcionalidad o módulo se debe seguir obligatoriamente el siguiente ciclo:
+
+1. Especificación
+2. Desarrollo
+3. Actualización de documentación
+4. Generación de datos de prueba
+5. Ejecución de pruebas
+6. Corrección de errores encontrados
+7. Commit
+8. Push
+9. Generación del informe final
+10. Revisión y aprobación
+11. Inicio de la siguiente funcionalidad
+
+No se puede pasar al siguiente punto mientras el anterior no esté finalizado.
+
+---
+
+## Documentación
+
+Al terminar una funcionalidad se debe actualizar toda la documentación afectada.
+
+Como mínimo:
+
+- Functional Specification
+- Technical Specification
+- API Specification
+- Test Report
+- Changelog
+
+La documentación debe reflejar exactamente el estado real del sistema.
+
+---
+
+## Datos de prueba
+
+Antes de ejecutar las pruebas:
+
+- Poblar todas las tablas relacionadas.
+- Verificar relaciones.
+- Verificar integridad.
+
+Nunca probar únicamente con datos mínimos.
+
+---
+
+## Pruebas
+
+Ejecutar como mínimo:
+
+- Unit Tests
+- Feature Tests
+- Browser Tests
+- CRUD completo
+- Validaciones
+- Permisos
+- Integración
+- Rendimiento básico
+
+Todos los errores encontrados deben corregirse antes de continuar.
+
+---
+
+## Control de versiones
+
+Una vez todas las pruebas sean satisfactorias:
+
+Realizar:
+
+- Commit
+- Push
+
+Utilizando mensajes descriptivos.
+
+Nunca comenzar otra funcionalidad sin haber registrado correctamente el trabajo realizado.
+
+---
+
+## Informe Final
+
+Al finalizar debe entregarse un informe.
+
+El informe debe contener como mínimo:
+
+### Información General
+
+- Funcionalidad o módulo
+- Fecha
+- Responsable
+- Rama
+- Commit
+- Hash
+
+### Desarrollo
+
+- Archivos creados
+- Archivos modificados
+- Archivos eliminados
+
+### Base de Datos
+
+- Migraciones
+- Tablas afectadas
+
+### Backend
+
+- APIs creadas
+- Servicios
+- Validaciones
+
+### Frontend
+
+- Pantallas
+- Componentes
+- Formularios
+
+### Pruebas
+
+- Tests ejecutados
+- Resultado
+- Evidencias
+- Cobertura
+
+### Problemas
+
+- Errores encontrados
+- Correcciones realizadas
+- Pendientes
+
+### Git
+
+- Commits realizados
+- Hash
+- Push realizado
+
+### Estado
+
+☐ Pendiente
+
+☐ Requiere correcciones
+
+☐ Aprobado
+
+---
+
+## Aprobación
+
+La funcionalidad o módulo NO podrá marcarse como terminado hasta que el propietario del proyecto apruebe el informe.
+
+Solamente cuando el estado sea:
+
+✔ Aprobado
+
+podrá iniciarse la siguiente funcionalidad o módulo.
+
+Hasta ese momento el desarrollo queda bloqueado.
+
+---
+
+## Regla Permanente
+
+Cada funcionalidad y cada módulo constituyen una unidad independiente de trabajo.
+
+Cada unidad debe seguir este ciclo completo:
+
+Especificación
+
+↓
+
+Desarrollo
+
+↓
+
+Documentación
+
+↓
+
+Datos de prueba
+
+↓
+
+Pruebas
+
+↓
+
+Correcciones
+
+↓
+
+Commit
+
+↓
+
+Push
+
+↓
+
+Informe
+
+↓
+
+Aprobación
+
+↓
+
+Siguiente funcionalidad
