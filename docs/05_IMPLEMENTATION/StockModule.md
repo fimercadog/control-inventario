@@ -93,11 +93,11 @@ Con este módulo, la **Fase 2 del roadmap RC1 queda oficialmente completa**. La 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** ver confirmación abajo — se actualiza inmediatamente después de ejecutar `git push`.
+- **Commit:** `8622247` — `feat(stock): implement Stock module as a view over Producto (RC1)`.
 
 ## Confirmación de push
 
-Pendiente — se actualiza inmediatamente después de ejecutar `git push`.
+✅ Ejecutado correctamente: `1439de9..8622247  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
