@@ -1,10 +1,30 @@
 # Changelog
 
-Formato libre, orden cronológico inverso (más reciente arriba). Referenciado por `docs/DefinitionOfDone.md` y `docs/ReleaseWorkflow.md` — toda entrada de release debe tener una línea aquí.
+Formato libre, orden cronológico inverso (más reciente arriba). Referenciado por `docs/10_GOVERNANCE/DefinitionOfDone.md` y `docs/10_GOVERNANCE/ReleaseWorkflow.md` — toda entrada de release debe tener una línea aquí.
 
 ## [Unreleased]
 
-### Documentación
+### Documentación — Auditoría final y consolidación definitiva (Documentation Baseline v1.0, segunda pasada)
+- **Cierre de los dos últimos gaps de organización** dejados abiertos deliberadamente por la auditoría anterior (`docs/DOCUMENTATION_BASELINE_REPORT.md`), sin tocar `backend/` ni `frontend/`.
+  - `docs/ArchitectureWorkflow.md`, `docs/ReleaseWorkflow.md`, `docs/SessionWorkflow.md` **movidos** a `docs/10_GOVERNANCE/` — los 10 documentos de gobernanza de proceso viven ahora en una única carpeta. 14 referencias activas actualizadas en 8 documentos (`AGENTS.md`, `README.md`, `CLAUDE.md`, `docs/README.md`, `docs/10_GOVERNANCE/EngineeringManual.md`, `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`, `docs/07_RELEASE/README.md`, este changelog). Contenido de los 3 archivos: sin cambios.
+  - `docs/10_GOVERNANCE/README.md` **creado**: índice de navegación puro de la carpeta, sin duplicar el contenido razonado de `EngineeringManual.md` (que sigue siendo la puerta de entrada real). Cierra el gap de que 1 de 13 carpetas principales no tenía `README.md` propio.
+  - Verificación independiente completa: 0 enlaces rotos reales, 0 duplicados por hash, 0 huérfanos, banners de deprecación intactos.
+  - Ver `docs/DOCUMENTATION_BASELINE_REPORT.md`, sección "Segunda pasada", para el detalle completo y el checklist con 100% de cumplimiento.
+
+### Documentación — Consolidación de gobernanza
+- **Reorganización de la documentación de gobernanza para eliminar duplicados y establecer una única fuente de verdad**, sin tocar `backend/` ni `frontend/`.
+  - `docs/README.md` creado como índice maestro de toda la documentación (no existía).
+  - `docs/10_GOVERNANCE/EngineeringManual.md` creado como documento maestro de gobernanza: no duplica contenido, indexa y explica cuándo usar cada documento de proceso.
+  - `docs/10_GOVERNANCE/DevelopmentWorkflow.md` y el documento previamente llamado `ENGINEERING_WORKFLOW.md` (título interno "Mandatory Development Workflow", el mismo que `AGENTS.md` citaba antes como `MANDATORY_DEVELOPMENT_WORKFLOW.md`) se solapaban al describir el mismo proceso con estructuras distintas — **fusionados** en `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`, ahora la única autoridad sobre el flujo de desarrollo (12 fases, cada una con Objetivo/Entradas/Salidas/Checklist/Criterios de aprobación). Ambos originales archivados en `docs/_ARCHIVE/` con nota de reemplazo, sin pérdida de contenido útil.
+  - `docs/10_GOVERNANCE/QualityGates.md` creado (no existía): reglas de bloqueo puras, independientes del workflow, extraídas de `AGENTS.md`, `DefinitionOfReady.md`, y la sección "Estados de aprobación de módulo" que antes vivía en `DefinitionOfDone.md`.
+  - `docs/10_GOVERNANCE/DefinitionOfDone.md` depurado: ahora contiene únicamente criterios objetivos de "cuándo está terminado"; el contenido de proceso/gates se movió a `QualityGates.md`.
+  - `docs/06_TESTS/TestingGuide.md` creado (no existía): guía por tipo de prueba (Unit/Functional/Integration/Regression/Performance/Security/UAT), enlaza los planes existentes sin duplicarlos.
+  - `docs/10_GOVERNANCE/GOVERNANCE.md` (stub de 6 líneas sin contenido navegable) archivado, reemplazado por `EngineeringManual.md`.
+  - Referencia rota corregida: `README.md` (raíz) listaba `MilestoneWorkflow.md`, un documento que no existe (eliminado por vacío durante la migración anterior) — se retiró la mención y se documentó el gap abierto (`AI_OPERATING_PROCEDURE.md` sigue refiriéndolo en su "Milestone Policy").
+  - `AGENTS.md`, `README.md` (raíz), `CLAUDE.md`, `docs/ArchitectureWorkflow.md` actualizados para apuntar a los documentos fusionados/nuevos.
+  - Ver `docs/POST_MIGRATION_AUDIT.md` §7bis y `docs/MIGRATION_REPORT.md` §6 para el origen del solapamiento (actividad concurrente de otro proceso sobre el mismo árbol de `docs/`).
+
+### Documentación — Migración SDD original
 - **Migración completa a Specification-Driven Development (SDD).** El repositorio pasa de un `docs/00_MASTER_SPECIFICATION.md` monolítico (74 secciones, mezcla de spec aspiracional pre-implementación y documentación real) a la estructura `00_VISION/` … `09_TEMPLATES/` + `_ARCHIVE/`.
   - Todo el contenido fue auditado, reconciliado contra el código real y redistribuido — ver `docs/SDD_MIGRATION_PLAN.md` para el detalle completo de la auditoría y mapeo.
   - Cada requisito funcional y cada spec de módulo quedó marcado `[BUILT]` o `[PLANNED]` según evidencia verificada en `backend/` y `frontend/`, no según lo que el borrador original asumía.

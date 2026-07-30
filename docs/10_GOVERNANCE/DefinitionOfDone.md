@@ -18,6 +18,10 @@ Un módulo o feature **NO está terminado** hasta que TODO lo siguiente se cumpl
 - [ ] Permisos verificados: cada endpoint/pantalla nueva usa `$user->can('recurso.accion')`, nunca `$user->hasRole()`.
 - [ ] Aislamiento multi-tenant verificado si el módulo toca datos de empresa (ver `04_TECHNICAL_SPEC/Security.md`).
 
+## Estados de aprobación de módulo
+
+Un módulo solo puede pasar de **"En Desarrollo"** a **"Aprobado"** / **"Aprobado con observaciones"** / **"Requiere correcciones"** cuando cumple, además de todo lo anterior, los gates específicos de esa transición. **Esos gates (qué bloquea el paso de un estado a otro, y qué hacer cuando un criterio depende de una capacidad no construida todavía) viven en `docs/10_GOVERNANCE/QualityGates.md`, no aquí** — este documento define únicamente *cuándo un desarrollo está terminado*; QualityGates.md define *qué lo bloquea de estarlo*. El estado exacto de cada módulo y su justificación viven en el informe de pruebas de ese módulo (`docs/09_TEMPLATES/Template_TestReport.md`), no en este documento.
+
 ## Nota sobre honestidad documental
 
 Esta migración encontró documentación desactualizada (el master spec original quedó congelado después de Captura IA y nunca se actualizó para Auth/RBAC). La Definition of Done existe precisamente para que eso no vuelva a pasar: **"documentación actualizada" es un criterio de cierre, no una tarea opcional de limpieza.**

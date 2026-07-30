@@ -27,6 +27,22 @@ El endpoint más costoso del sistema es, por lejos, el pipeline de Captura IA (`
 - Backend: `k6` o `Apache Bench` contra endpoints con el proveedor de IA mockeado (nunca contra OpenAI real, por costo y por no meter variabilidad de red externa en la medición).
 - Frontend: Lighthouse CI.
 
+## Volúmenes objetivo (requisito de producto, sesión 2026-07-29)
+
+Además del plan mínimo de arriba (enfocado en el pipeline de Captura IA), el product owner especificó volúmenes objetivo concretos para evaluar el sistema completo bajo carga, una vez que los módulos correspondientes existan:
+
+| Dataset | Volumen objetivo |
+|---|---|
+| Productos | 10.000 |
+| Movimientos | 100.000 |
+| Registros de auditoría | 50.000 |
+| Clientes | 20.000 |
+| Usuarios concurrentes | 50 (o el volumen objetivo definido) |
+
+Estos volúmenes son un orden de magnitud mayor que los datos de demostración funcionales de `docs/06_TESTS/DemoDataSeeding.md` (pensados para realismo, no para estrés) — sirven específicamente para medir degradación de tiempos de respuesta y detectar cuellos de botella, no para casos de prueba funcional. Documentar tiempos de respuesta reales y cuellos de botella encontrados aquí mismo, reemplazando esta tabla por resultados con fecha y ambiente de medición, siguiendo la misma disciplina que el resto de este documento ("Definition of Done de este documento" abajo).
+
+**Estado real:** Clientes (20.000) depende de `03_FUNCTIONAL_SPEC/FUTURE/Customers.md`, no construido. Registros de auditoría (50.000) depende de `03_FUNCTIONAL_SPEC/FUTURE/Auditoria.md`, no construido. Productos y Movimientos a esa escala son medibles hoy contra el esquema real (`productos`, `movimientos`), pero nunca se ha corrido esta prueba.
+
 ## Qué NO se debe hacer
 
 No ejecutar pruebas de carga contra la API real de OpenAI — cuesta dinero y mide la latencia de un tercero, no la del sistema propio. Cualquier prueba de carga del pipeline de Captura IA debe mockear `AIProviderInterface` (como ya hacen los tests funcionales, vía `FakeAIProvider`).

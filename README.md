@@ -35,7 +35,7 @@ Este repositorio sigue **Specification-Driven Development (SDD)**. La documentac
 - `docs/09_TEMPLATES/` — plantillas reutilizables
 - `docs/_ARCHIVE/` — documentación histórica, ya no es fuente de verdad
 
-Las reglas exactas del proceso (Definition of Ready/Done, workflows de desarrollo/documentación/arquitectura/release) están en `AGENTS.md` (constitución corta) y en los documentos dedicados dentro de `docs/`.
+Las reglas exactas del proceso (Definition of Ready/Done, workflows de desarrollo/documentación/arquitectura/release) están en `AGENTS.md` (constitución corta) y en los documentos dedicados dentro de `docs/`. **Índice completo de la documentación: [`docs/README.md`](docs/README.md).**
 
 ## Flujo
 
@@ -45,18 +45,22 @@ Architecture Review → Approval → Implementation → Testing → QA →
 Acceptance → Release
 ```
 
-Detalle completo: `docs/10_GOVERNANCE/DevelopmentWorkflow.md`. Este es el mismo flujo que describe `AGENTS.md` — no hay dos versiones distintas del proceso.
+Detalle completo (12 fases): `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`. Este es el mismo flujo que describe `AGENTS.md` — no hay dos versiones distintas del proceso.
 
+## Governance
 
-# Governance
+Punto de entrada: [`docs/10_GOVERNANCE/EngineeringManual.md`](docs/10_GOVERNANCE/EngineeringManual.md) — explica cuándo usar cada uno de los siguientes documentos:
 
-## Documents
+- `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`
+- `docs/10_GOVERNANCE/DefinitionOfReady.md`
+- `docs/10_GOVERNANCE/DefinitionOfDone.md`
+- `docs/10_GOVERNANCE/QualityGates.md`
+- `docs/10_GOVERNANCE/DocumentationWorkflow.md`
+- `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md`
+- `docs/10_GOVERNANCE/ArchitectureWorkflow.md`
+- `docs/10_GOVERNANCE/ReleaseWorkflow.md`
+- `docs/10_GOVERNANCE/SessionWorkflow.md`
 
-- DefinitionOfReady.md
-- DefinitionOfDone.md
-- DevelopmentWorkflow.md
-- DocumentationWorkflow.md
-- ArchitectureWorkflow.md
-- ReleaseWorkflow.md
-- MilestoneWorkflow.md
-- AI_OPERATING_PROCEDURE.md
+Los 10 documentos de gobernanza de proceso viven todos en `docs/10_GOVERNANCE/` desde la auditoría final de consolidación (antes, estos tres vivían en `docs/` raíz — ver `docs/DOCUMENTATION_BASELINE_REPORT.md`).
+
+> Nota: la mención previa a `MilestoneWorkflow.md` en esta sección se retiró — ese archivo no existe (fue eliminado por estar vacío durante la migración, ver `docs/POST_MIGRATION_AUDIT.md` §3.2). `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` sigue teniendo una "Milestone Policy" que lo referencia por nombre; queda como gap abierto documentado, no resuelto en esta consolidación — ver `docs/10_GOVERNANCE/EngineeringManual.md` y el informe de esta sesión.

@@ -43,6 +43,18 @@ Por `AGENTS.md`: todo módulo nuevo requiere Unit Tests + Integration Tests + Ma
 3. Performance tests mínimos sobre el pipeline de Captura IA (el endpoint más costoso del sistema, por la llamada a OpenAI).
 4. Accesibilidad — empezar por un checklist manual antes de herramientas automatizadas.
 
+## FASE 17 — Validación Integral (requisito de producto, sesión 2026-07-29, Planned)
+
+Ampliación del alcance de pruebas entregada directamente por el product owner, no proveniente del master spec original. Ninguno de estos documentos describe pruebas ya ejecutadas — todos son planes, marcados `Status: Planned`:
+
+- `DemoDataSeeding.md` — volúmenes de datos de demostración por módulo.
+- `IntegrationTestPlan.md` — checklist estándar de 17 puntos por módulo, matriz de pruebas de integración entre módulos, y matriz de pruebas de permisos por rol.
+- `PerformanceTests.md` (sección "Volúmenes objetivo") — datasets de gran escala (10K-100K registros) para pruebas de carga, más allá del pipeline de Captura IA ya contemplado.
+- `SecurityTests.md` (sección "Pruebas de permisos por rol") — matriz de acceso por rol, pendiente de Auth Módulo 3.
+- `docs/09_TEMPLATES/Template_TestReport.md` — formato de informe de cierre por módulo.
+- `docs/10_GOVERNANCE/DefinitionOfDone.md` (sección "Estados de aprobación de módulo") — gate Aprobado / Aprobado con observaciones / Requiere correcciones.
+- `docs/06_TESTS/TestExecutionReport.md` — ejecución real (sesión 2026-07-29): 103/103 tests automatizados, 6 bugs de navegación/branding corregidos y verificados en vivo, BUG-007 (logout) investigado hasta causa raíz y corregido. Dictamen: **Aprobado con observaciones** — la prueba de OCR con documentos reales sigue bloqueada por falta de archivos fuente.
+
 ## No objetivos de este plan
 
 Este documento no promete fechas ni compromisos de cobertura porcentual. Es honesto sobre el estado actual, no aspiracional.

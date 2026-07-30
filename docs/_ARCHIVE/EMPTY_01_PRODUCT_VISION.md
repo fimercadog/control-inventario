@@ -1,3 +1,5 @@
+> ⚠️ **DOCUMENTO HISTÓRICO — SUPERADO.** Scaffold vacío (solo encabezados y placeholders) que nunca se llenó. Reemplazado por contenido real y completo en `docs/00_VISION/Vision.md` y `docs/01_PRD/`. No usar este archivo como referencia activa.
+
 # 01 Product Vision
 
 ## Propósito

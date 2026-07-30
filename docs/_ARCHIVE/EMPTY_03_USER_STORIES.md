@@ -1,3 +1,5 @@
+> ⚠️ **DOCUMENTO HISTÓRICO — SUPERADO.** Scaffold vacío (solo placeholders literales como "US-001") que nunca se llenó. Reemplazado por contenido real y completo en `docs/01_PRD/UserStories.md`. No usar este archivo como referencia activa.
+
 # 03 User Stories
 
 ## Formato

@@ -152,6 +152,21 @@
 - **Objetivo:** confirmar la Policy específica de Captura IA de forma aislada (no solo vía HTTP en SEC-001 a SEC-010).
 - **Estado:** Pasa.
 
+## Pruebas de permisos por rol (planeadas — depende de Auth Módulo 3)
+
+**Status: Planned — no ejecutado.** Requisito de producto entregado directamente por el product owner (sesión 2026-07-29, "FASE 17"). A diferencia de las secciones anteriores (aislamiento multi-tenant, ya construido y probado), esta sección depende enteramente de Auth Módulo 3 (Authorization), no construido — hoy el sistema valida sesión + tenant, pero **ningún endpoint de negocio valida un permiso específico** (ver `docs/03_FUNCTIONAL_SPEC/Roles.md`).
+
+Matriz de ejemplo a validar una vez construido el Módulo 3:
+
+| Rol | Expectativa |
+|---|---|
+| Administrador | Debe acceder a todo. |
+| Auxiliar de Inventario | No puede administrar usuarios. |
+| Vendedor | No puede modificar configuración. |
+| Auditor | Solo lectura del módulo de Auditoría (`auditoria.ver`, permiso ya sembrado en el catálogo — ver `Roles.md` línea 48). |
+
+Cada fila de esta matriz debe convertirse en un caso de prueba formal (formato `docs/09_TEMPLATES/Template_TestCase.md`, prefijo `SEC-0XX` continuando la numeración de arriba) cuando el Módulo 3 exista — no antes, para no fabricar un resultado de "Pasa" sobre una validación que el sistema todavía no realiza.
+
 ## Fuera del alcance de la suite actual (gaps de seguridad)
 
 - Sin tests de fuerza bruta / rate limiting sobre `login` (no hay rate limiting implementado ni verificado).

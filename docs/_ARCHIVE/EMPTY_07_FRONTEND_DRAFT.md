@@ -1,3 +1,5 @@
+> ⚠️ **DOCUMENTO HISTÓRICO — SUPERADO.** Borrador de 22 líneas, nunca desarrollado. Reemplazado por `docs/04_TECHNICAL_SPEC/Frontend.md`, que documenta la estructura real de `frontend/`. No usar este archivo como referencia activa.
+
 # 07 Frontend
 
 ## Pantallas

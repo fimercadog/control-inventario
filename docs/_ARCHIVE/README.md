@@ -26,3 +26,9 @@ Scaffolds vacíos (solo encabezados y placeholders literales como "RF-001", "US-
 
 ### `EMPTY_07_FRONTEND_DRAFT.md`
 Borrador de 22 líneas, nunca desarrollado. Reemplazado por `04_TECHNICAL_SPEC/Frontend.md`, que documenta la estructura real de `frontend/`.
+
+### `DevelopmentWorkflow_SUPERSEDED.md`, `ENGINEERING_WORKFLOW_SUPERSEDED.md`
+Dos documentos que describían el mismo flujo de desarrollo obligatorio con estructuras distintas y se solapaban parcialmente (uno con la vista de alto nivel PRD→Release y el ciclo de estados de módulo; el otro con 11 fases operativas detalladas Comprensión→Revisión Final). `ENGINEERING_WORKFLOW_SUPERSEDED.md` es el mismo archivo que `AGENTS.md` citaba antes como `MANDATORY_DEVELOPMENT_WORKFLOW.md` — fue renombrado por un proceso concurrente sin actualizar esa referencia (ver `docs/POST_MIGRATION_AUDIT.md` §7bis). Fusionados, sin pérdida de contenido útil, en `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`, la única autoridad vigente sobre el flujo de desarrollo.
+
+### `GOVERNANCE_SUPERSEDED.md`
+Stub de 6 líneas (un diagrama de nombres sin enlaces ni contenido real) que ocupaba conceptualmente el rol de índice de gobernanza. Reemplazado por `docs/10_GOVERNANCE/EngineeringManual.md`, que cumple esa función con enlaces reales y explicación de cuándo usar cada documento.

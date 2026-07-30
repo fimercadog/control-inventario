@@ -86,6 +86,12 @@ El corpus completo (anterior y posterior a esta sesión) usa mayoritariamente ci
 
 ---
 
+## 7bis. Addendum — hallazgo posterior (mismo día)
+
+Durante trabajo posterior sobre este mismo repositorio (FASE 17), se encontró un nuevo artefacto del mismo proceso concurrente documentado en §6 de `MIGRATION_REPORT.md`: un archivo real y sustancial (`MANDATORY_DEVELOPMENT_WORKFLOW.md`, 11 fases, ~290 líneas) apareció en una ruta anidada malformada — `docs/10_GOVERNANCE/docs/10_GOVERNANCE/MANDATORY_DEVELOPMENT_WORKFLOW.md` — en vez de `docs/10_GOVERNANCE/MANDATORY_DEVELOPMENT_WORKFLOW.md`. Se movió a la ruta correcta y se eliminaron las carpetas anidadas vacías que quedaron (`docs/10_GOVERNANCE/docs/10_GOVERNANCE/`, `docs/10_GOVERNANCE/docs/`) — un cambio mecánico de ruta, sin modificar el contenido del archivo.
+
+**Nota de solapamiento sin resolver:** este archivo describe un flujo de desarrollo obligatorio de 11 fases que se superpone sustancialmente con `docs/10_GOVERNANCE/DevelopmentWorkflow.md` (ya existente) — ambos documentan el proceso que debe seguir cualquier desarrollo nuevo, con estructura y nivel de detalle distintos. No se fusionaron ni se reconciliaron en esta sesión porque decidir cuál es la versión autoritativa (o si ambos coexisten con propósitos distintos) es una decisión de gobernanza, no una corrección mecánica de ruta. Queda como recomendación abierta.
+
 ## 7. Estado final
 
 **Auditoría completa.** De 9 criterios solicitados, 7 pasan sin hallazgos y 2 tenían hallazgos reales — 7 referencias rotas corregidas, 2 gaps de alcanzabilidad documentados como recomendación (no corregidos, por no ser errores sino ausencia de estructura nueva), y 1 hallazgo abierto que requiere decisión humana (`MilestoneWorkflow.md`). Cero archivos vacíos, cero contenido duplicado, cero cambios en `backend/` o `frontend/`. Los 13 ADR están cubiertos por `ADR_INDEX.md`. La migración a Specification-Driven Development, iniciada en `docs/SDD_MIGRATION_PLAN.md` y cerrada en `docs/MIGRATION_REPORT.md`, queda ahora verificada a nivel de integridad de enlaces y estructura.

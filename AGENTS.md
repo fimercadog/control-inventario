@@ -12,6 +12,8 @@ Every AI agent working in this repository must follow the rules defined in this 
 
 This file is the **short constitution**. It states the non-negotiable rules. The detailed, living policy documents live in `docs/` and are the single source of truth for their topic — if this file and a `docs/` policy ever disagree, `docs/` wins and this file should be corrected.
 
+Full documentation entry point: **`docs/README.md`**. Full governance index (which document to use when): **`docs/10_GOVERNANCE/EngineeringManual.md`**.
+
 ---
 
 # Golden Rule
@@ -28,7 +30,7 @@ Create the specification first.
 
 # Development Workflow
 
-Every feature must follow this exact workflow. Full detail, states, and exceptions: **`docs/10_GOVERNANCE/DevelopmentWorkflow.md`**.
+Every feature must follow this exact workflow. Full detail (12 phases: Specification & Approval → Understanding → Analysis → Technical Plan → Implementation → Demo Data → Testing → Audit → Exports → Test Report → Documentation → Technical Review → Final Approval), states, and exceptions: **`docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`**.
 
 ```
 Idea → PRD → Functional Specification → Technical Specification →
@@ -36,7 +38,7 @@ Architecture Review → Approval → Implementation → Testing → QA →
 Acceptance → Release
 ```
 
-Never skip steps, except the narrow proportionality exception documented in `docs/10_GOVERNANCE/DefinitionOfReady.md`.
+Never skip steps, except the narrow proportionality exception documented in `docs/10_GOVERNANCE/DefinitionOfReady.md`. Blocking rules for each gate: **`docs/10_GOVERNANCE/QualityGates.md`**.
 
 ---
 
@@ -54,7 +56,7 @@ Always follow: Clean Architecture, SOLID, Dependency Injection, Repository Patte
 
 Never put business logic inside Controllers, React Components, or Middleware.
 
-When a change touches architecture, follow **`docs/ArchitectureWorkflow.md`** and record the decision as an ADR in `docs/08_ADR/`.
+When a change touches architecture, follow **`docs/10_GOVERNANCE/ArchitectureWorkflow.md`** and record the decision as an ADR in `docs/08_ADR/`.
 
 ---
 
@@ -97,7 +99,7 @@ Full conventions: **`docs/04_TECHNICAL_SPEC/Frontend.md`**.
 
 Every feature requires Unit Tests, Integration Tests, Manual Acceptance Tests, and Regression Tests. Critical bugs must be fixed before continuing.
 
-Full strategy and current coverage: **`docs/06_TESTS/MasterTestPlan.md`**.
+Guide by test type (Unit/Functional/Integration/Regression/Performance/Security/UAT): **`docs/06_TESTS/TestingGuide.md`**. Full strategy and current coverage: **`docs/06_TESTS/MasterTestPlan.md`**.
 
 ---
 
@@ -113,7 +115,7 @@ Full rules on where things go: **`docs/10_GOVERNANCE/DocumentationWorkflow.md`**
 
 Never release code that has critical bugs, failed tests, a broken build, or missing documentation.
 
-Full checklist: **`docs/ReleaseWorkflow.md`** and **`docs/07_RELEASE/ReleaseChecklist.md`**.
+Full checklist: **`docs/10_GOVERNANCE/ReleaseWorkflow.md`** and **`docs/07_RELEASE/ReleaseChecklist.md`**.
 
 ---
 
@@ -139,20 +141,27 @@ docs/
 ├── 07_RELEASE/
 ├── 08_ADR/
 ├── 09_TEMPLATES/
-├── 10_GOVERNANCE/
-│   ├── GOVERNANCE.md
+├── 10_GOVERNANCE/            (all 10 process-governance documents live here — single location)
+│   ├── EngineeringManual.md            (master governance index — start here)
+│   ├── README.md                       (folder navigation index)
+│   ├── MandatoryDevelopmentWorkflow.md (the single authoritative development process, 12 phases)
 │   ├── DefinitionOfReady.md
 │   ├── DefinitionOfDone.md
-│   ├── DevelopmentWorkflow.md
+│   ├── QualityGates.md
 │   ├── DocumentationWorkflow.md
-│   └── AI_OPERATING_PROCEDURE.md
+│   ├── AI_OPERATING_PROCEDURE.md
+│   ├── ArchitectureWorkflow.md
+│   ├── ReleaseWorkflow.md
+│   └── SessionWorkflow.md
 ├── _ARCHIVE/                 (historical, superseded — never a source of truth)
-├── ArchitectureWorkflow.md
-├── ReleaseWorkflow.md
-└── SDD_MIGRATION_PLAN.md     (audit/history of the migration to this structure)
+├── SDD_MIGRATION_PLAN.md     (audit/history of the migration to this structure)
+├── MIGRATION_REPORT.md       (audit/history — closes the migration started above)
+├── POST_MIGRATION_AUDIT.md   (audit/history — link integrity verification)
+├── DOCUMENTATION_BASELINE_REPORT.md  (audit/history — Documentation Baseline v1.0 declaration + final consolidation)
+└── README.md                 (documentation entry point)
 ```
 
-See `docs/10_GOVERNANCE/DocumentationWorkflow.md` for what goes where.
+See `docs/10_GOVERNANCE/DocumentationWorkflow.md` for what goes where, and `docs/10_GOVERNANCE/EngineeringManual.md` for which governance document to use in which situation.
 
 ---
 
