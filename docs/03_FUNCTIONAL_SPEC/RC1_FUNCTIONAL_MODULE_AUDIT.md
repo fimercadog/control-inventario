@@ -14,7 +14,7 @@
 | 1 | Dashboard | ⚫ Mock | 15% |
 | 2 | Captura IA | 🟢 Completo | 90% |
 | 3 | Productos | 🟢 Completo (corregido 2026-07-30) | 85% |
-| 4 | Categorías | 🔴 No Implementado | 10% |
+| 4 | Categorías | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 5 | Marcas | 🔴 No Implementado | 8% |
 | 6 | Unidades de Medida | 🔴 No Implementado | 8% |
 | 7 | Stock | 🔴 No Implementado | 5% |
@@ -36,7 +36,7 @@
 - [x] Dashboard (mock)
 - [x] Captura IA (completo)
 - [x] Productos (completo, corregido 2026-07-30)
-- [ ] Categorías
+- [x] Categorías (completo, implementado 2026-07-30)
 - [ ] Marcas
 - [ ] Unidades de Medida
 - [ ] Stock
@@ -105,18 +105,24 @@
 **Funcionalidades:**
 ✔ Crear ✔ Editar ✔ Buscar ✔ Filtrar por categoría/estado ✔ Ver detalle ✔ Asociar proveedor (FEATURE-005) ✔ Registrar ingreso manual ✔ Ver movimientos ✔ Logical Delete/Status (corregido 2026-07-30) ✘ Imagen (campo existe, sin UI de carga) ✘ Kardex dedicado ✘ Auditoría visible en UI (se escribe, no se muestra) ✘ Paginación real (bug pre-existente, documentado en `DemoDataAudit.md`)
 
-### 4. Categorías — 🔴 No Implementado
+### 4. Categorías — 🟢 Completo (implementado 2026-07-30)
 
 | Capa | Ítem | Estado |
 |---|---|:---:|
 | Backend | Migración/Modelo | ✔ (ya existían desde la Fase 3 original) |
-| Backend | Policy/FormRequest | ✔ (agregados en esta sesión, sin consumidor) |
-| Backend | Resource/Controller/Rutas | ✘ |
-| Frontend | Todo | ✘ |
-| Tests | Todo | ✘ |
-| Docs | Functional/Technical/Implementation | ✔ `Categories.md`, `CatalogModules.md` (recién escritos, `Status: Approved`, pendiente de implementar) |
+| Backend | Policy/FormRequest | ✔ |
+| Backend | Resource/Controller/Rutas | ✔ `CategoriaController` (index/store/show/update/disable/enable/productos), mismo patrón que Proveedores |
+| Frontend | Listado (búsqueda, filtro estado, badge, paginación heredada) | ✔ |
+| Frontend | Crear/Editar/Ver detalle | ✔ |
+| Frontend | Logical Delete + Activar/Desactivar con confirmación | ✔ |
+| Frontend | Refresco automático (`useCrudList`) | ✔ |
+| Frontend | Pestaña "Productos" en la ficha (relación bidireccional) | ✔ |
+| Frontend | Selector de Categoría en el formulario de Producto | ✘ (gap pre-existente, no cerrado por esta unidad — ver `Categories.md`) |
+| Tests | Feature | ✔ `CategoriaControllerTest` (12 casos, incluye integridad referencial con Productos) |
+| Tests | Browser | ✔ verificado en navegador real: CRUD, filtros, confirmación, relación con Productos, responsive |
+| Docs | Functional/Technical/Implementation | ✔ `Categories.md` (Built), `API.md`, `docs/05_IMPLEMENTATION/CategoriasModule.md` |
 
-**Funcionalidades:** ✘ Todo — nada alcanzable vía HTTP todavía.
+**Funcionalidades:** ✔ Crear ✔ Editar ✔ Ver detalle ✔ Buscar ✔ Filtrar por estado ✔ Logical Delete/Activar-Desactivar con confirmación ✔ Ver productos asociados (pestaña) ✘ Selector de categoría en el formulario de Producto (gap conocido, documentado)
 
 ### 5. Marcas — 🔴 No Implementado
 
@@ -236,11 +242,11 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 2 (Captura IA, Productos — corregido 2026-07-30)
+- **Completos (🟢):** 3 (Captura IA, Productos, Categorías — implementado 2026-07-30)
 - **Parciales (🟡):** 2 (Proveedores, Configuración)
 - **Mock (⚫):** 2 (Dashboard, Movimientos)
-- **No implementados (🔴):** 11 (Categorías, Marcas, Unidades de Medida, Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras la corrección de Productos): **~30%**
+- **No implementados (🔴):** 10 (Marcas, Unidades de Medida, Stock, Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Categorías): **~35%**
 
 ---
 

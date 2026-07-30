@@ -1,8 +1,10 @@
 # Categorías
 
-**Status: Approved** (aprobado 2026-07-29 junto con `RC1_GAP_ANALYSIS.md` — Fase 0 de `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`; implementación en curso, Fase 1 del roadmap de 8 fases aprobado, ver `docs/05_IMPLEMENTATION/CatalogModules.md`)
+**Status: Built** (implementado 2026-07-30 — Unidad de Trabajo "Implementación Completa del Módulo Categorías (RC1)", mismo nivel de funcionalidad que Productos/Proveedores)
 
-> La tabla `categorias` y el modelo `Categoria` ya existen desde la Fase 3 original (`categoria_id` en `productos`), pero nunca tuvieron controller, rutas, ni pantalla propia — esta spec formaliza el módulo administrativo completo que faltaba.
+> Verificado contra `backend/app/Http/Controllers/Api/CategoriaController.php`, `frontend/app/(app)/categorias/page.tsx`, `frontend/components/categoria-detail-screen.tsx`, `backend/tests/Feature/CategoriaControllerTest.php` (12 casos). Reemplaza la página stub "pendiente de implementación" que existía desde la Unidad de Trabajo "Sidebar RC1".
+>
+> La tabla `categorias` y el modelo `Categoria` ya existían desde la Fase 3 original (`categoria_id` en `productos`), pero nunca tuvieron controller, rutas, ni pantalla propia hasta esta unidad de trabajo.
 
 ## Purpose
 
@@ -21,8 +23,8 @@ Catálogo administrable de categorías de producto, reutilizado por Productos (`
 
 ## Screens
 
-- **`/categorias`**: listado con columnas Nombre, Descripción, Productos asociados (conteo), Estado. Botón "Nueva Categoría".
-- **`/categorias/{id}`**: detalle + edición inline (mismo patrón que `supplier-detail-screen.tsx`).
+- **`/categorias`**: listado con columnas Nombre, Descripción, Productos asociados (conteo), Estado. Botón "Nueva Categoría", búsqueda por nombre/descripción, filtro de Estado (Activas/Todas).
+- **`/categorias/{id}`**: detalle + edición inline (mismo patrón que `supplier-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta categoría (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 
 ## Fields
 
@@ -62,9 +64,9 @@ Mismo formato estándar de error de `04_TECHNICAL_SPEC/API.md` (envelope `ApiRes
 
 ## Acceptance Criteria
 
-- [ ] `CategoriaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría.
-- [ ] El selector de categoría en "Nuevo Producto"/edición de producto usa este catálogo real (no texto libre — ya era `categoria_id`, ahora tiene UI de gestión detrás).
-- [ ] Verificación real en navegador (agent-browser).
+- [x] `CategoriaControllerTest` cubre CRUD, disable/enable, aislamiento multi-tenant, auditoría, integridad referencial con Productos (12 casos).
+- [x] Verificación real en navegador (agent-browser): crear, editar, buscar, filtrar por estado, eliminar lógico, re-habilitar, relación bidireccional con Productos, responsive.
+- [ ] El selector de categoría en "Nuevo Producto"/edición de producto usa este catálogo real — **todavía no implementado**: el formulario de creación/edición de Producto sigue sin un selector de Categoría (gap pre-existente, no introducido ni cerrado por esta unidad de trabajo; `categoria_id` ya es asignable vía API, falta la UI en el formulario de Producto).
 
 ## Edge Cases
 

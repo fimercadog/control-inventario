@@ -4,6 +4,14 @@ Formato libre, orden cronológico inverso (más reciente arriba). Referenciado p
 
 ## [Unreleased]
 
+### Feature — Módulo Categorías completo (RC1, 2026-07-30)
+- Implementación completa del módulo Categorías al mismo nivel funcional que Productos/Proveedores, reemplazando la página stub "pendiente de implementación".
+- Backend: `CategoriaController` (List/View/Create/Edit/Activar/Desactivar, borrado siempre lógico), reutilizando `Categoria`/`CategoriaPolicy`/`StoreCategoriaRequest`/`UpdateCategoriaRequest` ya existentes desde la Fase 1 de catálogos. Nuevo endpoint `GET /categorias/{id}/productos` para la pestaña de relación.
+- Frontend: listado con búsqueda/filtro de estado/badge de color, diálogo de creación, ficha con edición inline + pestaña "Productos" (relación bidireccional con Productos, verificada), Logical Delete/Activar-Desactivar con `ConfirmDialog`, refresco automático vía `useCrudList`.
+- Integridad referencial: deshabilitar una categoría nunca rompe `productos.categoria_id` (verificado por test dedicado) — mismo principio ya aplicado a Proveedores.
+- Tests: 12 casos nuevos en `CategoriaControllerTest`, suite completa 155/155 en verde. Verificación real en navegador: CRUD completo, filtros, confirmación, relación con Productos, responsive.
+- Gap conocido y documentado, no cerrado por esta unidad: el formulario de creación/edición de Producto todavía no tiene un selector de Categoría (ver `docs/03_FUNCTIONAL_SPEC/Categories.md`).
+
 ### Corrección — Módulo Productos: Logical Delete y badge de Estado (2026-07-30)
 - **Productos era el único módulo construido sin Logical Delete ni columna Estado visible**, detectado por auditoría funcional (`docs/06_TESTS/DemoDataAudit.md`, `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`). Corregido con el mismo patrón ya usado en Proveedores.
 - Backend: `ProductoController::disable()`/`enable()` (borrado siempre lógico, nunca DELETE físico, auditado), filtro `estado` en `index()`.

@@ -201,6 +201,23 @@ export type StoreProveedorPayload = Partial<
 
 export type UpdateProveedorPayload = Partial<StoreProveedorPayload>;
 
+/** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
+export interface Categoria {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  estado: "activo" | "inactivo";
+  productos_count?: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type StoreCategoriaPayload = Partial<Pick<Categoria, "descripcion" | "estado">> & {
+  nombre: string;
+};
+
+export type UpdateCategoriaPayload = Partial<StoreCategoriaPayload>;
+
 /**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación

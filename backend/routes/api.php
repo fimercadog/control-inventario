@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
+use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
@@ -77,4 +78,17 @@ Route::prefix('v1/proveedores')->name('proveedores.')->middleware(['auth:api', '
     Route::post('{proveedor}/habilitar', [ProveedorController::class, 'enable'])->name('enable');
     // FEATURE-005: "Products" tab de la Ficha de Proveedor.
     Route::get('{proveedor}/productos', [ProveedorController::class, 'productos'])->name('productos');
+});
+
+// RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Categories.md). Borrado siempre
+// lógico — mismo patrón exacto que Proveedores.
+Route::prefix('v1/categorias')->name('categorias.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [CategoriaController::class, 'index'])->name('index');
+    Route::post('/', [CategoriaController::class, 'store'])->name('store');
+    Route::get('{categoria}', [CategoriaController::class, 'show'])->name('show');
+    Route::patch('{categoria}', [CategoriaController::class, 'update'])->name('update');
+    Route::post('{categoria}/deshabilitar', [CategoriaController::class, 'disable'])->name('disable');
+    Route::post('{categoria}/habilitar', [CategoriaController::class, 'enable'])->name('enable');
+    // Ficha de Categoría — pestaña "Productos".
+    Route::get('{categoria}/productos', [CategoriaController::class, 'productos'])->name('productos');
 });
