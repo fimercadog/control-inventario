@@ -89,10 +89,11 @@ Ninguno — la tabla `marcas` ya existía desde RC1 Fase 1, sin cambios de esque
 
 - **Rama:** `main`.
 - **Commit:** `d41fc12` — `feat(brands): implement complete CRUD module (RC1)`.
+- **Commit:** `b260631` — `docs(brands): record commit hash and push confirmation in final report`.
 
 ## Confirmación de push
 
-✅ Ejecutado correctamente: `636f2b7..d41fc12  main -> main` contra `origin` (GitHub).
+✅ Ejecutado correctamente: `636f2b7..b260631  main -> main` contra `origin` (GitHub) (incluye ambos commits de esta unidad de trabajo).
 
 ## Estado del informe
 
