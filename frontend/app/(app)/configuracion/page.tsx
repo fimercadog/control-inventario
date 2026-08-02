@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import { LogOut, Moon, Sparkles, Sun, User, Monitor, Building2 } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Sparkles, User, Building2, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -15,30 +14,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutThunk } from "@/store/slices/auth-slice";
-
-const THEME_OPTIONS = [
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "dark", label: "Oscuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
-];
 
 export default function SettingsPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // Patrón recomendado por next-themes: evita el mismatch de hidratación
-    // (el tema real solo se conoce en el cliente), no un caso de "cascading
-    // render" derivable de otro estado.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
 
   async function handleLogout() {
     await dispatch(logoutThunk());
@@ -70,15 +53,24 @@ export default function SettingsPage() {
           <CardDescription>Tu información de sesión.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
+          <Link href="/perfil" className="flex items-center gap-3 rounded-lg -m-2 p-2 hover:bg-muted/50">
             <Avatar className="size-12">
+              {user?.avatar_url && <AvatarImage src={user.avatar_url} alt={user.name} />}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1">
               <p className="font-medium">{user?.name ?? "Invitado"}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
-          </div>
+            <ChevronRight className="size-4 text-muted-foreground" />
+          </Link>
+          <p className="text-xs text-muted-foreground">
+            Avatar, tema, idioma, zona horaria y contraseña se editan desde{" "}
+            <Link href="/perfil" className="font-medium text-primary hover:underline">
+              Mi Perfil
+            </Link>
+            .
+          </p>
           <Separator />
           <Button variant="outline" className="w-fit gap-2" onClick={handleLogout}>
             <LogOut className="size-4" />
@@ -103,36 +95,6 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Zona horaria</Label>
             <Input defaultValue="America/Bogota" disabled />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60">
-        <CardHeader>
-          <CardTitle className="text-base">Apariencia</CardTitle>
-          <CardDescription>Elige cómo se ve la aplicación.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-3">
-            {THEME_OPTIONS.map((option) => {
-              const Icon = option.icon;
-              const active = mounted && theme === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setTheme(option.value)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-sm transition-colors ${
-                    active
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border/60 text-muted-foreground hover:border-border"
-                  }`}
-                >
-                  <Icon className="size-5" />
-                  {option.label}
-                </button>
-              );
-            })}
           </div>
         </CardContent>
       </Card>

@@ -20,14 +20,33 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   empresa_id: number | null;
+  /** Módulo Perfil (2026-08-02) — null solo para Platform Super Admin (sin empresa). */
+  empresa: { id: number; nombre: string } | null;
   is_platform_admin: boolean;
   avatar_path: string | null;
+  /** URL lista para usar en un <img>, computada por el backend a partir de avatar_path. */
+  avatar_url: string | null;
   theme: "light" | "dark" | "system";
   language: string;
   timezone: string;
   /** RC1 (docs/03_FUNCTIONAL_SPEC/Roles.md) — null si el usuario no tiene rol asignado todavía. */
   role: string | null;
+  /** Módulo Perfil (2026-08-02) — todos los roles, no solo el primero. */
+  roles: string[];
   permissions: string[];
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  theme?: "light" | "dark" | "system";
+  language?: "es" | "en";
+  timezone?: string;
+}
+
+export interface ChangePasswordPayload {
+  password_actual: string;
+  password: string;
+  password_confirmation: string;
 }
 
 /** Espejo del body de POST /auth/login, /auth/refresh. */

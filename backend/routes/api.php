@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ProveedorController;
 use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\RoleController;
@@ -205,3 +206,14 @@ Route::prefix('v1/auditoria')->name('auditoria.')->middleware(['auth:api', 'tena
 // endpoint compuesto — "Reportes" es una vista, no una lista paginable de
 // recursos, así que no sigue el shape index/show del resto del ERP.
 Route::get('v1/reportes', [ReporteController::class, 'index'])->name('reportes.index')->middleware(['auth:api', 'tenant']);
+
+// Perfil (2026-08-02, docs/03_FUNCTIONAL_SPEC/Profile.md). Cada método
+// opera exclusivamente sobre $request->user() — sin {id} en ninguna ruta,
+// a propósito: nunca es posible editar el perfil de otro usuario desde
+// aquí. Sin GET — GET /auth/me ya es la fuente de verdad de la ficha propia.
+Route::prefix('v1/perfil')->name('perfil.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::patch('/', [ProfileController::class, 'update'])->name('update');
+    Route::post('avatar', [ProfileController::class, 'subirAvatar'])->name('avatar.subir');
+    Route::delete('avatar', [ProfileController::class, 'eliminarAvatar'])->name('avatar.eliminar');
+    Route::post('password', [ProfileController::class, 'cambiarPassword'])->name('password');
+});

@@ -20,6 +20,7 @@ import {
   Settings,
   LogOut,
   Boxes,
+  UserCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -239,6 +240,10 @@ export function AppSidebar() {
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push("/perfil")}>
+                  <UserCircle />
+                  Mi Perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push("/configuracion")}>
                   <Settings />
                   Configuración

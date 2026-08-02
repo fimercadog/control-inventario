@@ -88,7 +88,7 @@ Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitaci�
 - POST `/auth/login` — `{email, password, remember_me?}` → access token (body) + refresh token (cookie httpOnly). Registra intento en `security_logs` sea éxito o fallo. Actualiza `last_login_ip`, `last_user_agent`, `last_activity_at`.
 - POST `/auth/logout` — revoca la sesión actual y hace blacklist del JWT.
 - POST `/auth/refresh` — sin body (cookie httpOnly); rota el refresh token, emite nuevo access token; actualiza `last_activity_at`.
-- GET `/auth/me` — usuario actual + permisos efectivos (para hidratar `PermissionContext`).
+- GET `/auth/me` — usuario actual + permisos efectivos (para hidratar `PermissionContext`). Desde el módulo Perfil (2026-08-02) también incluye `avatar_url`, `empresa` (`{id, nombre}`), y `roles` (todos, no solo el primero) — es la fuente de verdad de la ficha propia, `/perfil` no tiene su propio GET.
 - POST `/auth/password/olvide` — `{email}` → siempre responde genérico (sin enumeración de usuarios).
 - POST `/auth/password/restablecer` — `{token, email, password}` → revoca todas las `auth_sessions` del usuario.
 
@@ -137,10 +137,14 @@ Estadísticas reales sobre Productos/Inventario/Movimientos/Clientes/Proveedores
 
 - GET `/seguridad/intentos-login` — requiere `auditoria.ver`; listaría `security_logs` de la empresa (tabla ya existe y se escribe activamente desde Módulo 1, sin superficie de consulta todavía). No confundir con `/auditoria` arriba — son dos tablas y dos módulos distintos.
 
-### Perfil (Módulo 9)
+### Perfil (Módulo 9, Built 2026-08-02 — `ProfileController`, ver `docs/03_FUNCTIONAL_SPEC/Profile.md` y `docs/05_IMPLEMENTATION/ProfileModule.md`)
 
-- GET `/perfil` / PATCH `/perfil` — `{name, theme, language, timezone}`.
-- POST `/perfil/avatar` — sube y reemplaza el avatar.
+Cada acción opera exclusivamente sobre `$request->user()` — ninguna ruta acepta el id de otro usuario. **Sin GET** — `GET /auth/me` (Módulo 1) ya es la fuente de verdad de la ficha propia (incluye `avatar_url`/`theme`/`language`/`timezone`/`empresa`/`roles`, todos agregados a `AuthenticatedUserResource` en este módulo). Sin permiso propio — la acotación a "uno mismo" ya cierra cualquier superficie de escalamiento.
+
+- PATCH `/perfil` — `{name?, theme?, language?, timezone?}`, todos opcionales (actualización parcial).
+- POST `/perfil/avatar` — sube y reemplaza el avatar (`multipart/form-data`, campo `avatar`, imagen real hasta 2MB); borra el archivo anterior del disco.
+- DELETE `/perfil/avatar` — quita el avatar actual, sin subir uno nuevo.
+- POST `/perfil/password` — `{password_actual, password, password_confirmation}`; exige la contraseña actual correcta (422 si no coincide) y **revoca todas las sesiones del usuario** al tener éxito (mismo mecanismo que "olvidé mi contraseña", `AuthenticationService::forcePasswordReset()`) — el cliente debe redirigir a `/login`.
 
 ### Plataforma (Platform Super Admin, sin empresa_id)
 

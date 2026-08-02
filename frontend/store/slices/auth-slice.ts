@@ -1,8 +1,9 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import * as authApi from "@/lib/api/auth";
+import * as perfilApi from "@/lib/api/perfil";
 import { setAccessToken } from "@/lib/api/auth-token";
 import { ApiError } from "@/lib/api/client";
-import type { AuthenticatedUser } from "@/lib/api/types";
+import type { AuthenticatedUser, ChangePasswordPayload, UpdateProfilePayload } from "@/lib/api/types";
 
 interface AuthState {
   user: AuthenticatedUser | null;
@@ -69,6 +70,71 @@ export const logoutThunk = createAsyncThunk("auth/logout", async () => {
   }
 });
 
+/**
+ * Perfil (2026-08-02). Los 3 thunks siguientes viven en `auth-slice`, no
+ * en un `perfil-slice` propio: mutan exactamente el mismo `state.user`
+ * que este slice ya es dueño — un slice separado necesitaría un mecanismo
+ * cross-slice solo para actualizar el mismo objeto, sin beneficio real.
+ *
+ * Prefiere el primer error de campo (`fieldErrors`) sobre el mensaje
+ * genérico de nivel superior — encontrado en verificación de navegador:
+ * una contraseña actual incorrecta mostraba el toast genérico "Error de
+ * validación" en vez del mensaje real y específico que el backend ya
+ * arma ("La contraseña actual no es correcta").
+ */
+function mensajeError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    const primerCampo = error.fieldErrors && Object.values(error.fieldErrors)[0]?.[0];
+    return primerCampo ?? error.message;
+  }
+  return fallback;
+}
+
+export const updateProfileThunk = createAsyncThunk(
+  "auth/updateProfile",
+  async (payload: UpdateProfilePayload, { rejectWithValue }) => {
+    try {
+      return await perfilApi.updateProfile(payload);
+    } catch (error) {
+      return rejectWithValue(mensajeError(error, "No pudimos guardar los cambios."));
+    }
+  }
+);
+
+export const uploadAvatarThunk = createAsyncThunk(
+  "auth/uploadAvatar",
+  async (archivo: File, { rejectWithValue }) => {
+    try {
+      return await perfilApi.uploadAvatar(archivo);
+    } catch (error) {
+      return rejectWithValue(mensajeError(error, "No pudimos subir el avatar."));
+    }
+  }
+);
+
+export const removeAvatarThunk = createAsyncThunk(
+  "auth/removeAvatar",
+  async (_: void, { rejectWithValue }) => {
+    try {
+      return await perfilApi.removeAvatar();
+    } catch (error) {
+      return rejectWithValue(mensajeError(error, "No pudimos eliminar el avatar."));
+    }
+  }
+);
+
+/** No actualiza `state.user` — revoca sesiones, el componente debe redirigir a /login. */
+export const changePasswordThunk = createAsyncThunk(
+  "auth/changePassword",
+  async (payload: ChangePasswordPayload, { rejectWithValue }) => {
+    try {
+      await perfilApi.changePassword(payload);
+    } catch (error) {
+      return rejectWithValue(mensajeError(error, "No pudimos cambiar la contraseña."));
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -81,6 +147,15 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(updateProfileThunk.fulfilled, (state, action) => {
+        state.user = action.payload;
+      })
+      .addCase(uploadAvatarThunk.fulfilled, (state, action) => {
+        state.user = action.payload;
+      })
+      .addCase(removeAvatarThunk.fulfilled, (state, action) => {
+        state.user = action.payload;
+      })
       .addCase(bootstrapAuth.pending, (state) => {
         state.status = "loading";
       })
