@@ -5,9 +5,12 @@ namespace Tests\Feature;
 use App\Models\Empresa;
 use App\Models\Producto;
 use App\Models\Proveedor;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -17,6 +20,16 @@ use Tests\TestCase;
  * cantidad/tipo/producto/proveedor/stock son inmutables para siempre;
  * `update()` solo puede tocar metadata descriptiva; no existe ningún
  * endpoint de "eliminar"/"anular".
+ *
+ * Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md):
+ * `userA` y `userB` reciben `movimientos.ver`/`movimientos.crear` — ambas
+ * empresas necesitan poder listar/crear en los tests de aislamiento ya
+ * existentes. Deliberadamente NO se otorga ningún permiso de "editar":
+ * no existe `movimientos.editar` en el catálogo — `update()` (solo
+ * metadata descriptiva) permanece abierto a cualquier usuario autenticado
+ * de la empresa, por diseño (ver MovimientoPolicy::update()).
+ * `userSinPermiso` es de la MISMA empresa que `productoA` pero sin
+ * `movimientos.ver`/`movimientos.crear` — prueba el caso 403.
  */
 class MovimientoControllerTest extends TestCase
 {
@@ -30,16 +43,39 @@ class MovimientoControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Producto $productoA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $permisos = ['movimientos.ver', 'movimientos.crear'];
+        $registrar = app(PermissionRegistrar::class);
+        $context = app(TenantContext::class);
+
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
+        $rolA = Role::create(['name' => 'Test Movimientos A', 'guard_name' => 'api']);
+        $rolA->givePermissionTo($permisos);
+        $this->userA->assignRole($rolA);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $rolB = Role::create(['name' => 'Test Movimientos B', 'guard_name' => 'api']);
+        $rolB->givePermissionTo($permisos);
+        $this->userB->assignRole($rolB);
+        $registrar->forgetCachedPermissions();
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
         $this->productoA = Producto::create(['codigo' => 'TEST-001', 'nombre' => 'Producto con movimientos']);
@@ -327,5 +363,45 @@ class MovimientoControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/v1/movimientos')->assertUnauthorized();
+    }
+
+    // Fase 4.6 (Authorization Completion) — mismo usuario/empresa que
+    // productoA, sin movimientos.ver/movimientos.crear: listar, ver o
+    // crear se rechaza con 403 y no debe crear ningún registro.
+    public function test_a_same_company_user_without_permission_is_rejected_from_viewing_or_creating(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+        $movimiento = $this->productoA->movimientos()->first();
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/movimientos')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/movimientos/{$movimiento->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 5])
+            ->assertStatus(403);
+
+        $this->assertDatabaseCount('movimientos', 1); // solo el de userA — el intento sin permiso no crea nada
+    }
+
+    // Regla de negocio explícita de esta fase: no existe `movimientos.editar`
+    // en el catálogo — editar metadata descriptiva NO requiere ningún
+    // permiso, solo pertenecer a la empresa (MovimientoPolicy::update()).
+    public function test_updating_metadata_does_not_require_any_permission_by_design(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+        $movimiento = $this->productoA->movimientos()->first();
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/movimientos/{$movimiento->id}", ['observacion' => 'Editado sin permisos de movimientos'])
+            ->assertOk();
+
+        $this->assertSame('Editado sin permisos de movimientos', $movimiento->fresh()->observacion);
     }
 }

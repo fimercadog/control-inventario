@@ -1,10 +1,14 @@
 # Roles Matrix — RBAC de FidelOS
 
-**Status: Approved — referencia oficial del modelo de autorización** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día)
+**Status: Approved — referencia oficial del modelo de autorización, arquitectura de autorización completa** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día; Fase 4.6 — Authorization Completion — cerró el Gap 5 restante el mismo día)
 
-> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 11 Policies existentes, incluye `StockPolicy` nueva), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md` (diseño narrativo del motor RBAC) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento es la referencia obligatoria para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos".
+> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 10 Policies existentes, incluye `StockPolicy`), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`, `database/migrations/2026_08_02_100000_rename_productos_eliminar_permission.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md` (diseño narrativo del motor RBAC) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento es la referencia obligatoria para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos".
 >
 > **Fase 4.5 (Authorization Alignment, 2026-08-02)** alineó los seis módulos que esta matriz identificó sin permiso propio (Categorías, Marcas, Unidades de Medida, Stock, Proveedores, Producto↔Proveedor): cada uno ganó su propio namespace de permisos y sus Policies pasaron de "solo pertenencia de empresa" a **pertenencia de empresa Y permiso** (`AND`, nunca `OR`). 6 tests nuevos por módulo (36 en total) prueban explícitamente: usuario autorizado tiene éxito, usuario sin permiso recibe 403, acceso cross-company sigue prohibido. Suite completa: **228/228**. El detalle de qué se hizo por módulo vive en `docs/05_IMPLEMENTATION/AuthorizationAlignment.md`.
+>
+> **Fase 4.6 (Authorization Completion, 2026-08-02)** cerró el Gap 5 que Fase 4.5 dejó documentado a propósito: los tres módulos restantes sin segundo factor de permiso — Productos, Movimientos, Captura IA — ahora siguen exactamente el mismo modelo `AND`. Reglas de negocio explícitas de esta fase: Movimientos sigue siendo un ledger append-only — los permisos nuevos (`movimientos.ver`/`movimientos.crear`) solo gatean Listar/Ver/Crear, **nunca** Editar/Eliminar/Deshabilitar (esas operaciones no existen; editar metadata deliberadamente se queda sin permiso propio, ver sección 4); Captura IA separa el permiso por responsabilidad (`captura-ia.usar` crear+ver, `captura-ia.revisar` corregir un detalle de baja confianza, `captura-ia.confirmar` confirmar/descartar); Productos sigue el patrón estándar del ERP (`productos.ver/crear/editar/gestionar`, sin delete físico) y de paso corrigió una inconsistencia de nombres heredada — `productos.eliminar` nunca reflejó el comportamiento real (nunca hay un DELETE físico) y se renombró a `productos.gestionar` vía migración que preserva el `id` del permiso y todas sus asociaciones existentes (`role_has_permissions`), el mismo verbo que ya usaban los 6 módulos de Fase 4.5. Con esto, **las 9 Policies de recursos de negocio del ERP comparten exactamente el mismo modelo de autorización** (pertenencia de empresa AND permiso) — `UserPolicy` es la única excepción, y es deliberada y anterior a esta fase (RC1 Fase 4: `usuarios.ver`/`usuarios.editar` existen en el catálogo pero `UserPolicy` solo verifica pertenencia, sin cambios aquí). El detalle vive en `docs/05_IMPLEMENTATION/AuthorizationCompletion.md`.
+>
+> Durante esta fase se identificó y corrigió además un hallazgo de arquitectura independiente del alcance original: la caché de permisos de Spatie (`PermissionRegistrar`) no es team-aware — se construye una vez de forma global y, como `App\Models\Role` tiene `TenantScope` como global scope, la primera construcción "congela" la caché con los roles de la empresa que estaba activa en ese instante, filtrando incorrectamente los permisos de cualquier otra empresa hasta que se invalide. `IdentifyTenant` ahora llama `forgetCachedPermissions()` en cada request, garantizando que la caché se reconstruya siempre con el team correcto antes de cualquier chequeo de permiso — ver el comentario en `backend/app/Http/Middleware/IdentifyTenant.php`.
 
 ---
 
@@ -36,25 +40,26 @@ Hoy, la única forma de que un usuario tenga el rol "Administrador" con permiso 
 
 ## 2. Permissions — catálogo completo actual
 
-`PermissionSeeder` (guard `api`, global y fijo — ninguna empresa lo edita), 15 permisos sembrados hoy:
+`PermissionSeeder` (guard `api`, global y fijo — ninguna empresa lo edita), 41 permisos sembrados hoy:
 
 | Permiso | Descripción | Módulo que lo consume hoy |
 | --- | --- | --- |
-| `productos.ver` | Ver catálogo de productos | Ninguno todavía (Policy solo verifica empresa — Productos queda **fuera** del alcance de Fase 4.5, ver nota abajo) |
-| `productos.crear` | Crear productos | Ninguno todavía |
-| `productos.editar` | Editar productos | Ninguno todavía |
-| `productos.eliminar` | Deshabilitar/habilitar productos | Ninguno todavía |
+| `productos.ver` | Ver catálogo de productos | **Sí** — `ProductoPolicy` (Fase 4.6) |
+| `productos.crear` | Crear productos | **Sí** — `ProductoPolicy` (Fase 4.6) |
+| `productos.editar` | Editar productos (incluye `registrarIngreso`/`enable`) | **Sí** — `ProductoPolicy` (Fase 4.6) |
+| `productos.gestionar` | Deshabilitar productos (`disable`) | **Sí** — `ProductoPolicy` (Fase 4.6). Renombrado desde `productos.eliminar` vía migración que preserva `id`/asociaciones — nunca hubo ni hay un DELETE físico, el nombre viejo no reflejaba el comportamiento real. |
 | `categorias.ver/crear/editar/gestionar` | CRUD de Categorías (`gestionar` = activar/desactivar) | **Sí** — `CategoriaPolicy` (Fase 4.5) |
 | `marcas.ver/crear/editar/gestionar` | CRUD de Marcas | **Sí** — `MarcaPolicy` (Fase 4.5) |
 | `unidades-medida.ver/crear/editar/gestionar` | CRUD de Unidades de Medida | **Sí** — `UnidadMedidaPolicy` (Fase 4.5) |
 | `stock.ver/editar/gestionar` | Ver/editar umbrales/activar-desactivar Stock (sin `.crear` — nunca se crea independiente) | **Sí** — `StockPolicy` (Fase 4.5, dedicada — ver nota sobre conflicto con `ProductoPolicy` en la sección 3) |
 | `proveedores.ver/crear/editar/gestionar` | CRUD de Proveedores | **Sí** — `ProveedorPolicy` (Fase 4.5) |
 | `producto-proveedor.ver/crear/editar/gestionar` | CRUD de la asociación Producto↔Proveedor | **Sí** — `ProductoProveedorPolicy` (Fase 4.5) |
-| `movimientos.ver` | Ver movimientos de inventario | Ninguno todavía (fuera de alcance de Fase 4.5) |
-| `movimientos.crear` | Registrar movimientos (Entrada/Salida/Ajuste) | Ninguno todavía |
-| `captura-ia.usar` | Usar Captura IA (foto/voz) | Ninguno todavía |
-| `captura-ia.revisar` | Revisar/corregir una detección | Ninguno todavía |
-| `captura-ia.confirmar` | Confirmar/descartar una detección | Ninguno todavía |
+| `movimientos.ver` | Ver/listar movimientos de inventario | **Sí** — `MovimientoPolicy` (Fase 4.6) |
+| `movimientos.crear` | Registrar movimientos (Entrada/Salida/Ajuste) | **Sí** — `MovimientoPolicy` (Fase 4.6) |
+| `captura-ia.usar` | Crear una captura (foto/voz/foto+voz) y verla | **Sí** — `CapturaIAPolicy` (Fase 4.6) |
+| `captura-ia.revisar` | Corregir un detalle de baja confianza antes de confirmar (`actualizarDetalle`) | **Sí** — `CapturaIAPolicy` (Fase 4.6, ability `review` nueva, separada de `update`) |
+| `captura-ia.confirmar` | Confirmar/descartar una captura ya procesada | **Sí** — `CapturaIAPolicy` (Fase 4.6) |
+| `captura-ia.gestionar` | Configuración del pipeline de Captura IA | Sembrado, sin ninguna acción real que lo consuma todavía — no existe pantalla de configuración (mismo patrón que `roles.gestionar`/`usuarios.invitar`) |
 | `usuarios.ver` | Ver listado/ficha de usuarios | Ninguno todavía (solo pertenencia de empresa) |
 | `usuarios.editar` | Activar/desactivar usuarios | **Sí — lógica de negocio real** (`UserController::esElUltimoConGestion()`, RC1 Fase 4) |
 | `usuarios.invitar` | Invitar un usuario nuevo | Ninguno (Módulo 6, sin construir) |
@@ -64,15 +69,17 @@ Hoy, la única forma de que un usuario tenga el rol "Administrador" con permiso 
 | `plataforma.empresas.ver` | Platform Super Admin: ver empresas | Ninguno |
 | `plataforma.usuarios.ver` | Platform Super Admin: ver usuarios de cualquier empresa | Ninguno |
 
-**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.5, **11 de las 12 Policies existentes** (`CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`, `UserPolicy` + la guarda de negocio de Usuarios) ya verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Quedan exactamente **tres** Policies sin ese segundo factor: `ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy` — deliberadamente fuera del alcance de Fase 4.5 (ver nota abajo), y `roles.*`/`auditoria.*`/`usuarios.invitar` (esperan a los Módulos 5/6/7 que todavía no existen).
+**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.6, **9 de las 10 Policies existentes** (`ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy`, `CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`) verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Queda exactamente **una** excepción deliberada y anterior a Fase 4.5/4.6: `UserPolicy` (RC1 Fase 4) solo verifica pertenencia de empresa — `usuarios.ver` no tiene ningún consumidor todavía (ver fila arriba); la única lógica de negocio real hoy sobre Usuarios es la guarda del último administrador (`esElUltimoConGestion()`), no un chequeo de permiso Spatie. `roles.*`/`auditoria.*`/`usuarios.invitar` tampoco tienen Policy propia — esperan a los Módulos 5/6/7 que todavía no existen, no es un gap del modelo de autorización en sí.
 
-**Nota sobre Productos/Movimientos/Captura IA, deliberadamente fuera de Fase 4.5**: estos tres módulos **también** carecen hoy de enforcement de permiso real en su Policy — el mismo gap que tenían los seis módulos recién alineados. La Decisión de Fase 4.5 nombró explícitamente solo seis módulos como alcance; Productos/Movimientos/Captura IA quedan como el mismo tipo de gap, documentado aquí para que no se pierda, pendiente de una decisión explícita del propietario del proyecto sobre si entran en una fase de alineación posterior o se resuelven junto con el Módulo 3 (Authorization/RBAC) de una vez.
-
-Módulo 3 (Authorization/RBAC — middleware que aplica el permiso a nivel de ruta, `PermissionContext` en el frontend) sigue `[ ]` sin construir en `docs/00_VISION/Roadmap.md`. Fase 4.5 no lo reemplaza: mueve el chequeo de permiso a la capa de Policy (server-side, siempre evaluado), que es más fuerte que un middleware de ruta pero no incluye el `PermissionContext`/sidebar dinámico que Módulo 3 todavía debe construir para el frontend.
+Módulo 3 (Authorization/RBAC — middleware que aplica el permiso a nivel de ruta, `PermissionContext` en el frontend) sigue `[ ]` sin construir en `docs/00_VISION/Roadmap.md`. Ni Fase 4.5 ni Fase 4.6 lo reemplazan: mueven el chequeo de permiso a la capa de Policy (server-side, siempre evaluado, ahora sobre **todos** los recursos existentes), que es más fuerte que un middleware de ruta pero no incluye el `PermissionContext`/sidebar dinámico que Módulo 3 todavía debe construir para el frontend.
 
 ### Gap 2 — CERRADO (Fase 4.5, 2026-08-02)
 
 ~~`PermissionSeeder` no tiene ninguna entrada para: Categorías, Marcas, Unidades de Medida, Stock, Proveedores, Producto↔Proveedor.~~ Los 23 permisos de estos seis módulos ya están sembrados y enforced. Ver tabla arriba y sección 4.
+
+### Gap 5 — CERRADO (Fase 4.6, 2026-08-02)
+
+~~Productos, Movimientos y Captura IA tienen el mismo gap que tenían los 6 módulos de Fase 4.5: permiso sembrado, sin `$user->can()` en su Policy.~~ `ProductoPolicy`, `MovimientoPolicy` y `CapturaIAPolicy` ya exigen permiso real, AND-eado con pertenencia de empresa. 1 permiso nuevo (`captura-ia.gestionar`, sembrado sin consumidor todavía, mismo patrón que `roles.gestionar`), 1 permiso renombrado (`productos.eliminar` → `productos.gestionar`, sin pérdida de asociaciones existentes), 1 ability nueva (`CapturaIAPolicy::review()`, separada de `update()`). Tests nuevos por módulo (Producto, Movimiento, Captura IA + `CompanyIsolationHttpTest`) prueban explícitamente: usuario autorizado tiene éxito, usuario sin permiso recibe 403, acceso cross-company sigue prohibido. Suite completa: **232/232**. El detalle vive en `docs/05_IMPLEMENTATION/AuthorizationCompletion.md`.
 
 ---
 
@@ -104,15 +111,15 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 
 | Módulo | Listar | Ver | Crear | Editar | Activar/Desactivar | Eliminar (físico) | Permiso (prefijo) |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | --- |
-| Productos | ✔ | ✔ | ✔ | ✔ | ✔ (`disable`/`enable`) | — (nunca físico) | `productos.*` (sembrado, **sin enforcement en Policy todavía** — fuera de alcance de Fase 4.5) |
+| Productos | ✔ | ✔ | ✔ | ✔ | ✔ (`disable`/`enable`) | — (nunca físico) | `productos.*` — **enforced (Fase 4.6)**; `disable` exige `productos.gestionar`, `enable`/`registrarIngreso` reusan `productos.editar` |
 | Categorías | ✔ | ✔ | ✔ | ✔ | ✔ | — | `categorias.*` — **enforced (Fase 4.5)** |
 | Marcas | ✔ | ✔ | ✔ | ✔ | ✔ | — | `marcas.*` — **enforced (Fase 4.5)** |
 | Unidades de Medida | ✔ | ✔ | ✔ | ✔ | ✔ | — | `unidades-medida.*` — **enforced (Fase 4.5)** |
 | Stock | ✔ | ✔ | — (nunca aplica, ver `Stock.md`) | ✔ (solo umbrales) | ✔ | — | `stock.*` (sin `.crear`) — **enforced (Fase 4.5)**, vía `StockPolicy` dedicada |
-| Movimientos | ✔ | ✔ | ✔ | ✔ (solo metadata) | — (ledger append-only, ver `Movements.md`) | — | `movimientos.*` (sembrado, sin enforcement todavía — fuera de alcance de Fase 4.5) |
+| Movimientos | ✔ | ✔ | ✔ | ✔ (solo metadata) | — (ledger append-only, ver `Movements.md`) | — | `movimientos.ver`/`movimientos.crear` — **enforced (Fase 4.6)**. Editar metadata **deliberadamente sin permiso propio** — no existe `movimientos.editar` en el catálogo, cualquier usuario autenticado de la empresa puede corregir `documento`/`observacion`/`lote`/`vencimiento` (decisión de negocio explícita: los permisos solo controlan quién crea o ve movimientos) |
 | Proveedores | ✔ | ✔ | ✔ | ✔ | ✔ | — | `proveedores.*` — **enforced (Fase 4.5)** |
 | Producto↔Proveedor | ✔ | ✔ | ✔ | ✔ | ✔ (solo `disable`) | — | `producto-proveedor.*` (namespace propio) — **enforced (Fase 4.5)** |
-| Captura IA | ✔ | ✔ | ✔ (foto/voz) | ✔ (corregir detalle) | ✔ (confirmar/descartar) | — | `captura-ia.*` (sembrado, sin enforcement todavía — fuera de alcance de Fase 4.5) |
+| Captura IA | ✔ | ✔ | ✔ (foto/voz) | ✔ (corregir detalle) | ✔ (confirmar/descartar) | — | `captura-ia.*` — **enforced (Fase 4.6)**; crear/ver exige `.usar`, corregir detalle exige `.revisar`, confirmar/descartar exige `.confirmar` |
 | **Usuarios** | ✔ | ✔ | — (Módulo 6) | — (fuera de alcance, ver `Users.md`) | ✔ | — (nunca) | `usuarios.*` — enforcement parcial (solo la guarda del último administrador, RC1 Fase 4) |
 | **Roles** *(Fase 5, a construir)* | por construir | por construir | por construir | por construir | por construir | **—** (confirmado: sin Delete) | `roles.*` (ya existe, sin enforcement — lo construye Fase 5) |
 
@@ -122,15 +129,15 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 
 | Permiso (existente) | Empaqueta acceso a |
 | --- | --- |
-| `productos.ver/crear/editar/eliminar` | Módulo Productos — sembrado, **sin enforcement en Policy todavía** (fuera de alcance de Fase 4.5) |
+| `productos.ver/crear/editar/gestionar` | Módulo Productos — **enforced (Fase 4.6)**. `gestionar` renombrado desde `eliminar` (mismo permiso, misma fila en BD — solo el nombre cambió) |
 | `categorias.ver/crear/editar/gestionar` | Módulo Categorías — **enforced (Fase 4.5)** |
 | `marcas.ver/crear/editar/gestionar` | Módulo Marcas — **enforced (Fase 4.5)** |
 | `unidades-medida.ver/crear/editar/gestionar` | Módulo Unidades de Medida — **enforced (Fase 4.5)** |
 | `stock.ver/editar/gestionar` | Módulo Stock (vista sobre `Producto`, permiso independiente vía `StockPolicy` dedicada) — **enforced (Fase 4.5)** |
 | `proveedores.ver/crear/editar/gestionar` | Módulo Proveedores — **enforced (Fase 4.5)** |
 | `producto-proveedor.ver/crear/editar/gestionar` | Asociación Producto↔Proveedor (namespace propio, distinto de `proveedores.*`) — **enforced (Fase 4.5)** |
-| `movimientos.ver/crear` | Módulo Movimientos (Listar/Ver/Crear) — sembrado, sin enforcement todavía (fuera de alcance de Fase 4.5). No hay `movimientos.editar` en el catálogo — la edición de metadata no tiene permiso propio. |
-| `captura-ia.usar/revisar/confirmar` | Pipeline de Captura IA completo — sembrado, sin enforcement todavía |
+| `movimientos.ver/crear` | Módulo Movimientos (Listar/Ver/Crear) — **enforced (Fase 4.6)**. No hay `movimientos.editar` en el catálogo — la edición de metadata deliberadamente no tiene permiso propio (ver sección 4) |
+| `captura-ia.usar/revisar/confirmar/gestionar` | Pipeline de Captura IA completo — **enforced (Fase 4.6)** para `usar`/`revisar`/`confirmar`; `gestionar` sembrado para configuración futura, sin consumidor todavía |
 | `usuarios.ver/editar/invitar` | Módulo Usuarios (Fase 4, certificado construido) + futuro Módulo 6 |
 | `roles.ver/gestionar` | Módulo Roles (Fase 5, a construir desde este documento) |
 | `auditoria.ver` | Futura pantalla de Auditoría (Fase 7) |
@@ -151,11 +158,11 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 ## 7. Future Expansion Rules
 
 1. **Cómo se agrega un permiso nuevo**: únicamente vía `PermissionSeeder::PERMISSIONS`, como parte de la unidad de trabajo que construye el módulo que lo necesita — nunca editable por una empresa, nunca vía UI. Ejecutar `php artisan migrate:fresh --seed` (o un seeder idempotente equivalente en producción) tras agregarlo.
-2. **Convención de nombres, formalizada en Fase 4.5**: `recurso.accion`, minúsculas, singular o plural según ya esté establecido para ese recurso (`productos` no `producto`), separados por punto (o guion para nombres compuestos: `unidades-medida`, `producto-proveedor`). Verbos: `ver`, `crear`, `editar`, `gestionar` (activar/desactivar — usado consistentemente en los 6 permisos nuevos de Fase 4.5), `usar`, `revisar`, `confirmar`, `invitar`. **Nota de consistencia heredada, sin resolver todavía**: `productos.eliminar` (permiso preexistente, fuera de alcance de Fase 4.5) sigue nombrado con un verbo que no refleja el comportamiento real — Productos nunca hace un DELETE físico, solo activa/desactiva. Los 6 módulos de Fase 4.5 ya usan `gestionar` para esa misma acción, evitando repetir la inconsistencia. No se propone renombrar `productos.eliminar` retroactivamente aquí — tiene impacto en roles ya asignados, a evaluar aparte.
+2. **Convención de nombres, formalizada en Fase 4.5**: `recurso.accion`, minúsculas, singular o plural según ya esté establecido para ese recurso (`productos` no `producto`), separados por punto (o guion para nombres compuestos: `unidades-medida`, `producto-proveedor`). Verbos: `ver`, `crear`, `editar`, `gestionar` (activar/desactivar), `usar`, `revisar`, `confirmar`, `invitar`. **Resuelto en Fase 4.6**: `productos.eliminar` (la única inconsistencia de nombres heredada que quedaba) se renombró a `productos.gestionar` vía migración de datos (`UPDATE permissions SET name = ...`, no delete+recreate) — preserva el `id` del permiso y todas sus asociaciones en `role_has_permissions`/`model_has_permissions`. Los 9 módulos con `gestionar` (los 6 de Fase 4.5 + Productos/Stock ya lo tenían) ahora comparten el mismo verbo para la misma acción; no queda ningún permiso nombrado con un verbo que no refleje el comportamiento real.
 3. **`plataforma.*` es namespace reservado permanente** — ningún rol de empresa puede recibirlo, sin excepción, validado a nivel de aplicación cuando exista el Módulo 5.
 4. **Todo módulo nuevo que exponga un recurso propio nace con su propio namespace de permisos** desde su primera unidad de trabajo — Fase 4.5 cerró el gap retroactivo para los seis módulos que no lo tenían; ningún módulo futuro debería volver a acumular esta deuda.
 5. **Enforcement real de ruta (Módulo 3) es un prerrequisito de producto, no de este módulo específico** — Roles puede construirse y ser funcional (gestionar roles y sus permisos) sin que Módulo 3 exista todavía, exactamente como Usuarios y Fase 4.5 se construyeron sobre el mismo nivel incremental (permiso verificado en la Policy, sin middleware de ruta ni `PermissionContext` en el frontend todavía). Cuando Módulo 3 se construya, debe consumir esta misma matriz (sección 4/5) para decidir qué permiso exige cada ruta — no debe inventar un mapeo nuevo.
-6. **Productos, Movimientos y Captura IA quedan con el mismo gap que tenían los 6 módulos de Fase 4.5** — permiso sembrado, sin `$user->can()` en su Policy. No se resolvió en esta unidad de trabajo porque el alcance de Fase 4.5 nombró explícitamente solo seis módulos. Queda como decisión pendiente y explícita del propietario del proyecto, no un olvido.
+6. **Resuelto en Fase 4.6**: ~~Productos, Movimientos y Captura IA quedan con el mismo gap que tenían los 6 módulos de Fase 4.5~~ — `ProductoPolicy`, `MovimientoPolicy` y `CapturaIAPolicy` ya exigen permiso real. La arquitectura de autorización se considera completa: todo módulo existente comparte exactamente el mismo modelo RBAC (pertenencia de empresa AND permiso). No debería requerirse trabajo de autorización adicional salvo para módulos futuros (Roles, Auditoría, Módulo 6).
 
 ---
 
@@ -167,8 +174,10 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | 2 | 6 recursos sin permisos propios en el catálogo | **Cerrado (Fase 4.5)** — 23 permisos nuevos, Policies actualizadas, 36 tests nuevos, 228/228 suite completa |
 | 3 | `roles` sin columna de estado | **Cerrado (Fase 4.5)** — migración aplicada, string `estado`, no booleano |
 | 4 | `API.md` documentaba `DELETE /roles/{id}` | **Cerrado (Fase 4.5)** — removido |
-| 5 | Productos/Movimientos/Captura IA tienen el mismo gap que tenían los 6 módulos de Fase 4.5 | Abierto — decisión explícita pendiente: ¿una Fase 4.6, o se resuelve junto con Módulo 3? |
+| 5 | Productos/Movimientos/Captura IA tienen el mismo gap que tenían los 6 módulos de Fase 4.5 | **Cerrado (Fase 4.6)** — 3 Policies actualizadas, 1 permiso renombrado, 1 permiso nuevo, 1 ability nueva, tests nuevos, 232/232 suite completa |
+
+Gap 1 es el único abierto — fuera del roadmap de 8 fases actual, no bloquea Fase 5.
 
 ---
 
-**Aprobado como referencia oficial del modelo de autorización — Fase 5 puede comenzar.**
+**Aprobado como referencia oficial del modelo de autorización — arquitectura de autorización completa. Fase 5 (Roles UI) puede comenzar sin trabajo de autorización pendiente en los módulos existentes.**

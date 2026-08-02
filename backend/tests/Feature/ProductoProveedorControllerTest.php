@@ -25,9 +25,12 @@ use Tests\TestCase;
  * producto-proveedor.* (namespace propio, distinto de proveedores.*) —
  * cubre los casos de "usuario autorizado". `userSinPermiso` es de la
  * misma empresa pero sin esos permisos — prueba 403. Nota: estas rutas
- * también autorizan contra `ProductoPolicy` (sobre el Producto padre),
- * sin cambios en esta fase — por eso `userSinPermiso` sí puede resolver
- * esa primera capa y llega a fallar específicamente en la segunda.
+ * también autorizan contra `ProductoPolicy` (sobre el Producto padre) —
+ * doble chequeo por diseño desde Fase 4.5. `ProductoPolicy` en sí no
+ * exigía permiso todavía en ese momento; Fase 4.6 (Authorization
+ * Completion) lo cerró, así que `userA` ahora también necesita
+ * `productos.ver`/`productos.editar` para esa primera capa, además de
+ * producto-proveedor.* para la segunda.
  */
 class ProductoProveedorControllerTest extends TestCase
 {
@@ -69,6 +72,11 @@ class ProductoProveedorControllerTest extends TestCase
             // GET /proveedores/{id}/productos vive en ProveedorController (pestaña
             // "Products" de la Ficha de Proveedor), gateado por ProveedorPolicy.
             'proveedores.ver',
+            // Fase 4.6: estas rutas autorizan primero contra ProductoPolicy
+            // sobre el Producto padre (view para index, update para
+            // store/registrarIngreso) antes de llegar al chequeo de
+            // producto-proveedor.* propiamente dicho.
+            'productos.ver', 'productos.editar',
         ]);
         $this->userA->assignRole($rol);
         app(PermissionRegistrar::class)->forgetCachedPermissions();

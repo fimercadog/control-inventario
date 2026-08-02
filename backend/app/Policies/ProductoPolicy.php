@@ -6,14 +6,25 @@ use App\Models\Producto;
 use App\Models\User;
 
 /**
- * Solo verifica pertenencia a la empresa (docs/04_ARCHITECTURE.md, Módulo 2
- * — Company Isolation). Aún no existe un endpoint REST de Productos (fuera
- * de alcance de este MVP); esta Policy protege el modelo desde ya para
- * cuando ese endpoint se construya, y para cualquier código interno
- * (Captura IA, Servicios) que resuelva un Producto por id.
+ * Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md):
+ * autorización = pertenencia de empresa Y permiso — mismo estándar que el
+ * resto del ERP desde Fase 4.5. `update()` gatea tanto la edición real de
+ * campos como `registrarIngreso()`/`enable()` (reutilizan esta misma
+ * ability, sin cambios de controller), por eso usa `productos.editar`.
+ * `delete()` gatea únicamente `disable()`, con `productos.gestionar`
+ * (renombrado desde `productos.eliminar` en esta misma fase — Productos
+ * nunca hace un DELETE físico, solo activa/desactiva).
+ *
+ * `StockController` opera sobre este mismo modelo pero usa `StockPolicy`,
+ * una clase separada (Fase 4.5) — nunca mezclar ambos permisos aquí.
  */
 class ProductoPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return ($user->is_platform_admin || $user->empresa_id !== null) && $user->can('productos.ver');
+    }
+
     /**
      * FEATURE-001 (docs/03_FUNCTIONAL_SPEC/Products.md, Adenda 2): sin
      * instancia de Producto todavía que verificar por pertenencia — solo
@@ -23,22 +34,22 @@ class ProductoPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_platform_admin || $user->empresa_id !== null;
+        return ($user->is_platform_admin || $user->empresa_id !== null) && $user->can('productos.crear');
     }
 
     public function view(User $user, Producto $producto): bool
     {
-        return $this->ownedBy($user, $producto);
+        return $this->ownedBy($user, $producto) && $user->can('productos.ver');
     }
 
     public function update(User $user, Producto $producto): bool
     {
-        return $this->ownedBy($user, $producto);
+        return $this->ownedBy($user, $producto) && $user->can('productos.editar');
     }
 
     public function delete(User $user, Producto $producto): bool
     {
-        return $this->ownedBy($user, $producto);
+        return $this->ownedBy($user, $producto) && $user->can('productos.gestionar');
     }
 
     private function ownedBy(User $user, Producto $producto): bool

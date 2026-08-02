@@ -87,6 +87,8 @@ class ProductoController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Producto::class);
+
         $productos = Producto::query()
             ->with(['categoria', 'marca', 'unidadMedida'])
             ->when(

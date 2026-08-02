@@ -8,10 +8,13 @@ use App\Models\Empresa;
 use App\Models\Marca;
 use App\Models\Movimiento;
 use App\Models\Producto;
+use App\Models\Role;
 use App\Models\UnidadMedida;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -19,6 +22,14 @@ use Tests\TestCase;
  * de Producto"): detalle, edición de catálogo, historial de movimientos
  * de un producto. `stock_actual` nunca debe ser editable vía este
  * endpoint — solo InventoryService puede modificarlo.
+ *
+ * Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md):
+ * `userA` y `userB` reciben las 4 productos.* — el foco de este archivo
+ * es CRUD + aislamiento multi-tenant, no permisos finos (ambas empresas
+ * necesitan poder crear/editar productos propios en los tests ya
+ * existentes). `userSinPermiso` es de la MISMA empresa que `productoA`
+ * pero sin ningún permiso — prueba el caso 403, mismo patrón que
+ * CategoriaControllerTest.
  */
 class ProductoControllerTest extends TestCase
 {
@@ -32,16 +43,39 @@ class ProductoControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Producto $productoA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $permisos = ['productos.ver', 'productos.crear', 'productos.editar', 'productos.gestionar'];
+        $registrar = app(PermissionRegistrar::class);
+        $context = app(TenantContext::class);
+
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
+        $rolA = Role::create(['name' => 'Test Productos A', 'guard_name' => 'api']);
+        $rolA->givePermissionTo($permisos);
+        $this->userA->assignRole($rolA);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $rolB = Role::create(['name' => 'Test Productos B', 'guard_name' => 'api']);
+        $rolB->givePermissionTo($permisos);
+        $this->userB->assignRole($rolB);
+        $registrar->forgetCachedPermissions();
 
         // Fixtures se crean con el contexto de tenant fijado explícitamente
         // (no via actingAs(), para dejar el guard 'api' limpio y poder
@@ -372,5 +406,49 @@ class ProductoControllerTest extends TestCase
             ->assertNotFound();
 
         $this->assertSame('activo', $this->productoA->fresh()->estado);
+    }
+
+    // Fase 4.6 (Authorization Completion) — mismo usuario/empresa que
+    // productoA, cero permisos: cada acción debe rechazarse con 403, nunca
+    // llegar a tocar el registro (`disable()` exige `productos.gestionar`,
+    // el resto exige `productos.ver`/`productos.crear`/`productos.editar`).
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/productos')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/productos/{$this->productoA->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson('/api/v1/productos', ['nombre' => 'Sin permiso'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/productos/{$this->productoA->id}", ['nombre' => 'Hackeado'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/movimientos", ['cantidad' => 5])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/habilitar")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/productos/{$this->productoA->id}/movimientos")
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('productos', ['nombre' => 'Sin permiso']);
+        $this->assertNotSame('Hackeado', $this->productoA->fresh()->nombre);
+        $this->assertSame('activo', $this->productoA->fresh()->estado);
+        $this->assertDatabaseMissing('movimientos', ['producto_id' => $this->productoA->id]);
     }
 }

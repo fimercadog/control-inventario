@@ -5,10 +5,14 @@ namespace Tests\Feature;
 use App\Contracts\AI\AIProviderInterface;
 use App\Exceptions\AIProviderException;
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -72,8 +76,22 @@ class ErrorHandlingTest extends TestCase
     public function test_an_ai_provider_failure_never_leaks_the_vendor_message_or_status_code(): void
     {
         Storage::fake('local');
+        $this->seed(PermissionSeeder::class);
         $empresa = Empresa::create(['nombre' => 'Fidel OS']);
-        $this->actingAs(User::factory()->create(['empresa_id' => $empresa->id]), 'api');
+        $usuario = User::factory()->create(['empresa_id' => $empresa->id]);
+
+        // Payload válido (imagen real) para que la request pase la
+        // validación y llegue a authorize('create', ...) — Fase 4.6 exige
+        // captura-ia.usar ahí; el foco de este test es el manejo de
+        // errores del proveedor de IA, no la autorización en sí.
+        app(TenantContext::class)->setEmpresaId($empresa->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($empresa->id);
+        $rol = Role::create(['name' => 'Test Captura IA', 'guard_name' => 'api']);
+        $rol->givePermissionTo('captura-ia.usar');
+        $usuario->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $this->actingAs($usuario, 'api');
 
         $this->app->bind(AIProviderInterface::class, fn () => new class implements AIProviderInterface {
             public function name(): string

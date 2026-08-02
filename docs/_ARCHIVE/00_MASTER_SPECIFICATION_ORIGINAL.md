@@ -5771,12 +5771,13 @@ Esta regla es obligatoria para todos los módulos presentes y futuros del sistem
 
 ### Regla de Negocio — Autorización (RBAC)
 
-Aprobado 2026-08-02 como arquitectura oficial del sistema (Fase 4.5 — Authorization Alignment, ver `docs/security/ROLES_MATRIX.md` para el detalle completo).
+Aprobado 2026-08-02 como arquitectura oficial del sistema (Fase 4.5 — Authorization Alignment y Fase 4.6 — Authorization Completion, ver `docs/security/ROLES_MATRIX.md` para el detalle completo).
 
 - Todo módulo de negocio de Fidel OS debe validar autorización en dos capas combinadas con AND, nunca una sola: pertenencia a la empresa del usuario, y el permiso específico que la acción requiere.
 - Los permisos se otorgan exclusivamente a través de roles. No existen asignaciones de permiso directas a un usuario individual, y no se introducirán sin una revisión de arquitectura explícita.
 - Ningún Policy, Controller ni middleware verifica el nombre de un rol (`hasRole('Admin')`). Los roles son un empaquetado administrativo de permisos para la UI de gestión de cada empresa — el motor de autorización real solo conoce permisos.
 - Un rol nunca se elimina físicamente. Solo se activa o desactiva. Un rol con usuarios asignados no puede desactivarse hasta que esos usuarios sean reasignados a otro rol.
-- Esta regla se aplicó en Fase 4.5 a Categorías, Marcas, Unidades de Medida, Stock, Proveedores y Producto↔Proveedor. Productos, Movimientos y Captura IA quedan pendientes de la misma alineación, como decisión explícita separada — no un olvido.
+- Esta regla se aplicó en Fase 4.5 a Categorías, Marcas, Unidades de Medida, Stock, Proveedores y Producto↔Proveedor, y en Fase 4.6 a Productos, Movimientos y Captura IA — los tres módulos que Fase 4.5 dejó documentados a propósito como pendientes. Con Fase 4.6 cerrada, todo módulo de negocio existente del ERP comparte el mismo modelo de autorización; no queda ningún módulo con un segundo estándar.
+- Movimientos es la única excepción parcial, también deliberada: al ser un ledger append-only, el permiso solo controla quién crea o ve movimientos (`movimientos.ver`/`movimientos.crear`). No existe `movimientos.editar` — editar metadata descriptiva (`documento`/`observacion`/`lote`/`vencimiento`) no requiere ningún permiso más allá de pertenecer a la empresa, y los campos contables (`cantidad`/`tipo`/`producto_id`/`stock_anterior`/`stock_nuevo`) permanecen inmutables para siempre sin excepción, sin importar el permiso que se tenga — ver la regla de inmutabilidad de movimientos arriba.
 
 Esta regla es obligatoria para todos los módulos presentes y futuros del sistema.

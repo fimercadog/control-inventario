@@ -4,11 +4,16 @@ namespace Tests\Feature\CapturaIA;
 
 use App\Contracts\AI\AIProviderInterface;
 use App\DTO\AI\StructuredExtractionDTO;
+use App\Models\CapturaIA;
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Fakes\FakeAIProvider;
 use Tests\TestCase;
 
@@ -21,6 +26,8 @@ class CapturaIAControllerTest extends TestCase
         parent::setUp();
 
         Storage::fake('local');
+
+        $this->seed(PermissionSeeder::class);
     }
 
     public function test_post_foto_stores_original_image_and_returns_the_processed_capture(): void
@@ -212,16 +219,82 @@ class CapturaIAControllerTest extends TestCase
         $this->assertDatabaseCount('movimientos', 1);
     }
 
+    // Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md) —
+    // mismo usuario/empresa que la captura ya creada, sin ningún
+    // captura-ia.*: cada acción se rechaza con 403, nunca alcanza la
+    // lógica de negocio (ni AIProviderInterface real, que ni se llega a
+    // invocar porque authorize() corta antes).
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $empresa = $this->crearEmpresaAutenticada();
+        $this->bindFakeProvider(imagen: [
+            ['name' => 'Producto Dudoso', 'brand' => null, 'presentation' => null, 'category' => null, 'quantity' => 3, 'unit' => null, 'confidence' => 0.4],
+        ]);
+
+        $creado = $this->postJson('/api/v1/captura-ia/foto', [
+            'empresa_id' => $empresa->id,
+            'imagen' => UploadedFile::fake()->create('foto.jpg', 100, 'image/jpeg'),
+        ])->assertCreated();
+
+        $uuid = $creado->json('data.id');
+        $detalleId = $creado->json('data.products.0.id');
+
+        $sinPermiso = User::factory()->create(['empresa_id' => $empresa->id]);
+        $this->actingAs($sinPermiso, 'api');
+
+        $this->getJson('/api/v1/captura-ia')->assertStatus(403);
+        $this->getJson("/api/v1/captura-ia/{$uuid}")->assertStatus(403);
+
+        $this->postJson('/api/v1/captura-ia/foto', [
+            'imagen' => UploadedFile::fake()->create('otra.jpg', 100, 'image/jpeg'),
+        ])->assertStatus(403);
+
+        $this->postJson('/api/v1/captura-ia/voz', [
+            'audio' => UploadedFile::fake()->create('audio.wav', 100, 'audio/wav'),
+        ])->assertStatus(403);
+
+        $this->postJson('/api/v1/captura-ia/foto-voz', [
+            'imagen' => UploadedFile::fake()->create('otra.jpg', 100, 'image/jpeg'),
+            'audio' => UploadedFile::fake()->create('audio.wav', 100, 'audio/wav'),
+        ])->assertStatus(403);
+
+        $this->patchJson("/api/v1/captura-ia/{$uuid}/detalle/{$detalleId}", [
+            'nombre_detectado' => 'Hackeado',
+        ])->assertStatus(403);
+
+        $this->postJson("/api/v1/captura-ia/{$uuid}/confirmar")->assertStatus(403);
+        $this->postJson("/api/v1/captura-ia/{$uuid}/descartar")->assertStatus(403);
+
+        $this->assertDatabaseCount('capturas_ia', 1); // solo la creada por el usuario autorizado
+        $this->assertSame('pendiente_revision', CapturaIA::withoutGlobalScopes()->where('uuid', $uuid)->firstOrFail()->estado->value);
+    }
+
     /**
      * Todas las rutas de Captura IA exigen auth:api desde el Módulo 1
      * (docs/04_ARCHITECTURE.md); estas pruebas verifican el comportamiento
      * de negocio, no la autenticación en sí (eso vive en AuthenticationTest),
      * así que basta con `actingAs` en vez de un JWT real.
+     *
+     * Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md):
+     * el usuario autenticado recibe las 3 captura-ia.* — este helper lo usa
+     * CADA test del archivo, así que un solo cambio aquí cubre a todos. El
+     * caso 403 (usuario de la misma empresa sin ningún permiso) se prueba
+     * aparte, sin pasar por este helper — ver el test dedicado más abajo.
      */
     private function crearEmpresaAutenticada(): Empresa
     {
         $empresa = Empresa::create(['nombre' => 'Fidel OS']);
-        $this->actingAs(User::factory()->create(['empresa_id' => $empresa->id]), 'api');
+        $usuario = User::factory()->create(['empresa_id' => $empresa->id]);
+
+        $registrar = app(PermissionRegistrar::class);
+        app(TenantContext::class)->setEmpresaId($empresa->id);
+        $registrar->setPermissionsTeamId($empresa->id);
+        $rol = Role::create(['name' => 'Test Captura IA', 'guard_name' => 'api']);
+        $rol->givePermissionTo(['captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar']);
+        $usuario->assignRole($rol);
+        $registrar->forgetCachedPermissions();
+
+        $this->actingAs($usuario, 'api');
 
         return $empresa;
     }

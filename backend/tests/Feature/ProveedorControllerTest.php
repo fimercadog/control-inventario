@@ -19,10 +19,15 @@ use Tests\TestCase;
  * lógico (GLOBAL RULE, sesión 2026-07-29) — nunca un DELETE físico.
  *
  * Fase 4.5 (Authorization Alignment): `userA` tiene las 4 proveedores.* —
- * cubre los casos de "usuario autorizado", incluyendo los tests de
- * Registrar Ingreso (que autorizan contra `ProductoPolicy`, sin cambios
- * en esta fase, así que no requieren permiso adicional). `userSinPermiso`
- * es de la misma empresa pero sin permisos de `proveedores.*` — prueba 403.
+ * cubre los casos de "usuario autorizado". `userSinPermiso` es de la
+ * misma empresa pero sin permisos de `proveedores.*` — prueba 403.
+ *
+ * Fase 4.6 (Authorization Completion): los tests de Registrar Ingreso
+ * (`POST /productos/{id}/movimientos`) autorizan contra `ProductoPolicy`,
+ * que esta fase cerró — `userA` y `userB` reciben también
+ * `productos.ver`/`productos.editar` (userB solo para el test de
+ * aislamiento cross-tenant sobre su propio producto, que necesita pasar
+ * esa primera capa para llegar a la validación real bajo prueba).
  */
 class ProveedorControllerTest extends TestCase
 {
@@ -52,13 +57,25 @@ class ProveedorControllerTest extends TestCase
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
         $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
-        app(TenantContext::class)->setEmpresaId($this->empresaA->id);
-        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
-        $rol = Role::create(['name' => 'Test Proveedores', 'guard_name' => 'api']);
-        $rol->givePermissionTo(['proveedores.ver', 'proveedores.crear', 'proveedores.editar', 'proveedores.gestionar']);
-        $this->userA->assignRole($rol);
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $registrar = app(PermissionRegistrar::class);
+        $context = app(TenantContext::class);
 
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
+        $rolA = Role::create(['name' => 'Test Proveedores A', 'guard_name' => 'api']);
+        $rolA->givePermissionTo(['proveedores.ver', 'proveedores.crear', 'proveedores.editar', 'proveedores.gestionar', 'productos.ver', 'productos.editar']);
+        $this->userA->assignRole($rolA);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $rolB = Role::create(['name' => 'Test Proveedores B', 'guard_name' => 'api']);
+        $rolB->givePermissionTo(['productos.ver', 'productos.editar']);
+        $this->userB->assignRole($rolB);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
         $this->proveedorA = Proveedor::create(['nombre' => 'Distribuidora Central', 'nit' => '900123456']);
     }
 

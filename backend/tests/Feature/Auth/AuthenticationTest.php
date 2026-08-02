@@ -4,9 +4,13 @@ namespace Tests\Feature\Auth;
 
 use App\Models\AuthSession;
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -187,7 +191,23 @@ class AuthenticationTest extends TestCase
 
     public function test_business_routes_accept_an_authenticated_request(): void
     {
+        $this->seed(PermissionSeeder::class);
+
         $user = User::factory()->create(['empresa_id' => $this->empresa->id]);
+
+        // Esta ruta de negocio ahora exige captura-ia.usar (Fase 4.6,
+        // Authorization Completion) además de autenticación — el foco de
+        // este test es la autenticación en sí (par de
+        // test_business_routes_reject_anonymous_requests), así que se le
+        // otorga el permiso para que un 403 de autorización no se
+        // confunda con un fallo de autenticación.
+        app(TenantContext::class)->setEmpresaId($this->empresa->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresa->id);
+        $rol = Role::create(['name' => 'Test Captura IA', 'guard_name' => 'api']);
+        $rol->givePermissionTo('captura-ia.usar');
+        $user->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $token = JWTAuth::fromUser($user);
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")

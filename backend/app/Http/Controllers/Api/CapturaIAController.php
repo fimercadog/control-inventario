@@ -43,6 +43,8 @@ class CapturaIAController extends Controller
 
     public function foto(StoreFotoRequest $request): JsonResponse
     {
+        $this->authorize('create', CapturaIA::class);
+
         $empresaId = $this->empresaIdOrFail($request);
 
         if ($existente = $this->capturaExistentePorIdempotencyKey($request, $empresaId)) {
@@ -64,6 +66,8 @@ class CapturaIAController extends Controller
 
     public function voz(StoreVozRequest $request): JsonResponse
     {
+        $this->authorize('create', CapturaIA::class);
+
         $empresaId = $this->empresaIdOrFail($request);
 
         if ($existente = $this->capturaExistentePorIdempotencyKey($request, $empresaId)) {
@@ -85,6 +89,8 @@ class CapturaIAController extends Controller
 
     public function fotoVoz(StoreFotoVozRequest $request): JsonResponse
     {
+        $this->authorize('create', CapturaIA::class);
+
         $empresaId = $this->empresaIdOrFail($request);
 
         if ($existente = $this->capturaExistentePorIdempotencyKey($request, $empresaId)) {
@@ -108,6 +114,8 @@ class CapturaIAController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', CapturaIA::class);
+
         // Sin where('empresa_id', ...) manual a propósito: TenantScope ya
         // lo aplica a CapturaIA::query() automáticamente (Módulo 2).
         $capturas = CapturaIA::query()
@@ -153,7 +161,7 @@ class CapturaIAController extends Controller
 
     public function actualizarDetalle(UpdateDetalleRequest $request, CapturaIA $captura, int $detalleId): JsonResponse
     {
-        $this->authorize('update', $captura);
+        $this->authorize('review', $captura);
 
         $detalle = $captura->detalles()->findOrFail($detalleId);
         $detalle = $this->servicio->corregirDetalle($detalle, $request->validated());

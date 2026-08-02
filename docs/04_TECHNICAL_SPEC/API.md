@@ -34,7 +34,7 @@ Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md. Backend (Fase 3
 - POST /api/v1/captura-ia/{uuid}/confirmar
 - POST /api/v1/captura-ia/{uuid}/descartar
 
-`{uuid}` identifica la captura externamente (no el id numérico interno). Desde el **Módulo 1 (Authentication)** estos endpoints ya exigen `Authorization: Bearer <access_token>` — sin excepción, sin ventana de acceso anónimo. El permiso específico (`captura-ia.usar`, `captura-ia.revisar`, `captura-ia.confirmar`) se agrega en el **Módulo 3 (Authorization/RBAC)**.
+`{uuid}` identifica la captura externamente (no el id numérico interno). Desde el **Módulo 1 (Authentication)** estos endpoints ya exigen `Authorization: Bearer <access_token>` — sin excepción, sin ventana de acceso anónimo. **Fase 4.6 (Authorization Completion, 2026-08-02, docs/security/ROLES_MATRIX.md)**: `CapturaIAPolicy` exige además el permiso correspondiente, separado por responsabilidad — `foto`/`voz`/`foto-voz`/`GET` (listar y ver) exigen `captura-ia.usar`; `PATCH .../detalle/{detalleId}` (corregir un detalle de baja confianza) exige `captura-ia.revisar`, ability propia (`review`) separada de `confirmar`/`descartar`, que exigen `captura-ia.confirmar`.
 
 ## Módulo Catálogos — Categorías, Marcas, Unidades de Medida (RC1 Fase 1, docs/05_IMPLEMENTATION/CatalogModules.md)
 
@@ -45,6 +45,8 @@ Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-mode
 - GET/POST `/api/v1/unidades-medida`, GET/PATCH `/api/v1/unidades-medida/{id}`, POST `/api/v1/unidades-medida/{id}/deshabilitar`, POST `/api/v1/unidades-medida/{id}/habilitar`, GET `/api/v1/unidades-medida/{id}/productos` (Built 2026-07-30 — `UnidadMedidaController`, ver `docs/05_IMPLEMENTATION/UnidadesMedidaModule.md`. Con esto se cierra la Fase 1 completa del roadmap RC1 — Categorías/Marcas/Unidades de Medida, los tres catálogos ya tienen controller/rutas/frontend/tests).
 
 `POST/PATCH /api/v1/productos`: `marca`/`unidad_medida` (string libre) reemplazados por `marca_id`/`marca_nuevo` y `unidad_medida_id`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente ya usado para `proveedor_id`/`proveedor_nuevo`).
+
+**Fase 4.6 (Authorization Completion, 2026-08-02, docs/security/ROLES_MATRIX.md)**: `ProductoPolicy` exige además el permiso correspondiente — `GET` (listar/ver, incluye `/movimientos`) exige `productos.ver`; `POST`/`PATCH`/`registrarIngreso`/`habilitar` exigen `productos.editar` (o `.crear` para el alta); `deshabilitar` exige `productos.gestionar` (renombrado desde `productos.eliminar` — nunca hay un DELETE físico).
 
 ## Módulo Proveedores (FEATURE-003, docs/03_FUNCTIONAL_SPEC/Suppliers.md) y Producto↔Proveedor (FEATURE-005)
 
@@ -61,7 +63,7 @@ Stock NO es una entidad independiente — opera directamente sobre `Producto` (r
 
 ## Módulo Movimientos (RC1 Fase 3, docs/03_FUNCTIONAL_SPEC/Movements.md)
 
-Ledger append-only — sin `PUT`/`DELETE`/`deshabilitar`/`habilitar` a propósito. Distinto de `GET /productos/{producto}/movimientos` (historial acotado a un solo producto, sin cambios).
+Ledger append-only — sin `PUT`/`DELETE`/`deshabilitar`/`habilitar` a propósito. Distinto de `GET /productos/{producto}/movimientos` (historial acotado a un solo producto, sin cambios). **Fase 4.6**: `MovimientoPolicy` exige `movimientos.ver` para `GET` y `movimientos.crear` para `POST`. `PATCH` (metadata) **deliberadamente sin permiso propio** — no existe `movimientos.editar` en el catálogo; cualquier usuario autenticado de la empresa puede corregir `documento`/`observacion`/`lote`/`vencimiento` (decisión de negocio: los permisos solo controlan quién crea o ve movimientos, nunca quién edita metadata).
 
 - GET `/api/v1/movimientos` (con `producto_id`, `tipo`, `busqueda`, `desde`, `hasta`, `page`; `paginate(100)`), GET `/api/v1/movimientos/{id}`, POST `/api/v1/movimientos` (Entrada/Salida/Ajuste, vía `InventoryService::registrarMovimiento()`), PATCH `/api/v1/movimientos/{id}` (Built 2026-08-02 — `MovimientoController`, ver `docs/05_IMPLEMENTATION/MovimientosModule.md`). `PATCH` solo acepta `documento`/`observacion`/`lote`/`vencimiento` — `UpdateMovimientoRequest` no declara `cantidad`/`tipo`/`producto_id`/`proveedor_id`/`stock_anterior`/`stock_nuevo`, así que un payload que los incluya los ignora siempre.
 

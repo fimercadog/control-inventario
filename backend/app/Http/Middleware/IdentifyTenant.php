@@ -18,6 +18,21 @@ use Symfony\Component\HttpFoundation\Response;
  *    el ciclo de vida real de una request (solo en los tests que lo fijaban
  *    a mano).
  *
+ * `forgetCachedPermissions()` es obligatorio aquí (Fase 4.6, hallazgo de
+ * arquitectura): la caché interna de Spatie (`permission.cache`, TTL de
+ * horas por config) guarda permisos CON sus roles ya resueltos
+ * (`getPermissionsWithRoles()`), y esa consulta pasa por `App\Models\Role`,
+ * que tiene `TenantScope` como global scope (Módulo 2). Sin este forget,
+ * la primera request que construye la caché la deja "congelada" con los
+ * roles de LA EMPRESA QUE ESTABA ACTIVA en ese instante — cualquier otra
+ * empresa que reutilice esa caché (mismo proceso en Octane, o mismo cache
+ * store compartido en PHP-FPM clásico) heredaría permisos de una empresa
+ * ajena hasta que la caché expire. Limpiarla en cada request antes de
+ * cualquier check de permisos garantiza que siempre se reconstruya con el
+ * team correcto de ESTA request. El rebuild se repite en cada cambio de
+ * tenant, pero para el volumen de RC1 la correctitud multi-tenant pesa más
+ * que el ahorro de una query.
+ *
  * Se usa junto con `auth:api` en las rutas de negocio, nunca solo (ver
  * routes/api.php).
  */
@@ -37,6 +52,8 @@ class IdentifyTenant
             $context->setEmpresaId($user->empresa_id);
             $registrar->setPermissionsTeamId($user->empresa_id);
         }
+
+        $registrar->forgetCachedPermissions();
 
         return $next($request);
     }

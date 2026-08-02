@@ -45,6 +45,8 @@ class MovimientoController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Movimiento::class);
+
         $query = Movimiento::query()->with(['producto', 'usuario']);
 
         if ($productoId = $request->query('producto_id')) {

@@ -16,7 +16,9 @@ use App\Policies\MovimientoPolicy;
 use App\Policies\ProductoPolicy;
 use App\Services\Auth\TenantContext;
 use App\Services\InventoryService;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -39,6 +41,8 @@ class TenantScopeTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->context = app(TenantContext::class);
@@ -49,6 +53,35 @@ class TenantScopeTest extends TestCase
         $this->context->setEmpresaId($this->empresaB->id);
 
         return Producto::create(['nombre' => 'Producto de B', 'marca' => 'MarcaB']);
+    }
+
+    /**
+     * Fase 4.6 (Authorization Completion): las Policies de este archivo ya
+     * no dependen solo de `TenantScope`/pertenencia — también exigen el
+     * permiso del recurso (docs/security/ROLES_MATRIX.md). Este helper
+     * arma un rol de un solo uso en el team de `$user->empresa_id` para
+     * los pocos tests de este archivo que necesitan probar el camino
+     * "autorizado" en vez del camino "denegado" (que sigue funcionando
+     * con cero permisos, porque la pertenencia por sí sola ya lo bloquea).
+     *
+     * Deliberadamente NO restaura el team id/contexto anterior: a
+     * diferencia de los tests HTTP (donde `IdentifyTenant` lo vuelve a
+     * fijar en cada request), aquí las aserciones que siguen a esta
+     * llamada dependen de que el team siga siendo el de `$user` — Spatie
+     * resuelve `model_has_roles` por team ACTIVO al momento del check, no
+     * al momento de la asignación.
+     *
+     * @param array<int, string> $permisos
+     */
+    private function otorgarPermisos(User $user, array $permisos): void
+    {
+        $this->context->setEmpresaId($user->empresa_id);
+        $registrar = app(PermissionRegistrar::class);
+        $registrar->setPermissionsTeamId($user->empresa_id);
+        $rol = Role::create(['name' => 'Test '.uniqid(), 'guard_name' => 'api']);
+        $rol->givePermissionTo($permisos);
+        $user->assignRole($rol);
+        $registrar->forgetCachedPermissions();
     }
 
     // "Company A requests a Product [id] from Company B" + "sequential IDs".
@@ -119,6 +152,7 @@ class TenantScopeTest extends TestCase
         $this->context->setEmpresaId($this->empresaA->id);
         $productoA = Producto::create(['nombre' => 'Producto de A']);
         $userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $this->otorgarPermisos($userA, ['productos.ver', 'productos.editar', 'productos.gestionar']);
 
         $policy = new ProductoPolicy();
         $this->assertTrue($policy->view($userA, $productoA));
@@ -239,6 +273,7 @@ class TenantScopeTest extends TestCase
     {
         $userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->otorgarPermisos($userB, ['captura-ia.usar']);
 
         $capturaB = new \App\Models\CapturaIA(['empresa_id' => $this->empresaB->id]);
 

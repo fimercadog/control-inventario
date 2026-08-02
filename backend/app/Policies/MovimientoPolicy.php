@@ -15,17 +15,32 @@ use App\Models\User;
  * de trabajo, que reemplaza el diseño especulativo de "anular" descrito
  * en la migración `add_estado_to_movimientos_table` de una sesión
  * anterior — esa columna `estado` queda inerte a propósito).
+ *
+ * Fase 4.6 (Authorization Completion, docs/security/ROLES_MATRIX.md):
+ * decisión de negocio confirmada explícitamente — "Permissions only
+ * control who can create or view movements." `viewAny()`/`view()` exigen
+ * `movimientos.ver`, `create()` exige `movimientos.crear`. `update()`
+ * (metadata descriptiva únicamente — nunca los campos contables, ver
+ * `UpdateMovimientoRequest`) queda **sin cambios, deliberadamente**: no
+ * existe `movimientos.editar` en el catálogo y no se agrega aquí — el
+ * alcance de esta fase es explícito ("solo crear o ver"), no una edición
+ * de metadata que ya estaba fuera de esa lista.
  */
 class MovimientoPolicy
 {
+    public function viewAny(User $user): bool
+    {
+        return ($user->is_platform_admin || $user->empresa_id !== null) && $user->can('movimientos.ver');
+    }
+
     public function view(User $user, Movimiento $movimiento): bool
     {
-        return $this->ownedBy($user, $movimiento);
+        return $this->ownedBy($user, $movimiento) && $user->can('movimientos.ver');
     }
 
     public function create(User $user): bool
     {
-        return $user->is_platform_admin || $user->empresa_id !== null;
+        return ($user->is_platform_admin || $user->empresa_id !== null) && $user->can('movimientos.crear');
     }
 
     public function update(User $user, Movimiento $movimiento): bool

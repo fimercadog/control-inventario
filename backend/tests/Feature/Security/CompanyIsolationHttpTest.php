@@ -6,18 +6,26 @@ use App\Contracts\AI\AIProviderInterface;
 use App\DTO\AI\StructuredExtractionDTO;
 use App\Models\CapturaIA;
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\Support\Fakes\FakeAIProvider;
 use Tests\TestCase;
 
 /**
- * Módulo 2 — Company Isolation. La única superficie REST real hoy es
- * Captura IA (Productos/Movimientos no tienen endpoint todavía); estos
- * tests prueban el aislamiento end-to-end, a través de HTTP real, tal
- * como lo intentaría un atacante autenticado de otra empresa.
+ * Módulo 2 — Company Isolation. Estos tests prueban el aislamiento
+ * end-to-end sobre Captura IA, a través de HTTP real, tal como lo
+ * intentaría un atacante autenticado de otra empresa.
+ *
+ * Fase 4.6 (Authorization Completion): tanto `userA` como `userB` crean
+ * capturas propias dentro de este archivo (no solo intentan acceder a las
+ * del otro), así que ambos reciben el permiso completo de `captura-ia.*`
+ * en `setUp()` — el foco de este archivo es aislamiento por empresa, no
+ * permisos, y no debe mezclarse con eso.
  */
 class CompanyIsolationHttpTest extends TestCase
 {
@@ -37,10 +45,43 @@ class CompanyIsolationHttpTest extends TestCase
 
         Storage::fake('local');
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+
+        $registrar = app(PermissionRegistrar::class);
+        $context = app(\App\Services\Auth\TenantContext::class);
+        $permisos = ['captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar'];
+
+        // Nombres de rol distintos por claridad (no es lo que hace esto
+        // seguro: ver la nota sobre `forgetCachedPermissions()` en
+        // IdentifyTenant.php). La caché de permisos de Spatie guarda
+        // permisos CON sus roles ya resueltos vía una query sobre
+        // `App\Models\Role`, que tiene `TenantScope` global; construir esa
+        // caché mientras el team activo es A la deja "congelada" con solo
+        // los roles de A hasta que algo la limpie. Lo que realmente aísla
+        // A de B en cada request real es que `IdentifyTenant` llama
+        // `forgetCachedPermissions()` en cada request, forzando una
+        // reconstrucción con el team correcto ANTES de cualquier check.
+        // Aquí en `setUp()` no hay ninguna request real todavía, así que
+        // se hace manualmente para dejar la caché limpia después de armar
+        // ambos roles.
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
+        $rolA = Role::create(['name' => 'Test Captura IA A', 'guard_name' => 'api']);
+        $rolA->givePermissionTo($permisos);
+        $this->userA->assignRole($rolA);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $rolB = Role::create(['name' => 'Test Captura IA B', 'guard_name' => 'api']);
+        $rolB->givePermissionTo($permisos);
+        $this->userB->assignRole($rolB);
+        $registrar->forgetCachedPermissions();
     }
 
     private function bindFakeProvider(): void

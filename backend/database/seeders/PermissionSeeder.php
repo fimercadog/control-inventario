@@ -13,11 +13,13 @@ use Spatie\Permission\Models\Permission;
 class PermissionSeeder extends Seeder
 {
     private const PERMISSIONS = [
-        // Productos
+        // Productos (Fase 4.6 — Authorization Completion: 'eliminar' pasó a
+        // 'gestionar' vía migración dedicada, mismo verbo que el resto del
+        // ERP para activar/desactivar — nunca hay un DELETE físico).
         'productos.ver',
         'productos.crear',
         'productos.editar',
-        'productos.eliminar',
+        'productos.gestionar',
 
         // Categorías (Fase 4.5 — Authorization Alignment, docs/security/ROLES_MATRIX.md Gap 2)
         'categorias.ver',
@@ -60,10 +62,13 @@ class PermissionSeeder extends Seeder
         'movimientos.ver',
         'movimientos.crear',
 
-        // Captura IA
+        // Captura IA (captura-ia.gestionar agregado en Fase 4.6 — sembrado
+        // para configuración futura, sin ninguna acción real que lo
+        // consuma todavía, mismo patrón que roles.gestionar/usuarios.invitar).
         'captura-ia.usar',
         'captura-ia.revisar',
         'captura-ia.confirmar',
+        'captura-ia.gestionar',
 
         // Usuarios (Módulo 4 — User Management)
         'usuarios.ver',
