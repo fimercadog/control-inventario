@@ -92,8 +92,29 @@ Sin migraciones nuevas en esta unidad de trabajo (las de Categorías/Marcas/Unid
 - **Categorías/Marcas/Unidades de Medida/Stock/Movimientos/Clientes/Usuarios/Roles/Auditoría/Reportes:** siguen siendo páginas "pendiente de implementación" — el sidebar ya los expone correctamente, pero no tienen CRUD real detrás (por diseño, siguiendo el roadmap de 8 fases aprobado — no se salta la fase actual).
 - **`docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`** recibió una edición adicional en vivo (por el usuario) después del último commit de esta unidad — queda sin comitear, se incluirá en la próxima unidad de trabajo.
 
+## Corrección — Sidebar no reflejaba el estado real de implementación (2026-08-02)
+
+Auditoría solicitada explícitamente por el propietario del proyecto: "As Super Administrator I need to see every module that already exists in the system... the sidebar must reflect the real state of the ERP." Se comparó cada entrada del sidebar contra `routes/api.php`, cada Controller, y cada `page.tsx` real antes de tocar código (ver tabla de auditoría completa en el resumen de esa conversación — no se repite aquí).
+
+**Hallazgos:**
+
+1. **`Perfil` estaba mal clasificado** — el propio propietario del proyecto lo listó como "Implemented / debe ser completamente accesible", pero tanto `/perfil` como `/perfil/cambiar-contrasena` son (y siguen siendo) stubs `PendingModule` puros, sin ningún contenido real — el mismo estado que tenían el día que se escribió este informe (sección "Archivos creados" arriba). Confirmado con el propietario del proyecto vía pregunta directa; decidió moverlo al grupo "Planned". `app-sidebar.tsx` no lo marcaba `pending: true`, así que aparecía indistinguible de un módulo terminado.
+2. **Gap real en la lógica de permisos del sidebar, independiente del punto 1**: `Categorías`, `Marcas`, `Unidades de Medida`, `Stock` y `Proveedores` no tenían ninguna key `permission` en su `NavItem`, así que quedaban visibles para cualquier usuario autenticado sin importar su rol — el comentario del propio archivo lo justificaba diciendo que "los permisos de proveedores o categorías no están sembrados todavía", afirmación que Fase 4.5 (2026-08-02, ver `docs/security/ROLES_MATRIX.md`) dejó desactualizada: esos 5 módulos ya tienen permiso `.ver` real, sembrado y enforced en su Policy desde esa fase. Un usuario de empresa sin esos permisos seguía viendo la entrada en el sidebar y solo se enteraba de que no tenía acceso al recibir un 403 del backend al hacer clic.
+3. **`Dashboard`** se revisó también: el frontend está completo pero cada dato viene de `lib/mock/dashboard.ts`, no de un endpoint real. Consultado explícitamente con el propietario del proyecto — decidió mantenerlo en el grupo "Implemented" (es una vista de solo lectura, no un módulo CRUD; conectarlo a datos reales es un trabajo de backend separado y mayor, fuera del alcance de esta corrección puntual). Queda documentado aquí como deuda conocida, no resuelta.
+
+**Corregido:**
+
+- `frontend/components/app-sidebar.tsx`: `permission: "categorias.ver" | "marcas.ver" | "unidades-medida.ver" | "stock.ver" | "proveedores.ver"` agregado a los 5 items que no lo tenían; `pending: true` agregado a `Perfil`; comentario de la función `puedeVerModulo` actualizado para reflejar que el catálogo de permisos ya cubre todos los módulos de negocio existentes.
+- Ningún cambio de backend, de rutas, ni de agrupación visual (`Inventario`/`Terceros`/`Administración` se mantienen — la corrección es de datos/clasificación, no de arquitectura de información).
+
+**Verificado:**
+
+- `npx tsc --noEmit` limpio.
+- Login real en navegador (Playwright + Edge del sistema) con el usuario demo (`test@example.com`, rol Administrador → 41/41 permisos): las 16 entradas del sidebar visibles, exactamente 5 badges "Pronto" (Clientes/Roles/Auditoría/Reportes/Perfil), clic en Perfil navega a `/perfil` y muestra el stub real sin romperse.
+- Sin cambios de backend — no se corrió la suite de backend para esta corrección (fuera de alcance, ningún archivo `.php` tocado).
+
 ## Estado
 
 ☐ Pendiente
 ☐ Requiere correcciones
-**☑ Aprobado — pendiente de confirmación del usuario** (backend 138/138 verde, frontend typecheck limpio, verificación real en navegador con un bug encontrado y corregido en el proceso; commits y push realizados)
+**☑ Aprobado — pendiente de confirmación del usuario** (backend 138/138 verde, frontend typecheck limpio, verificación real en navegador con un bug encontrado y corregido en el proceso; commits y push realizados). Corrección del 2026-08-02 (arriba) también verificada en navegador y con typecheck limpio.

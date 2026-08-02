@@ -5781,3 +5781,20 @@ Aprobado 2026-08-02 como arquitectura oficial del sistema (Fase 4.5 — Authoriz
 - Movimientos es la única excepción parcial, también deliberada: al ser un ledger append-only, el permiso solo controla quién crea o ve movimientos (`movimientos.ver`/`movimientos.crear`). No existe `movimientos.editar` — editar metadata descriptiva (`documento`/`observacion`/`lote`/`vencimiento`) no requiere ningún permiso más allá de pertenecer a la empresa, y los campos contables (`cantidad`/`tipo`/`producto_id`/`stock_anterior`/`stock_nuevo`) permanecen inmutables para siempre sin excepción, sin importar el permiso que se tenga — ver la regla de inmutabilidad de movimientos arriba.
 
 Esta regla es obligatoria para todos los módulos presentes y futuros del sistema.
+
+
+### Definición de Módulo Implementado
+
+Un módulo se considera implementado cuando:
+
+- Tiene interfaz de usuario.
+- Tiene navegación.
+- Tiene arquitectura definida.
+- Tiene contratos de API definidos.
+- Puede ejecutarse completamente.
+
+Durante la fase MVP, el origen de los datos puede ser temporalmente Mock o Real.
+
+El uso de Mock Data no cambia el estado de implementación del módulo.
+
+La sustitución de Mock por API Real debe realizarse mediante la capa Repository sin modificar la interfaz de usuario.

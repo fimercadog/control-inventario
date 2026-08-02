@@ -84,15 +84,15 @@ const TOP_ITEMS: NavItem[] = [
 
 const INVENTARIO_ITEMS: NavItem[] = [
   { href: "/productos", label: "Productos", icon: Package, permission: "productos.ver" },
-  { href: "/categorias", label: "Categorías", icon: Tags },
-  { href: "/marcas", label: "Marcas", icon: Award },
-  { href: "/unidades-medida", label: "Unidades de Medida", icon: Ruler },
-  { href: "/stock", label: "Stock", icon: Warehouse },
+  { href: "/categorias", label: "Categorías", icon: Tags, permission: "categorias.ver" },
+  { href: "/marcas", label: "Marcas", icon: Award, permission: "marcas.ver" },
+  { href: "/unidades-medida", label: "Unidades de Medida", icon: Ruler, permission: "unidades-medida.ver" },
+  { href: "/stock", label: "Stock", icon: Warehouse, permission: "stock.ver" },
   { href: "/movimientos", label: "Movimientos", icon: ArrowLeftRight, permission: "movimientos.ver" },
 ];
 
 const TERCEROS_ITEMS: NavItem[] = [
-  { href: "/proveedores", label: "Proveedores", icon: Truck },
+  { href: "/proveedores", label: "Proveedores", icon: Truck, permission: "proveedores.ver" },
   { href: "/clientes", label: "Clientes", icon: Contact, pending: true },
 ];
 
@@ -105,17 +105,26 @@ const ADMINISTRACION_ITEMS: NavItem[] = [
 
 const BOTTOM_ITEMS: NavItem[] = [
   { href: "/reportes", label: "Reportes", icon: FileBarChart2, pending: true },
-  { href: "/perfil", label: "Perfil", icon: UserCircle },
+  { href: "/perfil", label: "Perfil", icon: UserCircle, pending: true },
 ];
 
 /**
- * El catálogo de permisos hoy no cubre todos los módulos (p. ej. los
- * permisos de proveedores o categorías no están sembrados todavía), y
- * ningún módulo tiene enforcement de ruta real (docs/03_FUNCTIONAL_SPEC/Roles.md). Si el
- * usuario no tiene NINGÚN permiso asignado (rol sin permisos, o enforcement
- * simplemente no activo para esta cuenta todavía), se trata como "no
- * aplica todavía" y el módulo queda visible — nunca se oculta el sidebar
- * completo por un catálogo de permisos incompleto o sin usar.
+ * Fase 4.5/4.6 (docs/security/ROLES_MATRIX.md) ya sembraron y enforced
+ * permiso real para todos los módulos de negocio existentes — por eso
+ * cada item de arriba con `permission` usa el `.ver` real de su Policy
+ * (Productos/Categorías/Marcas/Unidades de Medida/Stock/Movimientos/
+ * Proveedores/Usuarios). Perfil no tiene contraparte de permiso: es
+ * `pending` (no construido todavía), no un caso de RBAC. Roles/Auditoría
+ * sí tienen permiso Y `pending: true` a la vez — el módulo existe en el
+ * catálogo de permisos (para cuando Fase 5/7 lo construyan) pero la
+ * página real todavía no existe.
+ *
+ * Si el usuario no tiene NINGÚN permiso asignado (rol recién creado sin
+ * permisos todavía, o cuenta sin rol), se trata como "no aplica todavía"
+ * y el módulo queda visible — nunca se oculta el sidebar completo por un
+ * rol vacío. El Platform Super Admin (`is_platform_admin`) siempre ve
+ * todo, sin excepción — el RBAC por permiso solo limita usuarios
+ * normales de una empresa.
  */
 function puedeVerModulo(permiso: string | undefined, user: AuthenticatedUser | null): boolean {
   if (!permiso) return true;
