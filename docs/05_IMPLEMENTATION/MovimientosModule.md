@@ -108,11 +108,11 @@ Con este módulo, la **Fase 3 del roadmap RC1 queda oficialmente completa**. La 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _(pendiente — se completa en el commit de seguimiento tras el push)_.
+- **Commit:** `d31eaa7` — `feat(movimientos): implement complete Movimientos module as an append-only ledger (RC1)`.
 
 ## Confirmación de push
 
-_(pendiente)_
+✅ Ejecutado correctamente: `b08000a..d31eaa7  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
