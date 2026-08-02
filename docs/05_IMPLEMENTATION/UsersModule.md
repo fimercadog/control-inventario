@@ -101,11 +101,11 @@ Con este módulo, la **Fase 4 del roadmap RC1 queda oficialmente completa**. La 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _(pendiente — se completa en el commit de seguimiento tras el push)_.
+- **Commit:** `16b2f96` — `feat(usuarios): implement complete Users module - list, view, activate, deactivate (RC1)`.
 
 ## Confirmación de push
 
-_(pendiente)_
+✅ Ejecutado correctamente: `5a09df9..16b2f96  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
