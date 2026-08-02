@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ClienteController;
@@ -189,3 +190,12 @@ Route::prefix('v1/roles')->name('roles.')->middleware(['auth:api', 'tenant'])->g
 
 // Catálogo global de solo lectura, para la UI de asignación de permisos a un rol.
 Route::get('v1/permisos', [PermissionController::class, 'index'])->name('permisos.index')->middleware(['auth:api', 'tenant']);
+
+// Auditoría (2026-08-02, docs/03_FUNCTIONAL_SPEC/Auditoria.md). Solo
+// lectura por diseño — sin POST/PATCH/DELETE, a propósito: AuditLog es
+// inmutable y las escrituras son responsabilidad exclusiva de
+// Services\Audit\AuditLogger, invocado por los demás módulos.
+Route::prefix('v1/auditoria')->name('auditoria.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [AuditLogController::class, 'index'])->name('index');
+    Route::get('{auditLog}', [AuditLogController::class, 'show'])->name('show');
+});

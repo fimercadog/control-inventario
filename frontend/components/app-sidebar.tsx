@@ -15,6 +15,7 @@ import {
   Contact,
   UserCog,
   ShieldCheck,
+  ScrollText,
   Settings,
   LogOut,
   Boxes,
@@ -89,6 +90,7 @@ const TERCEROS_ITEMS: NavItem[] = [
 const ADMINISTRACION_ITEMS: NavItem[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog, permission: "usuarios.ver" },
   { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver" },
+  { href: "/auditoria", label: "Auditoría", icon: ScrollText, permission: "auditoria.ver" },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 

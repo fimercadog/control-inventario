@@ -1,8 +1,8 @@
 # Roles Matrix — RBAC de FidelOS
 
-**Status: Approved — referencia oficial del modelo de autorización, arquitectura de autorización completa** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día; Fase 4.6 — Authorization Completion — cerró el Gap 5 restante el mismo día; **Fase 5 — Role Management — construida y cerrada el mismo día**, ver sección 6 y Gap 7)
+**Status: Approved — referencia oficial del modelo de autorización, arquitectura de autorización completa** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día; Fase 4.6 — Authorization Completion — cerró el Gap 5 restante el mismo día; **Fase 5 — Role Management y el módulo Auditoría — ambos construidos y cerrados el mismo día**, ver sección 6, Gap 7 y Gap 8)
 
-> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 12 Policies existentes, incluye `StockPolicy`, `ClientePolicy` y `RolePolicy`), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `backend/app/Repositories/RoleRepository.php`, `backend/app/Services/RoleService.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`, `database/migrations/2026_08_02_100000_rename_productos_eliminar_permission.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md` (diseño narrativo del motor RBAC) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento fue la referencia usada para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos" — y sus reglas (sección 6) fueron seguidas sin desviaciones.
+> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 13 Policies existentes, incluye `StockPolicy`, `ClientePolicy`, `RolePolicy` y `AuditLogPolicy`), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `backend/app/Repositories/RoleRepository.php`, `backend/app/Services/RoleService.php`, `backend/app/Repositories/AuditLogRepository.php`, `backend/app/Services/AuditLogService.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`, `database/migrations/2026_08_02_100000_rename_productos_eliminar_permission.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md`/`Auditoria.md` (diseño narrativo) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento fue la referencia usada para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos" — y sus reglas (sección 6) fueron seguidas sin desviaciones.
 >
 > **Fase 4.5 (Authorization Alignment, 2026-08-02)** alineó los seis módulos que esta matriz identificó sin permiso propio (Categorías, Marcas, Unidades de Medida, Stock, Proveedores, Producto↔Proveedor): cada uno ganó su propio namespace de permisos y sus Policies pasaron de "solo pertenencia de empresa" a **pertenencia de empresa Y permiso** (`AND`, nunca `OR`). 6 tests nuevos por módulo (36 en total) prueban explícitamente: usuario autorizado tiene éxito, usuario sin permiso recibe 403, acceso cross-company sigue prohibido. Suite completa: **228/228**. El detalle de qué se hizo por módulo vive en `docs/05_IMPLEMENTATION/AuthorizationAlignment.md`.
 >
@@ -66,11 +66,11 @@ Hoy, la única forma de que un usuario tenga el rol "Administrador" con permiso 
 | `usuarios.invitar` | Invitar un usuario nuevo | Ninguno (Módulo 6, sin construir) |
 | `roles.ver` | Ver roles de la empresa | **Sí** — `RolePolicy` (Módulo 5, 2026-08-02) |
 | `roles.gestionar` | Crear/editar/activar/desactivar roles | **Sí** — `RolePolicy` (Módulo 5, 2026-08-02) |
-| `auditoria.ver` | Ver el módulo de Auditoría | Ninguno (Fase 7, sin construir) |
+| `auditoria.ver` | Ver el módulo de Auditoría (`audit_logs` — acciones de negocio, distinto de `security_logs`/intentos de login) | **Sí** — `AuditLogPolicy` (2026-08-02) |
 | `plataforma.empresas.ver` | Platform Super Admin: ver empresas | Ninguno |
 | `plataforma.usuarios.ver` | Platform Super Admin: ver usuarios de cualquier empresa | Ninguno |
 
-**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.6 + los módulos Clientes y Roles, **11 de las 12 Policies existentes** (`ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy`, `CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`, `ClientePolicy`, `RolePolicy`) verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Queda exactamente **una** excepción deliberada y anterior a Fase 4.5/4.6: `UserPolicy` (RC1 Fase 4) solo verifica pertenencia de empresa — `usuarios.ver` no tiene ningún consumidor todavía (ver fila arriba); la única lógica de negocio real hoy sobre Usuarios es la guarda del último administrador (`esElUltimoConGestion()`), no un chequeo de permiso Spatie. `auditoria.*`/`usuarios.invitar` tampoco tienen Policy propia todavía — esperan a los Módulos 6/7 (Auditoría es ahora Módulo 2 del roadmap de 4 módulos vertical-slice activo), no es un gap del modelo de autorización en sí.
+**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.6 + los módulos Clientes, Roles y Auditoría, **12 de las 13 Policies existentes** (`ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy`, `CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`, `ClientePolicy`, `RolePolicy`, `AuditLogPolicy`) verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Queda exactamente **una** excepción deliberada y anterior a Fase 4.5/4.6: `UserPolicy` (RC1 Fase 4) solo verifica pertenencia de empresa — `usuarios.ver` no tiene ningún consumidor todavía (ver fila arriba); la única lógica de negocio real hoy sobre Usuarios es la guarda del último administrador (`esElUltimoConGestion()`), no un chequeo de permiso Spatie. `usuarios.invitar` tampoco tiene Policy propia todavía — espera al Módulo 6 (Invitaciones), no es un gap del modelo de autorización en sí.
 
 Módulo 3 (Authorization/RBAC — middleware que aplica el permiso a nivel de ruta, `PermissionContext` en el frontend) sigue `[ ]` sin construir en `docs/00_VISION/Roadmap.md`. Ni Fase 4.5 ni Fase 4.6 lo reemplazan: mueven el chequeo de permiso a la capa de Policy (server-side, siempre evaluado, ahora sobre **todos** los recursos existentes), que es más fuerte que un middleware de ruta pero no incluye el `PermissionContext`/sidebar dinámico que Módulo 3 todavía debe construir para el frontend.
 
@@ -85,6 +85,10 @@ Módulo 3 (Authorization/RBAC — middleware que aplica el permiso a nivel de ru
 ### Gap 6 — Clientes construido como vertical slice completo (2026-08-02)
 
 No era un gap de esta matriz — es un módulo nuevo. Documentado aquí porque cambia los totales de las secciones 1-5: Clientes se agregó al catálogo de permisos (`clientes.ver/crear/editar/gestionar`) y a `ClientePolicy` en el mismo commit que creó el módulo, sin pasar por ninguna etapa intermedia de "solo pertenencia" — decisión explícita del propietario del proyecto de cambiar la metodología ("A module is either COMPLETE or it does not exist in the navigation"). Ver `docs/03_FUNCTIONAL_SPEC/Customers.md` y `docs/05_IMPLEMENTATION/CustomersModule.md`.
+
+### Gap 8 — Auditoría construida como vertical slice completo, alcance reducido a propósito (2026-08-02)
+
+Tampoco era un gap de esta matriz — segundo módulo de la secuencia Roles→Auditoría→Reportes→Perfil. `auditoria.ver` ya estaba sembrado desde antes (no es un permiso nuevo); lo nuevo es `AuditLogPolicy`, `AuditLogRepository`/`AuditLogService` (solo lectura, sin ningún método de escritura), y las rutas `GET /auditoria`/`GET /auditoria/{id}`. Decisión de arquitectura propia de este módulo, confirmada con el propietario del proyecto antes de codificar: el campo `usuario` de cada registro expone únicamente `email` y `roles`, **nunca** `name` — regla de privacidad no negociable que no existe en ningún otro módulo del ERP (los demás sí muestran el nombre real libremente). Ver `docs/03_FUNCTIONAL_SPEC/Auditoria.md` y `docs/05_IMPLEMENTATION/AuditoriaModule.md`.
 
 ---
 
@@ -104,7 +108,7 @@ No era un gap de esta matriz — es un módulo nuevo. Documentado aquí porque c
 | Captura IA | `CapturaIA` | Automático | `CapturaIAPolicy` |
 | **Usuarios** | `User` | **Manual** — `User` no usa `BelongsToEmpresa` a propósito (aplicar un scope global a un modelo que el propio guard de autenticación resuelve se consideró riesgo fuera de alcance de Fase 4); cada Controller filtra por `empresa_id` vía `TenantContext::empresaId()` | `UserPolicy` (segunda capa, sobre el resultado ya filtrado) |
 | Roles | `Role` (subclase de Spatie con `BelongsToEmpresa`; columna `estado` agregada en Fase 4.5) | Automático | `RolePolicy` (Módulo 5, 2026-08-02) |
-| Auditoría (`AuditLog`) | `AuditLog` | Automático (`BelongsToEmpresa`, per Módulo 2) | No existe todavía — no hay endpoint de consulta (Fase 7) |
+| Auditoría (`AuditLog`) | `AuditLog` | Automático (`BelongsToEmpresa`, per Módulo 2) | `AuditLogPolicy` (2026-08-02) — solo `viewAny`/`view`, sin `create`/`update`/`delete` |
 | Plataforma (multi-empresa) | `Empresa`, `User` sin scope | N/A — `TenantScope::bypass()` exclusivo de `is_platform_admin` | No existe todavía |
 
 **Nota — por qué Stock tiene su propia Policy (Fase 4.5)**: Laravel resuelve una Policy por **clase de modelo**, no por controller. Stock opera sobre `Producto` (mismo modelo que `ProductoController`), así que si su chequeo de permiso viviera dentro de `ProductoPolicy`, gatearía también las acciones propias de Productos con el permiso equivocado. `StockPolicy` es una clase separada, y `StockController` la invoca directamente (inyectada, vía un helper `authorizeStock()`) en vez de usar el atajo `$this->authorize('ability', $producto)`, que siempre habría resuelto a `ProductoPolicy`. Cualquier módulo futuro que comparta modelo con otro (como Stock con Producto) debe seguir este mismo patrón, no intentar mezclar dos permisos dentro de una Policy compartida.
@@ -129,6 +133,7 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | Captura IA | ✔ | ✔ | ✔ (foto/voz) | ✔ (corregir detalle) | ✔ (confirmar/descartar) | — | `captura-ia.*` — **enforced (Fase 4.6)**; crear/ver exige `.usar`, corregir detalle exige `.revisar`, confirmar/descartar exige `.confirmar` |
 | **Usuarios** | ✔ | ✔ | — (Módulo 6) | — (fuera de alcance, ver `Users.md`) | ✔ | — (nunca) | `usuarios.*` — enforcement parcial (solo la guarda del último administrador, RC1 Fase 4) |
 | **Roles** | ✔ | ✔ | ✔ | ✔ | ✔ (`activar`/`desactivar`, bloqueado con 409 si tiene usuarios asignados) | **—** (confirmado: sin Delete) | `roles.*` — **enforced (Módulo 5, 2026-08-02)** |
+| **Auditoría** | ✔ | ✔ | — (nunca, solo lectura) | — (nunca, `AuditLog` es inmutable) | — (nunca aplica) | **—** (nunca físico, ni lógico) | `auditoria.ver` — **enforced (2026-08-02)**; único permiso, sin `.gestionar` — no hay nada que gestionar en un módulo 100% de solo lectura |
 
 ---
 
@@ -148,7 +153,7 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | `captura-ia.usar/revisar/confirmar/gestionar` | Pipeline de Captura IA completo — **enforced (Fase 4.6)** para `usar`/`revisar`/`confirmar`; `gestionar` sembrado para configuración futura, sin consumidor todavía |
 | `usuarios.ver/editar/invitar` | Módulo Usuarios (Fase 4, certificado construido) + futuro Módulo 6 |
 | `roles.ver/gestionar` | Módulo Roles — **enforced (Módulo 5, 2026-08-02)** |
-| `auditoria.ver` | Futura pantalla de Auditoría (siguiente módulo del roadmap vertical-slice activo) |
+| `auditoria.ver` | Módulo Auditoría — **enforced (2026-08-02)** |
 | `plataforma.empresas.ver`, `plataforma.usuarios.ver` | Superficie exclusiva de Platform Super Admin, namespace reservado — **nunca** asignable a un rol de empresa (validación de aplicación implementada en Módulo 5: `not_regex:/^plataforma\./` en `StoreRoleRequest`/`UpdateRoleRequest`, no una constraint de base de datos) |
 
 ---
@@ -186,9 +191,10 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | 5 | Productos/Movimientos/Captura IA tienen el mismo gap que tenían los 6 módulos de Fase 4.5 | **Cerrado (Fase 4.6)** — 3 Policies actualizadas, 1 permiso renombrado, 1 permiso nuevo, 1 ability nueva, tests nuevos, 232/232 suite completa |
 | 6 | Módulo Clientes no existía | **Cerrado (2026-08-02)** — vertical slice completo, `ClientePolicy` construida ya con el modelo de autorización estándar, 13 tests nuevos |
 | 7 | Módulo Roles (Fase 5) no existía | **Cerrado (2026-08-02)** — vertical slice completo (`RoleRepository`/`RoleService`/`RolePolicy`/`RoleController`/`PermissionController`), 24 tests nuevos, incluye la corrección de `RoleAlreadyExists` (Spatie) sin capturar en nombres duplicados. Ver `docs/05_IMPLEMENTATION/RolesModule.md` |
+| 8 | Módulo Auditoría no existía | **Cerrado (2026-08-02)** — vertical slice completo, 100% de solo lectura (`AuditLogRepository`/`AuditLogService`/`AuditLogPolicy`/`AuditLogController`), 15 tests nuevos, incluye la regla de privacidad no negociable (usuario expone solo email+roles, nunca nombre real). Ver `docs/05_IMPLEMENTATION/AuditoriaModule.md` |
 
 Gap 1 es el único abierto — fuera del roadmap de 8 fases actual, no bloquea ningún módulo activo.
 
 ---
 
-**Aprobado como referencia oficial del modelo de autorización — arquitectura de autorización completa. Fase 5 (Roles) completa (2026-08-02): construida exactamente según las reglas de la sección 6, sin desviaciones. Próximo módulo del roadmap vertical-slice activo: Auditoría (read-only).**
+**Aprobado como referencia oficial del modelo de autorización — arquitectura de autorización completa. Fase 5 (Roles) y Auditoría completas (2026-08-02), ambas construidas exactamente según lo especificado, sin desviaciones. Próximo módulo del roadmap vertical-slice activo: Reportes.**

@@ -257,6 +257,48 @@ export interface UsuarioAsignadoRol {
   is_active: boolean;
 }
 
+/**
+ * Espejo de App\Http\Resources\Audit\AuditLogResource (Auditoría,
+ * 2026-08-02, docs/03_FUNCTIONAL_SPEC/Auditoria.md). Regla de privacidad
+ * no negociable: `usuario` NUNCA trae un campo `name` — solo `email` y
+ * `roles`. No agregar `name` aquí aunque el backend algún día lo exponga
+ * por error; ver Auditoria.md antes de tocar este tipo.
+ */
+export interface AuditLog {
+  id: number;
+  uuid: string;
+  modulo: string;
+  accion: string;
+  auditable_type: string | null;
+  auditable_id: number | null;
+  valores_anteriores: Record<string, unknown> | null;
+  valores_nuevos: Record<string, unknown> | null;
+  resultado: string | null;
+  ip: string | null;
+  user_agent: string | null;
+  usuario: { id: number; email: string; roles: string[] } | null;
+  created_at: string | null;
+}
+
+export interface AuditLogFiltros {
+  busqueda?: string;
+  modulo?: string;
+  accion?: string;
+  usuario_id?: number;
+  resultado?: string;
+  desde?: string;
+  hasta?: string;
+  page?: number;
+}
+
+export interface PaginatedAuditLogs {
+  items: AuditLog[];
+  meta: PaginatedItems<AuditLog>["meta"] & {
+    modulos_disponibles: string[];
+    acciones_disponibles: string[];
+  };
+}
+
 /** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
 export interface Categoria {
   id: number;

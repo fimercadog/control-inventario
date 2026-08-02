@@ -118,10 +118,17 @@ Ver "Módulo Usuarios" arriba — construido, endpoints reales confirmados contr
 - GET `/auth/sesiones` — sesiones no revocadas del usuario actual (o de otro usuario de la misma empresa con `usuarios.editar`).
 - DELETE `/auth/sesiones/{id}` — revoca esa sesión puntual (cierra esa sesión de forma remota).
 
-### Seguridad y auditoría (Módulo 8)
+### Auditoría (Built 2026-08-02 — `AuditLogController`, ver `docs/03_FUNCTIONAL_SPEC/Auditoria.md` y `docs/05_IMPLEMENTATION/AuditoriaModule.md`)
 
-- GET `/auditoria` — requiere `auditoria.ver`; lista `audit_logs` de la empresa.
-- GET `/seguridad/intentos-login` — requiere `auditoria.ver`; lista `security_logs` de la empresa.
+Distinto de "Seguridad" abajo — audita **acciones de negocio** (`audit_logs`), no intentos de inicio de sesión (`security_logs`, tabla y propósito distintos). Solo lectura de punta a punta: sin `POST`/`PATCH`/`DELETE`, a propósito — `AuditLog` es inmutable y las escrituras son responsabilidad exclusiva de `Services\Audit\AuditLogger`, invocado por los 11 módulos de negocio existentes.
+
+- GET `/auditoria` — requiere `auditoria.ver`; lista paginada de `audit_logs` de la empresa, con filtros `busqueda`, `modulo`, `accion`, `usuario_id`, `resultado`, `desde`, `hasta`. La respuesta incluye `meta.modulos_disponibles`/`meta.acciones_disponibles` (valores realmente sembrados en la empresa, para poblar los selectores de filtro sin inventar una lista estática).
+- GET `/auditoria/{id}` — requiere `auditoria.ver`; detalle completo de un evento, incluyendo `valores_anteriores`/`valores_nuevos`.
+- **Regla de privacidad no negociable**: el campo `usuario` de cada registro expone únicamente `email` y `roles` (resueltos en vivo, no un snapshot histórico) — **nunca** `name`. Ver `Auditoria.md` para el detalle completo de esta decisión.
+
+### Seguridad — intentos de inicio de sesión (Módulo 8, sin construir)
+
+- GET `/seguridad/intentos-login` — requiere `auditoria.ver`; listaría `security_logs` de la empresa (tabla ya existe y se escribe activamente desde Módulo 1, sin superficie de consulta todavía). No confundir con `/auditoria` arriba — son dos tablas y dos módulos distintos.
 
 ### Perfil (Módulo 9)
 

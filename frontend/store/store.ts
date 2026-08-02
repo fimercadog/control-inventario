@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "@/store/slices/auth-slice";
 import clientesReducer from "@/store/slices/clientes-slice";
 import rolesReducer from "@/store/slices/roles-slice";
+import auditoriaReducer from "@/store/slices/auditoria-slice";
 
 export function makeStore() {
   return configureStore({
@@ -9,6 +10,7 @@ export function makeStore() {
       auth: authReducer,
       clientes: clientesReducer,
       roles: rolesReducer,
+      auditoria: auditoriaReducer,
     },
   });
 }
