@@ -51,6 +51,12 @@ class PermissionSeeder extends Seeder
         'proveedores.editar',
         'proveedores.gestionar',
 
+        // Clientes (2026-08-02) — mismo patrón que Proveedores.
+        'clientes.ver',
+        'clientes.crear',
+        'clientes.editar',
+        'clientes.gestionar',
+
         // Producto ↔ Proveedor (Fase 4.5) — namespace propio, distinto de
         // proveedores.* (es la asociación, no el proveedor en sí).
         'producto-proveedor.ver',

@@ -55,6 +55,12 @@ Borrado siempre lógico — nunca DELETE físico. **Fase 4.5**: `ProveedorPolicy
 - GET/POST `/api/v1/proveedores`, GET/PATCH `/api/v1/proveedores/{id}`, POST `/api/v1/proveedores/{id}/deshabilitar`, POST `/api/v1/proveedores/{id}/habilitar`, GET `/api/v1/proveedores/{id}/productos` — `ProveedorController`.
 - GET/POST `/api/v1/productos/{producto}/proveedores`, PATCH `/api/v1/productos/{producto}/proveedores/{asociacion}`, POST `/api/v1/productos/{producto}/proveedores/{asociacion}/deshabilitar` — `ProductoProveedorController`. Sin `habilitar` — esa ruta nunca se construyó.
 
+## Módulo Clientes (2026-08-02, docs/03_FUNCTIONAL_SPEC/Customers.md)
+
+Borrado siempre lógico — nunca DELETE físico. Primer módulo construido como vertical slice completo (`ClienteRepository`+`ClienteService`+`ClienteDTO`+`ClientePolicy`, sin la etapa de "solo pertenencia" que tuvieron los módulos anteriores a Fase 4.5 — `ClientePolicy` ya nace exigiendo `clientes.*` desde el primer commit).
+
+- GET/POST `/api/v1/clientes`, GET/PATCH `/api/v1/clientes/{id}`, POST `/api/v1/clientes/{id}/deshabilitar`, POST `/api/v1/clientes/{id}/habilitar` — `ClienteController`. Mismo shape que `/proveedores`, sin la pestaña "Productos" (Clientes no tiene una relación equivalente todavía).
+
 ## Módulo Stock (RC1 Fase 2, docs/03_FUNCTIONAL_SPEC/Stock.md)
 
 Stock NO es una entidad independiente — opera directamente sobre `Producto` (route-model-binding sobre `{producto}`). **Fase 4.5**: gateado por `StockPolicy`, una Policy **dedicada** — no `ProductoPolicy`, a propósito: Laravel resuelve Policy por clase de modelo, y Stock comparte modelo (`Producto`) con `ProductoController`, así que reutilizar `ProductoPolicy` habría gateado ambos módulos con el mismo permiso. `StockController` invoca `StockPolicy` directamente (inyectada), no vía el helper `$this->authorize()`. Sin `POST /` a propósito: no existe "crear un Stock". Sin `stock.crear` en el catálogo de permisos por la misma razón.

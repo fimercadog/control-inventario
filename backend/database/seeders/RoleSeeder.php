@@ -31,6 +31,7 @@ class RoleSeeder extends Seeder
                 'movimientos.ver', 'movimientos.crear',
                 'captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar',
                 'usuarios.ver', 'auditoria.ver',
+                'clientes.ver', 'clientes.crear', 'clientes.editar', 'clientes.gestionar',
             ],
             'Bodeguero' => [
                 'productos.ver', 'movimientos.ver', 'movimientos.crear',
@@ -38,9 +39,10 @@ class RoleSeeder extends Seeder
             ],
             'Vendedor' => [
                 'productos.ver', 'movimientos.ver',
+                'clientes.ver', 'clientes.crear', 'clientes.editar',
             ],
             'Auxiliar Contable' => [
-                'productos.ver', 'auditoria.ver',
+                'productos.ver', 'auditoria.ver', 'clientes.ver',
             ],
         ];
 

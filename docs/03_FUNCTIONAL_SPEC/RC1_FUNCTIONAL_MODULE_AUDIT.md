@@ -26,15 +26,15 @@
 | 7 | Stock | usa columnas de `productos`, sin tabla propia | ✅ Controller+Policy dedicada | ✅ lista+detalle | ✅ real | 13 | 🟢 COMPLETE |
 | 8 | Movimientos | ✅ | ✅ Controller+Policy+Service | ✅ lista+detalle | ✅ real | 19 | 🟢 COMPLETE |
 | 9 | Proveedores | ✅ 2 tablas | ✅ 2 Controllers+2 Policies | ✅ lista+detalle | ✅ real | 29 | 🟢 COMPLETE |
-| 10 | Clientes | ❌ | ❌ nada | 🔴 solo placeholder | ❌ | 0 | 🔴 NOT IMPLEMENTED |
+| 10 | Clientes | ✅ (actualizado 2026-08-02) | ✅ Controller+Policy+**Repository+Service+DTO** (actualizado 2026-08-02) | ✅ lista+detalle, Redux (actualizado 2026-08-02) | ✅ real | 13 | 🟢 COMPLETE (actualizado 2026-08-02) |
 | 11 | Usuarios | ✅ (tabla `users`) | ✅ Controller+Policy | ✅ lista+detalle | ✅ real | 14 | 🟢 COMPLETE |
-| 12 | Roles | ✅ (motor Spatie real, usado por todo el sistema) | ❌ sin Controller/ruta de CRUD | 🔴 solo placeholder | ➖ el motor escribe, sin CRUD de cara al usuario | 0 dedicados (motor probado aparte) | 🔴 NOT IMPLEMENTED |
-| 13 | Auditoría | ✅ (`audit_logs`, se escribe activamente) | ✅ escritura (`AuditLogger`), ❌ sin Controller/ruta de lectura | 🔴 solo placeholder | ✅ escritura real, ❌ sin lectura | 0 dedicados (escritura cubierta indirectamente por 9 archivos de test de otros módulos) | 🔴 NOT IMPLEMENTED |
-| 14 | Reportes | ❌ | ❌ nada | 🔴 solo placeholder | ❌ | 0 | 🔴 NOT IMPLEMENTED |
+| 12 | Roles | ✅ (motor Spatie real, usado por todo el sistema) | ❌ sin Controller/ruta de CRUD | ❌ **eliminado de la navegación** (actualizado 2026-08-02 — ya no hay placeholder, la ruta no existe) | ➖ el motor escribe, sin CRUD de cara al usuario | 0 dedicados (motor probado aparte) | 🔴 NOT IMPLEMENTED |
+| 13 | Auditoría | ✅ (`audit_logs`, se escribe activamente) | ✅ escritura (`AuditLogger`), ❌ sin Controller/ruta de lectura | ❌ **eliminado de la navegación** (actualizado 2026-08-02) | ✅ escritura real, ❌ sin lectura | 0 dedicados (escritura cubierta indirectamente por 9 archivos de test de otros módulos) | 🔴 NOT IMPLEMENTED |
+| 14 | Reportes | ❌ | ❌ nada | ❌ **eliminado de la navegación** (actualizado 2026-08-02) | ❌ | 0 | 🔴 NOT IMPLEMENTED |
 | 15 | Configuración | columnas sin usar en `users` | ❌ sin Controller | ✅ página real | ⚠️ solo tema, 100% client-side, nunca toca el backend | 0 | 🟡 PARTIAL |
-| 16 | Perfil | mismas columnas sin usar que Configuración | ❌ nada | 🔴 placeholder ×2 | ❌ | 0 | 🔴 NOT IMPLEMENTED |
+| 16 | Perfil | mismas columnas sin usar que Configuración | ❌ nada | ❌ **eliminado de la navegación** (actualizado 2026-08-02 — antes 2 placeholders, ahora ninguna ruta) | ❌ | 0 | 🔴 NOT IMPLEMENTED |
 
-**Totales:** 🟢 10 · 🟡 2 · 🔴 4 (empatados con "no implementado" pero con infraestructura real detrás: Roles y Auditoría — ver detalle).
+**Totales:** 🟢 11 · 🟡 2 · 🔴 3 (Roles y Auditoría tienen infraestructura real detrás pero sin capa de usuario — ver detalle; los 3 🔴 ya no tienen ninguna ruta ni placeholder en la navegación, per decisión del propietario del proyecto del 2026-08-02: "A module is either COMPLETE or it does not exist in the navigation").
 
 ---
 
@@ -75,9 +75,11 @@ Para los 10 módulos 🟢, las respuestas 1-14 son idénticas en estructura; se 
 
 ---
 
-### 🔴 NOT IMPLEMENTED — Clientes
+### 🟢 COMPLETE — Clientes (2026-08-02, primer vertical slice completo del proyecto)
 
-1. Base de datos: ❌ ninguna tabla `clientes`. 2. Migraciones: ❌. 3. Model: ❌. 4. Repository: ❌. 5. Service: ❌. 6. Policy: ❌. 7. Controller: ❌. 8. Endpoints de API: ❌. 9. Página frontend: solo `PendingModule` — sin UI real de ningún tipo. 10. Conectada al backend: ❌. 11. Persistencia: ❌. 12. Tests: 0. 13. Documentación: solo un documento de diseño en `docs/03_FUNCTIONAL_SPEC/FUTURE/Customers.md` (`Status: Planned`). 14. Usable: no, en absoluto.
+Distinto en arquitectura de los otros 9 módulos 🟢: es el primer módulo construido con `Repository`+`Service`+`DTO` en el backend y Redux Toolkit en el frontend, bajo la nueva metodología del propietario del proyecto ("A module is either COMPLETE or it does not exist in the navigation"). Detalle completo en `docs/05_IMPLEMENTATION/CustomersModule.md`.
+
+1. Base de datos: ✅ tabla `clientes` (mismo shape que `proveedores`). 2. Migraciones: ✅. 3. Model: ✅ `Cliente`. 4. Repository: ✅ `ClienteRepository` — primero de este proyecto. 5. Service: ✅ `ClienteService`. 6. Policy: ✅ `ClientePolicy`, pertenencia de empresa AND permiso desde el commit inicial. 7. Controller: ✅ `ClienteController`. 8. Endpoints de API: ✅ 6 rutas (`index/store/show/update/disable/enable`). 9. Página frontend: ✅ listado + ficha de detalle con edición inline. 10. Conectada al backend real: ✅. 11. Persistencia: ✅, confirmada por test y directamente contra la base de datos. 12. Tests: 13 (`ClienteControllerTest`), incluye un caso dedicado a que vaciar un campo `nullable` con `null` explícito persista correctamente (encontrado y corregido durante el diseño del DTO, antes de llegar al Controller). 13. Documentación: ✅ `Customers.md` (reemplaza `FUTURE/Customers.md`). 14. Usable: sí, verificado en navegador real.
 
 ### 🔴 NOT IMPLEMENTED — Roles (como módulo de gestión)
 
@@ -91,11 +93,13 @@ Para los 10 módulos 🟢, las respuestas 1-14 son idénticas en estructura; se 
 
 ### 🔴 NOT IMPLEMENTED — Reportes
 
-1-14: idéntico a Clientes — cero código en cualquier capa. Solo `docs/03_FUNCTIONAL_SPEC/FUTURE/Reports.md`.
+1-14: idéntico a Clientes antes de esta unidad de trabajo — cero código en cualquier capa. Solo `docs/03_FUNCTIONAL_SPEC/FUTURE/Reports.md`.
 
 ### 🔴 NOT IMPLEMENTED — Perfil
 
-1. Base de datos: las mismas columnas sin usar de `users` que Configuración (`avatar_path`/`theme`/`language`/`timezone`) — ningún endpoint las lee ni las escribe para editar perfil. 2-8: ❌ en todo — no existe `ProfileController`, no existe `PATCH /perfil`, no existe ninguna ruta bajo `/perfil` en el backend. 9. Página frontend: **dos** stubs `PendingModule` — `/perfil` y `/perfil/cambiar-contrasena` — ninguno tiene contenido real. 10-12: ❌/0. 13. Documentación: ❌ — no existe ningún `Profile.md` en ningún lado del árbol de `docs/`. 14. Usable: no, en absoluto.
+1. Base de datos: las mismas columnas sin usar de `users` que Configuración (`avatar_path`/`theme`/`language`/`timezone`) — ningún endpoint las lee ni las escribe para editar perfil. 2-8: ❌ en todo — no existe `ProfileController`, no existe `PATCH /perfil`, no existe ninguna ruta bajo `/perfil` en el backend. 9. Página frontend: ❌ **ya no existe ninguna** — hasta el 2026-08-02 eran dos stubs `PendingModule` (`/perfil` y `/perfil/cambiar-contrasena`); ambos directorios se eliminaron por completo, junto con `pending-module.tsx` (sin consumidores restantes). 10-12: ❌/0. 13. Documentación: ❌ — no existe ningún `Profile.md` en ningún lado del árbol de `docs/`. 14. Usable: no, en absoluto.
+
+**Nota (2026-08-02)**: Roles, Auditoría, Reportes y Perfil dejaron de tener CUALQUIER placeholder — sus directorios de página, el componente `PendingModule`, y sus entradas del sidebar fueron eliminados por completo. Antes de esta fecha, mostraban una pantalla real de "pendiente de implementación" con badge "Próximamente"; ahora sus rutas simplemente no existen (404 real de Next.js) y no aparecen en el sidebar en absoluto. Decisión explícita del propietario del proyecto que revoca la regla anterior ("nunca ocultar un módulo del sidebar, mostrar Coming Soon en su lugar").
 
 ---
 
@@ -110,7 +114,7 @@ Para los 10 módulos 🟢, las respuestas 1-14 son idénticas en estructura; se 
 
 ## Estado del sidebar frente a esta auditoría
 
-Regla explícita: si un módulo es 🟢 COMPLETE o 🟡 PARTIAL, el sidebar debe abrir el módulo real; si es 🔴 NOT IMPLEMENTED, debe mostrar el placeholder. `frontend/components/app-sidebar.tsx` ya cumple esto exactamente: los 5 módulos marcados `pending: true` (Clientes, Roles, Auditoría, Reportes, Perfil) son precisamente los 5 clasificados 🔴 aquí; los 11 restantes (incluyendo Dashboard y Configuración, ambos 🟡) abren su página real. No se requieren cambios adicionales de sidebar como resultado de esta auditoría.
+**Actualizado 2026-08-02 — regla revisada.** La regla original de esta auditoría (COMPLETE/PARTIAL abre el módulo real, NOT IMPLEMENTED muestra un placeholder "Próximamente") quedó revocada el mismo día por decisión explícita del propietario del proyecto: "A module is either COMPLETE or it does not exist in the navigation." Bajo la regla nueva: Clientes se reconstruyó como vertical slice completo y ahora abre su módulo real; Roles, Auditoría, Reportes y Perfil — los 4 restantes clasificados 🔴 — se eliminaron de la navegación por completo (ni entrada de sidebar, ni ruta, ni placeholder). El sidebar hoy lista exactamente 12 módulos, todos 🟢 COMPLETE o 🟡 PARTIAL — ninguno 🔴. Cuando cualquiera de los 4 restantes se construya como vertical slice completo, se agrega de vuelta al sidebar en el mismo commit que lo haga real, nunca antes.
 
 ---
 

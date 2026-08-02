@@ -201,6 +201,29 @@ export type StoreProveedorPayload = Partial<
 
 export type UpdateProveedorPayload = Partial<StoreProveedorPayload>;
 
+/** Espejo de App\Http\Resources\Cliente\ClienteResource (2026-08-02, docs/03_FUNCTIONAL_SPEC/Customers.md). */
+export interface Cliente {
+  id: number;
+  nombre: string;
+  nit: string | null;
+  contacto: string | null;
+  telefono: string | null;
+  email: string | null;
+  direccion: string | null;
+  ciudad: string | null;
+  pais: string | null;
+  notas: string | null;
+  estado: "activo" | "inactivo";
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type StoreClientePayload = Partial<
+  Pick<Cliente, "nit" | "contacto" | "telefono" | "email" | "direccion" | "ciudad" | "pais" | "notas" | "estado">
+> & { nombre: string };
+
+export type UpdateClientePayload = Partial<StoreClientePayload>;
+
 /** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
 export interface Categoria {
   id: number;

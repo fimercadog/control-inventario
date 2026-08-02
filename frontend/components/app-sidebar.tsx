@@ -14,12 +14,7 @@ import {
   Truck,
   Contact,
   UserCog,
-  ShieldCheck,
-  ScrollText,
   Settings,
-  FileBarChart2,
-  UserCircle,
-  KeyRound,
   LogOut,
   Boxes,
 } from "lucide-react";
@@ -39,12 +34,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutThunk } from "@/store/slices/auth-slice";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -57,25 +51,20 @@ interface NavItem {
   icon: React.ElementType;
   /** Si no hay permiso en el catálogo para este módulo, es visible siempre. */
   permission?: string;
-  /**
-   * Módulo sin backend/frontend real todavía — sigue navegando a su
-   * página real de "pendiente de implementación" (nunca desaparece del
-   * sidebar), pero se marca visualmente como "Próximamente" para no
-   * confundirlo con un módulo funcional. Decisión confirmada
-   * explícitamente por el propietario del proyecto (2026-08-02): la
-   * navegación completa del ERP debe quedar siempre visible.
-   */
-  pending?: boolean;
 }
 
 /**
- * Sidebar Oficial RC1 (2026-07-30). Agrupado en Inventario/Terceros/
- * Administración según lo aprobado — no es una reorganización estética,
- * es la navegación oficial del release. Módulos sin backend/frontend
- * completo todavía apuntan a una página real de "pendiente de
- * implementación" (`components/pending-module.tsx`), nunca a datos mock,
- * y quedan marcados `pending: true` (badge "Próximamente") en vez de
- * ocultarse o quitarse del menú.
+ * Sidebar Oficial (metodología revisada 2026-08-02): "A module is either
+ * COMPLETE or it does not exist in the navigation" — decisión explícita
+ * del propietario del proyecto que reemplaza la regla anterior (RC1
+ * 2026-07-30), que exigía mantener cada módulo del ERP visible aunque
+ * fuera un placeholder "Próximamente". Esa regla queda revocada: este
+ * sidebar solo lista módulos con vertical slice completo (DB real +
+ * Backend + Frontend + persistencia + tests + documentación, ver
+ * `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`). Un módulo
+ * sin esas 6 capas completas no aparece aquí — no hay estado intermedio
+ * "Próximamente"/`pending`. Cuando un módulo se construye por completo,
+ * se agrega aquí en el mismo commit que lo hace real.
  */
 const TOP_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -93,31 +82,18 @@ const INVENTARIO_ITEMS: NavItem[] = [
 
 const TERCEROS_ITEMS: NavItem[] = [
   { href: "/proveedores", label: "Proveedores", icon: Truck, permission: "proveedores.ver" },
-  { href: "/clientes", label: "Clientes", icon: Contact, pending: true },
+  { href: "/clientes", label: "Clientes", icon: Contact, permission: "clientes.ver" },
 ];
 
 const ADMINISTRACION_ITEMS: NavItem[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog, permission: "usuarios.ver" },
-  { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver", pending: true },
-  { href: "/auditoria", label: "Auditoría", icon: ScrollText, permission: "auditoria.ver", pending: true },
   { href: "/configuracion", label: "Configuración", icon: Settings },
-];
-
-const BOTTOM_ITEMS: NavItem[] = [
-  { href: "/reportes", label: "Reportes", icon: FileBarChart2, pending: true },
-  { href: "/perfil", label: "Perfil", icon: UserCircle, pending: true },
 ];
 
 /**
  * Fase 4.5/4.6 (docs/security/ROLES_MATRIX.md) ya sembraron y enforced
- * permiso real para todos los módulos de negocio existentes — por eso
- * cada item de arriba con `permission` usa el `.ver` real de su Policy
- * (Productos/Categorías/Marcas/Unidades de Medida/Stock/Movimientos/
- * Proveedores/Usuarios). Perfil no tiene contraparte de permiso: es
- * `pending` (no construido todavía), no un caso de RBAC. Roles/Auditoría
- * sí tienen permiso Y `pending: true` a la vez — el módulo existe en el
- * catálogo de permisos (para cuando Fase 5/7 lo construyan) pero la
- * página real todavía no existe.
+ * permiso real para todos los módulos de negocio existentes — cada item
+ * de arriba con `permission` usa el `.ver` real de su Policy.
  *
  * Si el usuario no tiene NINGÚN permiso asignado (rol recién creado sin
  * permisos todavía, o cuenta sin rol), se trata como "no aplica todavía"
@@ -166,20 +142,11 @@ export function AppSidebar() {
             <SidebarMenuButton
               size={menuButtonSize}
               isActive={isActive}
-              tooltip={item.pending ? `${item.label} (Próximamente)` : item.label}
-              className={item.pending ? "text-muted-foreground" : undefined}
+              tooltip={item.label}
               render={
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
-                  {item.pending && (
-                    <Badge
-                      variant="outline"
-                      className="ml-auto px-1.5 py-0 text-[10px] font-normal text-muted-foreground group-data-[collapsible=icon]:hidden"
-                    >
-                      Pronto
-                    </Badge>
-                  )}
                 </Link>
               }
             />
@@ -232,12 +199,6 @@ export function AppSidebar() {
             <SidebarMenu>{renderItems(ADMINISTRACION_ITEMS)}</SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>{renderItems(BOTTOM_ITEMS)}</SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
@@ -272,13 +233,9 @@ export function AppSidebar() {
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/perfil")}>
-                  <UserCircle />
-                  Mi Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/perfil/cambiar-contrasena")}>
-                  <KeyRound />
-                  Cambiar contraseña
+                <DropdownMenuItem onClick={() => router.push("/configuracion")}>
+                  <Settings />
+                  Configuración
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>

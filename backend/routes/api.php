@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
+use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\ProductoController;
@@ -83,6 +84,17 @@ Route::prefix('v1/proveedores')->name('proveedores.')->middleware(['auth:api', '
     Route::post('{proveedor}/habilitar', [ProveedorController::class, 'enable'])->name('enable');
     // FEATURE-005: "Products" tab de la Ficha de Proveedor.
     Route::get('{proveedor}/productos', [ProveedorController::class, 'productos'])->name('productos');
+});
+
+// Módulo Clientes (2026-08-02, docs/03_FUNCTIONAL_SPEC/Customers.md).
+// Borrado siempre lógico — mismo patrón exacto que Proveedores.
+Route::prefix('v1/clientes')->name('clientes.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [ClienteController::class, 'index'])->name('index');
+    Route::post('/', [ClienteController::class, 'store'])->name('store');
+    Route::get('{cliente}', [ClienteController::class, 'show'])->name('show');
+    Route::patch('{cliente}', [ClienteController::class, 'update'])->name('update');
+    Route::post('{cliente}/deshabilitar', [ClienteController::class, 'disable'])->name('disable');
+    Route::post('{cliente}/habilitar', [ClienteController::class, 'enable'])->name('enable');
 });
 
 // RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Categories.md). Borrado siempre

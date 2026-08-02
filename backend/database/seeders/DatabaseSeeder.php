@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
         'unidades' => 10,
         'productos' => 500,
         'proveedores' => 100,
+        'clientes' => 150,
         'movimientos' => 10000,
         'capturas_ia' => 100,
         'auditoria' => 5000,
@@ -84,6 +85,7 @@ class DatabaseSeeder extends Seeder
 
         (new ProductoSeeder())->crear($empresa, max(10, (int) round(self::VOLUMEN_BASE['productos'] * $escala)));
         (new ProveedorSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['proveedores'] * $escala)));
+        (new ClienteSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['clientes'] * $escala)));
         $paresCreados = (new ProductoProveedorSeeder())->crear($empresa);
         $this->command?->info("  producto_proveedor: {$paresCreados} pares creados");
 
