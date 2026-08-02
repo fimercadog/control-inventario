@@ -23,7 +23,15 @@ class InventoryService
     /**
      * @param float $cantidad Magnitud siempre positiva. La dirección
      *                        (sumar o restar) la decide este Service según
-     *                        $tipo, nunca el llamador.
+     *                        $tipo, nunca el llamador — excepto para
+     *                        Ajuste, el único tipo inherentemente
+     *                        bidireccional (un conteo físico puede
+     *                        encontrar más o menos stock del esperado),
+     *                        donde el llamador debe pasar $direccion
+     *                        explícitamente (+1/-1). Para todo lo demás,
+     *                        $direccion debe quedar en null y la dirección
+     *                        la sigue decidiendo direccion($tipo) como
+     *                        siempre (RC1 Fase 3, docs/03_FUNCTIONAL_SPEC/Movements.md).
      */
     public function registrarMovimiento(
         Producto $producto,
@@ -38,9 +46,10 @@ class InventoryService
         ?string $lote = null,
         ?string $vencimiento = null,
         ?int $proveedorId = null,
+        ?int $direccion = null,
     ): Movimiento {
         $cantidad = abs($cantidad);
-        $delta = $cantidad * $this->direccion($tipo);
+        $delta = $cantidad * ($direccion ?? $this->direccion($tipo));
 
         return DB::transaction(function () use ($producto, $tipo, $cantidad, $delta, $documento, $observacion, $usuarioId, $costo, $precio, $proveedor, $lote, $vencimiento, $proveedorId) {
             /** @var Producto $productoBloqueado */
@@ -92,11 +101,15 @@ class InventoryService
     }
 
     /**
-     * Entrada, Ajuste, Conteo y Transferencia suman por defecto en este MVP
-     * de un solo almacén; Salida resta. Un ajuste negativo explícito o una
-     * transferencia con origen/destino son de un futuro módulo de
-     * Compras/Ventas/Transferencias (sección 25-28) y podrán refinar esta
-     * regla sin que Captura IA se entere.
+     * Entrada, Conteo y Transferencia suman por defecto en este MVP de un
+     * solo almacén; Salida resta. Ajuste normalmente llega con
+     * $direccion explícito desde MovimientoController (RC1 Fase 3) — este
+     * default solo aplica si algún llamador antiguo (p. ej. Captura IA)
+     * lo invoca sin especificarla, y mantiene el comportamiento histórico
+     * (+1) para no romper nada existente. Una transferencia con
+     * origen/destino real es de un futuro módulo de Compras/Ventas
+     * (sección 25-28) y podrá refinar esta regla sin que Captura IA se
+     * entere.
      */
     private function direccion(TipoMovimiento $tipo): int
     {

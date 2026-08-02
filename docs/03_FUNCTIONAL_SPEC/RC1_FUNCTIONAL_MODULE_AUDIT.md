@@ -18,7 +18,7 @@
 | 5 | Marcas | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 6 | Unidades de Medida | 🟢 Completo (implementado 2026-07-30) | 90% |
 | 7 | Stock | 🟢 Completo (implementado 2026-07-30) | 90% |
-| 8 | Movimientos | ⚫ Mock | 20% |
+| 8 | Movimientos | 🟢 Completo (implementado 2026-08-02) | 90% |
 | 9 | Proveedores | 🟡 Parcial | 85% |
 | 10 | Clientes | 🔴 No Implementado | 0% |
 | 11 | Usuarios | 🔴 No Implementado | 0% |
@@ -40,7 +40,7 @@
 - [x] Marcas (completo, implementado 2026-07-30)
 - [x] Unidades de Medida (completo, implementado 2026-07-30 — cierra Fase 1)
 - [x] Stock (completo, implementado 2026-07-30 — cierra Fase 2)
-- [x] Movimientos (mock, backend fragmentario)
+- [x] Movimientos (completo, implementado 2026-08-02 — cierra Fase 3)
 - [x] Proveedores (parcial — falta retrofit + verificación en navegador de tabs nuevas)
 - [ ] Clientes
 - [ ] Usuarios
@@ -186,20 +186,23 @@ Stock **no es una entidad independiente** — no existe tabla ni modelo `Stock`;
 
 Con esto se cierra la **Fase 2** del roadmap de 8 fases aprobado.
 
-### 8. Movimientos — ⚫ Mock (pantalla) / fragmentario (backend)
+### 8. Movimientos — 🟢 Completo (implementado 2026-08-02)
 
 | Capa | Ítem | Estado |
-|---|---|:---:|
-| Backend | Modelo/Migración | ✔ (`movimientos`, con `estado` agregado pero **inerte**) |
-| Backend | Policy | ✔ parcial — `MovimientoPolicy` solo `view`/`delete`, sin `create`/`update` |
-| Backend | Controller/Rutas propias (`/api/v1/movimientos`) | ✘ — no existen en absoluto |
-| Backend | Único punto de escritura real | `InventoryService::registrarMovimiento()`, invocado solo desde Captura IA y desde `POST /productos/{id}/movimientos` (Entrada únicamente) |
-| Frontend | Pantalla `/movimientos` | ✔ existe, pero 100% sobre `lib/mock/data.ts` — cero llamada real a API |
-| Frontend | Crear/Editar/Eliminar lógico | ✘ — no hay botón "Crear Movimiento" en ningún lado |
-| Tests | Cobertura directa | ✘ — solo cobertura indirecta vía `ProductoControllerTest`/`ProveedorControllerTest` |
-| Docs | Functional Spec | ✔ `Movements.md`, explícito: "no existe `MovimientoController` ni rutas `GET /api/v1/movimientos`" |
+| --- | --- | :---: |
+| Backend | Modelo/Migración | ✔ (`movimientos`; `estado` sigue **inerte** a propósito — un movimiento nunca se desactiva) |
+| Backend | Policy | ✔ `MovimientoPolicy` con `view`/`create`/`update`/`delete` — `delete()` sigue sin invocarse desde ningún controller, a propósito |
+| Backend | Controller/Rutas propias (`/api/v1/movimientos`) | ✔ `MovimientoController` (index/show/store/update, sin `destroy`) |
+| Backend | Único punto de escritura real | `InventoryService::registrarMovimiento()`, invocado desde Captura IA, `POST /productos/{id}/movimientos` (Entrada), y ahora también `MovimientoController::store()` (Entrada/Salida/Ajuste) |
+| Frontend | Pantalla `/movimientos` | ✔ línea de tiempo real sobre `GET /api/v1/movimientos`, con paginación, búsqueda y filtro por tipo reales |
+| Frontend | Crear/Editar/Eliminar lógico | ✔ Crear (Entrada/Salida/Ajuste) y Editar (solo metadata descriptiva) ✘ Eliminar/Logical Delete (deliberadamente no existe — ledger append-only) |
+| Tests | Feature | ✔ `MovimientoControllerTest` (17 casos: creación de los 3 tipos, rechazo de stock negativo, `direccion` solo para Ajuste, proveedor solo para Entrada, listar/filtrar, editar metadata sin tocar campos contables, ausencia de endpoint de eliminar, aislamiento multi-tenant) |
+| Tests | Browser | ✔ verificado en navegador real: login, listado con datos reales (miles de movimientos), paginación real (Página 2 de N), ficha con campos contables de solo lectura y sin botón Eliminar, edición de metadata persistente, responsive, sidebar |
+| Docs | Functional Spec | ✔ `Movements.md`, reescrito — Status Built, regla de inmutabilidad como decisión de arquitectura |
 
-**Funcionalidades:** ✔ Registro automático vía Captura IA ✔ Registro manual de Entrada (desde ficha de producto, no desde el módulo) ✘ Ver listado real ✘ Crear movimiento standalone ✘ Editar ✘ Anular/Logical Delete ✘ Filtros/búsqueda reales (los que existen en la pantalla filtran datos falsos)
+**Funcionalidades:** ✔ Registro automático vía Captura IA ✔ Registro manual de Entrada/Salida/Ajuste desde el módulo global ✔ Ver listado real (paginado, filtrable) ✔ Ver detalle ✔ Editar metadata descriptiva ✘ Eliminar/Anular/Logical Delete (deliberadamente no aplica — ver nota de arquitectura en `Movements.md`) ✘ Crear Conteo/Transferencia/Compra/Venta/Producción/Devolución/Consumo/Corrección (tipos no generables todavía, fuera de alcance de esta fase)
+
+Con esto se cierra la **Fase 3** del roadmap de 8 fases aprobado.
 
 ### 9. Proveedores — 🟡 Parcial
 
@@ -275,11 +278,11 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 6 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida, Stock — Stock implementado 2026-07-30, cierra Fase 2 completa)
+- **Completos (🟢):** 7 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida, Stock, Movimientos — Movimientos implementado 2026-08-02, cierra Fase 3 completa)
 - **Parciales (🟡):** 2 (Proveedores, Configuración)
-- **Mock (⚫):** 2 (Dashboard, Movimientos)
+- **Mock (⚫):** 1 (Dashboard)
 - **No implementados (🔴):** 7 (Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Stock): **~50%**
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Movimientos): **~47%**
 
 ---
 
@@ -289,16 +292,16 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil. (Categorías, Marcas, Unidades de Medida — Fase 1 — y Stock — Fase 2 — ya se cerraron el 2026-07-30.)
 
 ### Funcionalidades faltantes
-Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; CRUD completo de Movimientos (Fase 3, sin empezar); persistencia real de Configuración.
+Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; persistencia real de Configuración. (CRUD de Movimientos — Fase 3 — ya se cerró el 2026-08-02, adaptado a su naturaleza de ledger append-only: sin Eliminar/Desactivar, por diseño.)
 
 ### APIs faltantes
-`/movimientos` (CRUD real), `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida` y `/stock` ya se implementaron el 2026-07-30 — Fases 1 y 2 completas.)
+`/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida`, `/stock` y `/movimientos` ya se implementaron — Fases 1, 2 y 3 completas.)
 
 ### Pantallas faltantes
 `/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida` y `/stock` ya se implementaron el 2026-07-30.)
 
 ### CRUD incompletos
-Movimientos (solo existe la "C" de Entrada, indirecta), Configuración (no es CRUD real, es un formulario decorativo).
+Configuración (no es CRUD real, es un formulario decorativo). (Movimientos ya no aplica aquí: su alcance de "Listar/Ver/Crear, nunca Editar-contable/Eliminar" es una decisión de arquitectura confirmada, no un gap — ver `Movements.md`.)
 
 ### Permisos faltantes
 No existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte. (Categoria/Marca/UnidadMedida ya tienen Policy + controller propio; Stock reutiliza `ProductoPolicy` — los cuatro desde el 2026-07-30.)
@@ -307,7 +310,7 @@ No existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte
 Ninguna pendiente en Fases 1-2 — `productos.categoria_id`/`marca_id`/`unidad_medida_id`/`stock_estado` aplicadas, en uso, y expuestas por sus respectivos controllers desde el 2026-07-30.
 
 ### Tests faltantes
-`MovimientoControllerTest`, `UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest` y `StockControllerTest` ya existen desde el 2026-07-30.)
+`UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest`, `StockControllerTest` y `MovimientoControllerTest` ya existen.)
 
 ### Documentación faltante
 `Suppliers.md` real sigue en `FUTURE/` marcado `Planned` pese a estar construido — nunca se actualizó su estado. `TestExecutionReport.md` no refleja FEATURE-005/008 todavía. (`Stock.md` ya se escribió el 2026-07-30, cerrando el gap que esta misma sección señalaba.)

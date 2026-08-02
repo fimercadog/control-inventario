@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\MarcaController;
+use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
@@ -132,4 +133,15 @@ Route::prefix('v1/stock')->name('stock.')->middleware(['auth:api', 'tenant'])->g
     Route::patch('{producto}', [StockController::class, 'update'])->name('update');
     Route::post('{producto}/deshabilitar', [StockController::class, 'disable'])->name('disable');
     Route::post('{producto}/habilitar', [StockController::class, 'enable'])->name('enable');
+});
+
+// RC1 Fase 3 (docs/03_FUNCTIONAL_SPEC/Movements.md). Módulo global —
+// distinto de GET /productos/{producto}/movimientos (historial acotado a
+// un solo producto, sin cambios). Un movimiento nunca se elimina ni se
+// anula: sin rutas de deshabilitar/habilitar/DELETE a propósito.
+Route::prefix('v1/movimientos')->name('movimientos.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [MovimientoController::class, 'index'])->name('index');
+    Route::post('/', [MovimientoController::class, 'store'])->name('store');
+    Route::get('{movimiento}', [MovimientoController::class, 'show'])->name('show');
+    Route::patch('{movimiento}', [MovimientoController::class, 'update'])->name('update');
 });

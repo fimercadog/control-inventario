@@ -281,6 +281,59 @@ export interface UpdateStockPayload {
 }
 
 /**
+ * Espejo de App\Http\Resources\Movimiento\MovimientoResource (RC1 Fase 3,
+ * docs/03_FUNCTIONAL_SPEC/Movements.md). Registro contable inmutable —
+ * cantidad/tipo/producto/proveedor/stock nunca cambian una vez creados.
+ */
+export interface Movimiento {
+  id: number;
+  tipo: "entrada" | "salida" | "ajuste" | "conteo" | "transferencia";
+  producto_id: number;
+  producto: string | null;
+  producto_codigo: string | null;
+  usuario: string | null;
+  cantidad: number;
+  /** stock_nuevo - stock_anterior, con signo. */
+  delta: number;
+  stock_anterior: number;
+  stock_nuevo: number;
+  documento: string | null;
+  observacion: string | null;
+  proveedor: string | null;
+  proveedor_id: number | null;
+  lote: string | null;
+  vencimiento: string | null;
+  created_at: string | null;
+}
+
+/**
+ * Único mecanismo de "Crear" en el módulo global de Movimientos.
+ * `direccion` solo aplica (y es obligatorio) cuando `tipo === "ajuste"`;
+ * `proveedor_id` solo aplica cuando `tipo === "entrada"`.
+ */
+export interface StoreMovimientoPayload {
+  producto_id: number;
+  tipo: "entrada" | "salida" | "ajuste";
+  cantidad: number;
+  direccion?: "incremento" | "decremento";
+  costo?: number;
+  precio?: number;
+  proveedor_id?: number;
+  documento?: string;
+  observacion?: string;
+  lote?: string;
+  vencimiento?: string;
+}
+
+/** Solo metadata descriptiva — el registro contable nunca es editable. */
+export interface UpdateMovimientoPayload {
+  documento?: string | null;
+  observacion?: string | null;
+  lote?: string | null;
+  vencimiento?: string | null;
+}
+
+/**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación
  * Producto↔Proveedor con atributos propios (precio de compra, código del

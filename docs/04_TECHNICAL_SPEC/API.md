@@ -52,6 +52,12 @@ Stock NO es una entidad independiente — opera directamente sobre `Producto` (r
 
 - GET `/api/v1/stock` (con `busqueda`, `estado`, `bajo_minimo`), GET `/api/v1/stock/{id}`, PATCH `/api/v1/stock/{id}` (solo `stock_minimo`/`stock_maximo`), POST `/api/v1/stock/{id}/deshabilitar`, POST `/api/v1/stock/{id}/habilitar` (Built 2026-07-30 — `StockController`, ver `docs/05_IMPLEMENTATION/StockModule.md`). `deshabilitar`/`habilitar` tocan únicamente `productos.stock_estado` — nunca `stock_actual` ni `productos.estado` (catálogo).
 
+## Módulo Movimientos (RC1 Fase 3, docs/03_FUNCTIONAL_SPEC/Movements.md)
+
+Ledger append-only — sin `PUT`/`DELETE`/`deshabilitar`/`habilitar` a propósito. Distinto de `GET /productos/{producto}/movimientos` (historial acotado a un solo producto, sin cambios).
+
+- GET `/api/v1/movimientos` (con `producto_id`, `tipo`, `busqueda`, `desde`, `hasta`, `page`; `paginate(100)`), GET `/api/v1/movimientos/{id}`, POST `/api/v1/movimientos` (Entrada/Salida/Ajuste, vía `InventoryService::registrarMovimiento()`), PATCH `/api/v1/movimientos/{id}` (Built 2026-08-02 — `MovimientoController`, ver `docs/05_IMPLEMENTATION/MovimientosModule.md`). `PATCH` solo acepta `documento`/`observacion`/`lote`/`vencimiento` — `UpdateMovimientoRequest` no declara `cantidad`/`tipo`/`producto_id`/`proveedor_id`/`stock_anterior`/`stock_nuevo`, así que un payload que los incluya los ignora siempre.
+
 ## Módulo Auth & RBAC (Fase 5)
 
 Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitación/reset/verificación con token firmado) exige `Authorization: Bearer <access_token>`; toda acción de negocio valida un permiso específico, nunca un nombre de rol. Entre paréntesis, el módulo donde se construye.
