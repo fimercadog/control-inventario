@@ -83,11 +83,11 @@ Tercer módulo de la secuencia vertical-slice Roles→Auditoría→Reportes→Pe
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra en el commit de documentación posterior a este informe._
+- **Commit:** `882b26e` — `feat(reportes): implement Reportes as a complete read-only vertical slice (RC1 Module 3/4)`.
 
 ## Confirmación de push
 
-⏳ Pendiente.
+✅ Ejecutado correctamente: `fd07c33..882b26e  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
