@@ -4,15 +4,25 @@ namespace Tests\Feature;
 
 use App\Models\Categoria;
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
  * RC1 (docs/03_FUNCTIONAL_SPEC/Categories.md). Borrado siempre lógico
  * (GLOBAL RULE, sesión 2026-07-29) — nunca un DELETE físico. Mismo shape
  * de tests que ProveedorControllerTest.
+ *
+ * Fase 4.5 (Authorization Alignment, docs/security/ROLES_MATRIX.md):
+ * `userA` tiene las 4 categorias.* — cubre los casos ya existentes de
+ * "usuario autorizado". `userSinPermiso` es de la MISMA empresa que
+ * `categoriaA` pero sin ningún permiso — prueba el caso 403. `userB` sigue
+ * probando aislamiento multi-tenant (404, ni siquiera llega a evaluar el
+ * permiso — TenantScope ya lo bloquea antes).
  */
 class CategoriaControllerTest extends TestCase
 {
@@ -26,18 +36,29 @@ class CategoriaControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Categoria $categoriaA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
+        $rol = Role::create(['name' => 'Test Categorias', 'guard_name' => 'api']);
+        $rol->givePermissionTo(['categorias.ver', 'categorias.crear', 'categorias.editar', 'categorias.gestionar']);
+        $this->userA->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->categoriaA = Categoria::create(['nombre' => 'Alimentos', 'descripcion' => 'Comida para mascotas']);
     }
 
@@ -199,5 +220,32 @@ class CategoriaControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/v1/categorias')->assertUnauthorized();
+    }
+
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/categorias')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/categorias/{$this->categoriaA->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson('/api/v1/categorias', ['nombre' => 'Sin permiso'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/categorias/{$this->categoriaA->id}", ['nombre' => 'Hackeado'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/categorias/{$this->categoriaA->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('categorias', ['nombre' => 'Sin permiso']);
+        $this->assertNotSame('Hackeado', $this->categoriaA->fresh()->nombre);
+        $this->assertSame('activo', $this->categoriaA->fresh()->estado);
     }
 }

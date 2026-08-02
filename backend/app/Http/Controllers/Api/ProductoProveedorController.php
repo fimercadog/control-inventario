@@ -26,10 +26,16 @@ class ProductoProveedorController extends Controller
     ) {
     }
 
-    /** "Suppliers" tab en la Ficha de Producto. */
+    /**
+     * "Suppliers" tab en la Ficha de Producto. Doble chequeo a propósito
+     * (Fase 4.5, docs/security/ROLES_MATRIX.md): pertenencia+permiso sobre
+     * el Producto padre (ya existía) Y `producto-proveedor.ver` sobre la
+     * asociación en sí — dos recursos distintos, dos permisos distintos.
+     */
     public function index(Producto $producto): JsonResponse
     {
         $this->authorize('view', $producto);
+        $this->authorize('viewAny', ProductoProveedor::class);
 
         $asociaciones = $producto->proveedoresAsociados()
             ->where('estado', 'activo')
@@ -43,6 +49,7 @@ class ProductoProveedorController extends Controller
     public function store(StoreProductoProveedorRequest $request, Producto $producto): JsonResponse
     {
         $this->authorize('update', $producto);
+        $this->authorize('create', ProductoProveedor::class);
 
         // El proveedor debe pertenecer a la misma empresa — TenantScope ya
         // filtra find(); si no aparece, es de otra empresa o no existe.

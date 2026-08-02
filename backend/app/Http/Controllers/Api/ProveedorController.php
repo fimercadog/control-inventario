@@ -34,6 +34,8 @@ class ProveedorController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Proveedor::class);
+
         $query = Proveedor::query()->withCount('movimientos');
 
         if ($busqueda = $request->query('busqueda')) {

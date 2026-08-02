@@ -38,7 +38,7 @@ Ver sección 74 de _ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md. Backend (Fase 3
 
 ## Módulo Catálogos — Categorías, Marcas, Unidades de Medida (RC1 Fase 1, docs/05_IMPLEMENTATION/CatalogModules.md)
 
-Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-model-binding + `TenantScope` automático + Policy como segunda capa). Borrado siempre lógico — `deshabilitar`/`habilitar`, nunca DELETE físico.
+Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-model-binding + `TenantScope` automático + Policy como segunda capa). Borrado siempre lógico — `deshabilitar`/`habilitar`, nunca DELETE físico. **Fase 4.5 (2026-08-02, docs/security/ROLES_MATRIX.md)**: cada Policy ahora exige además el permiso correspondiente (`categorias.*`/`marcas.*`/`unidades-medida.*`) — pertenencia de empresa **Y** permiso, nunca uno solo.
 
 - GET/POST `/api/v1/categorias`, GET/PATCH `/api/v1/categorias/{id}`, POST `/api/v1/categorias/{id}/deshabilitar`, POST `/api/v1/categorias/{id}/habilitar`, GET `/api/v1/categorias/{id}/productos` (Built 2026-07-30 — `CategoriaController`, ver `docs/05_IMPLEMENTATION/CategoriasModule.md`).
 - GET/POST `/api/v1/marcas`, GET/PATCH `/api/v1/marcas/{id}`, POST `/api/v1/marcas/{id}/deshabilitar`, POST `/api/v1/marcas/{id}/habilitar`, GET `/api/v1/marcas/{id}/productos` (Built 2026-07-30 — `MarcaController`, ver `docs/05_IMPLEMENTATION/MarcasModule.md`).
@@ -46,9 +46,16 @@ Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-mode
 
 `POST/PATCH /api/v1/productos`: `marca`/`unidad_medida` (string libre) reemplazados por `marca_id`/`marca_nuevo` y `unidad_medida_id`/`unidad_medida_nuevo` (mismo patrón mutuamente excluyente ya usado para `proveedor_id`/`proveedor_nuevo`).
 
+## Módulo Proveedores (FEATURE-003, docs/03_FUNCTIONAL_SPEC/Suppliers.md) y Producto↔Proveedor (FEATURE-005)
+
+Borrado siempre lógico — nunca DELETE físico. **Fase 4.5**: `ProveedorPolicy` exige `proveedores.*`; la asociación Producto↔Proveedor tiene su propio namespace `producto-proveedor.*` (distinto de `proveedores.*` — es la relación, no el proveedor en sí), verificado además de (no en lugar de) la pertenencia sobre el Producto padre.
+
+- GET/POST `/api/v1/proveedores`, GET/PATCH `/api/v1/proveedores/{id}`, POST `/api/v1/proveedores/{id}/deshabilitar`, POST `/api/v1/proveedores/{id}/habilitar`, GET `/api/v1/proveedores/{id}/productos` — `ProveedorController`.
+- GET/POST `/api/v1/productos/{producto}/proveedores`, PATCH `/api/v1/productos/{producto}/proveedores/{asociacion}`, POST `/api/v1/productos/{producto}/proveedores/{asociacion}/deshabilitar` — `ProductoProveedorController`. Sin `habilitar` — esa ruta nunca se construyó.
+
 ## Módulo Stock (RC1 Fase 2, docs/03_FUNCTIONAL_SPEC/Stock.md)
 
-Stock NO es una entidad independiente — opera directamente sobre `Producto` (route-model-binding sobre `{producto}`, mismo `ProductoPolicy` que ya protegía el modelo). Sin `POST /` a propósito: no existe "crear un Stock".
+Stock NO es una entidad independiente — opera directamente sobre `Producto` (route-model-binding sobre `{producto}`). **Fase 4.5**: gateado por `StockPolicy`, una Policy **dedicada** — no `ProductoPolicy`, a propósito: Laravel resuelve Policy por clase de modelo, y Stock comparte modelo (`Producto`) con `ProductoController`, así que reutilizar `ProductoPolicy` habría gateado ambos módulos con el mismo permiso. `StockController` invoca `StockPolicy` directamente (inyectada), no vía el helper `$this->authorize()`. Sin `POST /` a propósito: no existe "crear un Stock". Sin `stock.crear` en el catálogo de permisos por la misma razón.
 
 - GET `/api/v1/stock` (con `busqueda`, `estado`, `bajo_minimo`), GET `/api/v1/stock/{id}`, PATCH `/api/v1/stock/{id}` (solo `stock_minimo`/`stock_maximo`), POST `/api/v1/stock/{id}/deshabilitar`, POST `/api/v1/stock/{id}/habilitar` (Built 2026-07-30 — `StockController`, ver `docs/05_IMPLEMENTATION/StockModule.md`). `deshabilitar`/`habilitar` tocan únicamente `productos.stock_estado` — nunca `stock_actual` ni `productos.estado` (catálogo).
 
@@ -79,14 +86,12 @@ Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitaci�
 
 ### Usuarios (Módulo 4 — User Management)
 
-- GET `/usuarios` — lista usuarios de la empresa actual, requiere `usuarios.ver`.
-- GET `/usuarios/{id}` — requiere `usuarios.ver`.
-- PATCH `/usuarios/{id}` — requiere `usuarios.editar`.
-- PATCH `/usuarios/{id}/desactivar` / `/activar` — requiere `usuarios.editar`.
+Ver "Módulo Usuarios" arriba — construido, endpoints reales confirmados contra `routes/api.php`. Esta subsección solía duplicar (y contradecir en el verbo HTTP) esa sección; retirada en Fase 4.5 para no mantener dos fuentes de verdad sobre el mismo módulo ya construido.
 
-### Roles y permisos (Módulo 5 — Role Management)
+### Roles y permisos (Módulo 5 — Role Management, a construir desde docs/security/ROLES_MATRIX.md)
 
-- GET `/roles` / POST `/roles` / PATCH `/roles/{id}` / DELETE `/roles/{id}` — requiere `roles.gestionar`; siempre acotado a la empresa del usuario (Teams de Spatie).
+- GET `/roles` (Listar) / GET `/roles/{id}` (Ver) / POST `/roles` (Crear) / PATCH `/roles/{id}` (Editar) / POST `/roles/{id}/activar` / POST `/roles/{id}/desactivar` — requiere `roles.gestionar` (o `roles.ver` para las de solo lectura); siempre acotado a la empresa del usuario (Teams de Spatie). **Sin `DELETE`, a propósito** — Roles nunca se elimina, solo se activa/desactiva, mismo patrón que el resto del ERP (corregido en Fase 4.5; este documento antes listaba un `DELETE /roles/{id}` que contradecía esa decisión).
+- Un rol con usuarios asignados no puede desactivarse hasta reasignarlos (409).
 - GET `/permisos` — catálogo global de solo lectura (para la UI de asignación de permisos a un rol).
 
 ### Invitaciones (Módulo 6)

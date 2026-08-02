@@ -31,6 +31,8 @@ class UnidadMedidaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', UnidadMedida::class);
+
         $query = UnidadMedida::query()->withCount('productos');
 
         if ($busqueda = $request->query('busqueda')) {

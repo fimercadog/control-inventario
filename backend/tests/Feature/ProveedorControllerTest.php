@@ -6,14 +6,23 @@ use App\Models\Empresa;
 use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\Proveedor;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
  * FEATURE-003 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). Borrado siempre
  * lógico (GLOBAL RULE, sesión 2026-07-29) — nunca un DELETE físico.
+ *
+ * Fase 4.5 (Authorization Alignment): `userA` tiene las 4 proveedores.* —
+ * cubre los casos de "usuario autorizado", incluyendo los tests de
+ * Registrar Ingreso (que autorizan contra `ProductoPolicy`, sin cambios
+ * en esta fase, así que no requieren permiso adicional). `userSinPermiso`
+ * es de la misma empresa pero sin permisos de `proveedores.*` — prueba 403.
  */
 class ProveedorControllerTest extends TestCase
 {
@@ -27,18 +36,29 @@ class ProveedorControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Proveedor $proveedorA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
+        $rol = Role::create(['name' => 'Test Proveedores', 'guard_name' => 'api']);
+        $rol->givePermissionTo(['proveedores.ver', 'proveedores.crear', 'proveedores.editar', 'proveedores.gestionar']);
+        $this->userA->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->proveedorA = Proveedor::create(['nombre' => 'Distribuidora Central', 'nit' => '900123456']);
     }
 
@@ -170,6 +190,33 @@ class ProveedorControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/v1/proveedores')->assertUnauthorized();
+    }
+
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/proveedores')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/proveedores/{$this->proveedorA->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson('/api/v1/proveedores', ['nombre' => 'Sin permiso'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['nombre' => 'Hackeado'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/proveedores/{$this->proveedorA->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('proveedores', ['nombre' => 'Sin permiso']);
+        $this->assertNotSame('Hackeado', $this->proveedorA->fresh()->nombre);
+        $this->assertSame('activo', $this->proveedorA->fresh()->estado);
     }
 
     // Integración con Registrar Ingreso Manual (FEATURE-002 + FEATURE-003)

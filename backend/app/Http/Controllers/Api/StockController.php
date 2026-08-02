@@ -7,7 +7,9 @@ use App\Http\Requests\Stock\UpdateStockRequest;
 use App\Http\Resources\Stock\StockResource;
 use App\Http\Support\ApiResponse;
 use App\Models\Producto;
+use App\Policies\StockPolicy;
 use App\Services\Audit\AuditLogger;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,6 +21,13 @@ use Illuminate\Http\Request;
  * binding + `TenantScope` + `ProductoPolicy` como segunda capa, mismo
  * patrón que `ProductoController`), acotado exclusivamente a sus campos
  * de stock.
+ *
+ * Fase 4.5 (Authorization Alignment): usa `StockPolicy` (dedicada, no
+ * `ProductoPolicy`) invocada directamente vía `authorizeStock()` — el
+ * helper `$this->authorize()` resolvería siempre a `ProductoPolicy` por
+ * ser `Producto` el modelo, gateando estas acciones con el permiso
+ * equivocado (`productos.*` en vez de `stock.*`). Ver `StockPolicy` para
+ * el detalle completo.
  *
  * Reglas de negocio, ya acordadas y NUNCA relajadas por este controller:
  * - No existe `store()`: un producto ya nace con sus campos de stock
@@ -38,11 +47,14 @@ class StockController extends Controller
 {
     public function __construct(
         private readonly AuditLogger $auditoria,
+        private readonly StockPolicy $stockPolicy,
     ) {
     }
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorizeStock('viewAny');
+
         $query = Producto::query()
             ->with(['categoria', 'marca', 'unidadMedida'])
             ->where('estado', 'activo');
@@ -80,14 +92,14 @@ class StockController extends Controller
 
     public function show(Producto $producto): JsonResponse
     {
-        $this->authorize('view', $producto);
+        $this->authorizeStock('view', $producto);
 
         return ApiResponse::success(new StockResource($producto->load(['categoria', 'marca', 'unidadMedida'])));
     }
 
     public function update(UpdateStockRequest $request, Producto $producto): JsonResponse
     {
-        $this->authorize('update', $producto);
+        $this->authorizeStock('update', $producto);
 
         $producto->update($request->validated());
 
@@ -110,7 +122,7 @@ class StockController extends Controller
      */
     public function disable(Request $request, Producto $producto): JsonResponse
     {
-        $this->authorize('delete', $producto);
+        $this->authorizeStock('delete', $producto);
 
         $producto->update(['stock_estado' => 'inactivo']);
 
@@ -124,7 +136,7 @@ class StockController extends Controller
 
     public function enable(Request $request, Producto $producto): JsonResponse
     {
-        $this->authorize('update', $producto);
+        $this->authorizeStock('update', $producto);
 
         $producto->update(['stock_estado' => 'activo']);
 
@@ -134,6 +146,23 @@ class StockController extends Controller
             new StockResource($producto->fresh()->load(['categoria', 'marca', 'unidadMedida'])),
             'Stock habilitado correctamente'
         );
+    }
+
+    /**
+     * Invoca `StockPolicy` directamente en vez de `$this->authorize()` —
+     * ver docblock de la clase para el porqué (colisión de Policy con
+     * `ProductoPolicy` sobre el mismo modelo `Producto`).
+     */
+    private function authorizeStock(string $ability, ?Producto $producto = null): void
+    {
+        $user = request()->user();
+        $autorizado = $producto
+            ? $this->stockPolicy->{$ability}($user, $producto)
+            : $this->stockPolicy->{$ability}($user);
+
+        if (! $autorizado) {
+            throw new AuthorizationException('No tienes permiso para realizar esta acción.');
+        }
     }
 
     /**

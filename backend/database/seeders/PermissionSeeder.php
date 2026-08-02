@@ -19,6 +19,43 @@ class PermissionSeeder extends Seeder
         'productos.editar',
         'productos.eliminar',
 
+        // Categorías (Fase 4.5 — Authorization Alignment, docs/security/ROLES_MATRIX.md Gap 2)
+        'categorias.ver',
+        'categorias.crear',
+        'categorias.editar',
+        'categorias.gestionar',
+
+        // Marcas (Fase 4.5)
+        'marcas.ver',
+        'marcas.crear',
+        'marcas.editar',
+        'marcas.gestionar',
+
+        // Unidades de Medida (Fase 4.5)
+        'unidades-medida.ver',
+        'unidades-medida.crear',
+        'unidades-medida.editar',
+        'unidades-medida.gestionar',
+
+        // Stock (Fase 4.5) — sin '.crear': Stock nunca se crea de forma
+        // independiente, cada producto ya nace con sus propios campos.
+        'stock.ver',
+        'stock.editar',
+        'stock.gestionar',
+
+        // Proveedores (Fase 4.5)
+        'proveedores.ver',
+        'proveedores.crear',
+        'proveedores.editar',
+        'proveedores.gestionar',
+
+        // Producto ↔ Proveedor (Fase 4.5) — namespace propio, distinto de
+        // proveedores.* (es la asociación, no el proveedor en sí).
+        'producto-proveedor.ver',
+        'producto-proveedor.crear',
+        'producto-proveedor.editar',
+        'producto-proveedor.gestionar',
+
         // Movimientos de inventario
         'movimientos.ver',
         'movimientos.crear',

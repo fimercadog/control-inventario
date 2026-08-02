@@ -5750,3 +5750,33 @@ No avanzar a la siguiente fase sin cerrar la anterior (sección 8 del flujo gene
 ---
 
 Estado de este módulo: **Backend completo y revisado (Fases 1-3 + revisión final de arquitectura: idempotencia, transacciones, eventos de dominio). Iniciando Fase 4 (Frontend) a solicitud explícita del usuario.** Pendiente conocido antes de producción: módulo Auth/JWT (sección 35) no existe todavía, estos endpoints no deben exponerse fuera de una red de confianza.
+
+
+
+### Regla de Negocio — Movimientos de Inventario
+
+Los movimientos de inventario representan el libro contable (ledger) del inventario.
+
+Por razones de auditoría, trazabilidad y consistencia:
+
+- Un movimiento nunca podrá editarse.
+- Un movimiento nunca podrá eliminarse.
+- Un movimiento nunca podrá desactivarse.
+- Un movimiento nunca podrá restaurarse.
+
+Si existe un error, el sistema deberá generar un nuevo movimiento compensatorio (Ajuste o Corrección), preservando el historial completo.
+
+Esta regla es obligatoria para todos los módulos presentes y futuros del sistema.
+
+
+### Regla de Negocio — Autorización (RBAC)
+
+Aprobado 2026-08-02 como arquitectura oficial del sistema (Fase 4.5 — Authorization Alignment, ver `docs/security/ROLES_MATRIX.md` para el detalle completo).
+
+- Todo módulo de negocio de Fidel OS debe validar autorización en dos capas combinadas con AND, nunca una sola: pertenencia a la empresa del usuario, y el permiso específico que la acción requiere.
+- Los permisos se otorgan exclusivamente a través de roles. No existen asignaciones de permiso directas a un usuario individual, y no se introducirán sin una revisión de arquitectura explícita.
+- Ningún Policy, Controller ni middleware verifica el nombre de un rol (`hasRole('Admin')`). Los roles son un empaquetado administrativo de permisos para la UI de gestión de cada empresa — el motor de autorización real solo conoce permisos.
+- Un rol nunca se elimina físicamente. Solo se activa o desactiva. Un rol con usuarios asignados no puede desactivarse hasta que esos usuarios sean reasignados a otro rol.
+- Esta regla se aplicó en Fase 4.5 a Categorías, Marcas, Unidades de Medida, Stock, Proveedores y Producto↔Proveedor. Productos, Movimientos y Captura IA quedan pendientes de la misma alineación, como decisión explícita separada — no un olvido.
+
+Esta regla es obligatoria para todos los módulos presentes y futuros del sistema.

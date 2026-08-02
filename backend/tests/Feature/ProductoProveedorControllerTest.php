@@ -8,15 +8,26 @@ use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\ProductoProveedor;
 use App\Models\Proveedor;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
  * FEATURE-005 (docs/03_FUNCTIONAL_SPEC/Suppliers.md): relación
  * muchos-a-muchos Producto↔Proveedor. Borrado siempre lógico (GLOBAL
  * RULE, sesión 2026-07-29) — nunca un DELETE físico.
+ *
+ * Fase 4.5 (Authorization Alignment): `userA` tiene las 4
+ * producto-proveedor.* (namespace propio, distinto de proveedores.*) —
+ * cubre los casos de "usuario autorizado". `userSinPermiso` es de la
+ * misma empresa pero sin esos permisos — prueba 403. Nota: estas rutas
+ * también autorizan contra `ProductoPolicy` (sobre el Producto padre),
+ * sin cambios en esta fase — por eso `userSinPermiso` sí puede resolver
+ * esa primera capa y llega a fallar específicamente en la segunda.
  */
 class ProductoProveedorControllerTest extends TestCase
 {
@@ -30,6 +41,8 @@ class ProductoProveedorControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Producto $productoA;
 
     private Proveedor $proveedorA1;
@@ -40,12 +53,26 @@ class ProductoProveedorControllerTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
+        $rol = Role::create(['name' => 'Test ProductoProveedor', 'guard_name' => 'api']);
+        $rol->givePermissionTo([
+            'producto-proveedor.ver', 'producto-proveedor.crear', 'producto-proveedor.editar', 'producto-proveedor.gestionar',
+            // GET /proveedores/{id}/productos vive en ProveedorController (pestaña
+            // "Products" de la Ficha de Proveedor), gateado por ProveedorPolicy.
+            'proveedores.ver',
+        ]);
+        $this->userA->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $categoria = Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
         $this->productoA = Producto::create(['categoria_id' => $categoria->id, 'codigo' => 'P-001', 'nombre' => 'Producto Test']);
         $this->proveedorA1 = Proveedor::create(['nombre' => 'Distribuidora Uno']);
@@ -245,6 +272,33 @@ class ProductoProveedorControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson("/api/v1/productos/{$this->productoA->id}/proveedores")->assertUnauthorized();
+    }
+
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        $asociacion = ProductoProveedor::create([
+            'producto_id' => $this->productoA->id,
+            'proveedor_id' => $this->proveedorA1->id,
+        ]);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/productos/{$this->productoA->id}/proveedores")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/proveedores", ['proveedor_id' => $this->proveedorA1->id])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/productos/{$this->productoA->id}/proveedores/{$asociacion->id}", ['precio_compra' => 1])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/productos/{$this->productoA->id}/proveedores/{$asociacion->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->assertSame('activo', $asociacion->fresh()->estado);
     }
 
     // Integración con Registrar Ingreso Manual — default al proveedor principal (FEATURE-005).

@@ -31,6 +31,8 @@ class MarcaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Marca::class);
+
         $query = Marca::query()->withCount('productos');
 
         if ($busqueda = $request->query('busqueda')) {

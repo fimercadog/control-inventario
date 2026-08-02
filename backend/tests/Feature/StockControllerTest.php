@@ -4,9 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Empresa;
 use App\Models\Producto;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -17,6 +20,11 @@ use Tests\TestCase;
  * (`stock_minimo`/`stock_maximo`, nunca `stock_actual`), y
  * `disable()`/`enable()` solo tocan `stock_estado` — nunca `stock_actual`
  * ni `productos.estado`, nunca generan un movimiento.
+ *
+ * Fase 4.5 (Authorization Alignment): `userA` tiene `stock.ver/editar/
+ * gestionar` (sin `stock.crear` — no existe esa acción). `userSinPermiso`
+ * es de la misma empresa pero sin esos permisos — prueba 403, vía
+ * `StockPolicy` (dedicada, no `ProductoPolicy` — ver StockController).
  */
 class StockControllerTest extends TestCase
 {
@@ -30,18 +38,29 @@ class StockControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private Producto $productoA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
+        $rol = Role::create(['name' => 'Test Stock', 'guard_name' => 'api']);
+        $rol->givePermissionTo(['stock.ver', 'stock.editar', 'stock.gestionar']);
+        $this->userA->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->productoA = Producto::create([
             'codigo' => 'TEST-001',
             'nombre' => 'Producto con stock',
@@ -216,5 +235,27 @@ class StockControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/v1/stock')->assertUnauthorized();
+    }
+
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/stock')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/stock/{$this->productoA->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/stock/{$this->productoA->id}", ['stock_minimo' => 999])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/stock/{$this->productoA->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->assertEquals(5, $this->productoA->fresh()->stock_minimo);
+        $this->assertSame('activo', $this->productoA->fresh()->stock_estado);
     }
 }

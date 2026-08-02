@@ -3,16 +3,23 @@
 namespace Tests\Feature;
 
 use App\Models\Empresa;
+use App\Models\Role;
 use App\Models\UnidadMedida;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
  * RC1 (docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md). Borrado siempre lógico
  * (GLOBAL RULE, sesión 2026-07-29) — nunca un DELETE físico. Mismo shape
  * de tests que CategoriaControllerTest/MarcaControllerTest.
+ *
+ * Fase 4.5 (Authorization Alignment): `userA` tiene las 4 unidades-medida.* —
+ * cubre los casos de "usuario autorizado". `userSinPermiso` es de la
+ * misma empresa pero sin permisos — prueba 403.
  */
 class UnidadMedidaControllerTest extends TestCase
 {
@@ -26,18 +33,29 @@ class UnidadMedidaControllerTest extends TestCase
 
     private User $userB;
 
+    private User $userSinPermiso;
+
     private UnidadMedida $unidadA;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+
         $this->empresaA = Empresa::create(['nombre' => 'Empresa A']);
         $this->empresaB = Empresa::create(['nombre' => 'Empresa B']);
         $this->userA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $this->userSinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         app(TenantContext::class)->setEmpresaId($this->empresaA->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaA->id);
+        $rol = Role::create(['name' => 'Test Unidades', 'guard_name' => 'api']);
+        $rol->givePermissionTo(['unidades-medida.ver', 'unidades-medida.crear', 'unidades-medida.editar', 'unidades-medida.gestionar']);
+        $this->userA->assignRole($rol);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->unidadA = UnidadMedida::create(['nombre' => 'Kilogramo', 'abreviatura' => 'kg']);
     }
 
@@ -197,5 +215,32 @@ class UnidadMedidaControllerTest extends TestCase
     public function test_unauthenticated_request_is_rejected(): void
     {
         $this->getJson('/api/v1/unidades-medida')->assertUnauthorized();
+    }
+
+    public function test_a_same_company_user_without_permission_is_rejected_with_403(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson('/api/v1/unidades-medida')
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->getJson("/api/v1/unidades-medida/{$this->unidadA->id}")
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson('/api/v1/unidades-medida', ['nombre' => 'Sin permiso'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->patchJson("/api/v1/unidades-medida/{$this->unidadA->id}", ['nombre' => 'Hackeado'])
+            ->assertStatus(403);
+
+        $this->actingAs($this->userSinPermiso, 'api')
+            ->postJson("/api/v1/unidades-medida/{$this->unidadA->id}/deshabilitar")
+            ->assertStatus(403);
+
+        $this->assertDatabaseMissing('unidades_medida', ['nombre' => 'Sin permiso']);
+        $this->assertNotSame('Hackeado', $this->unidadA->fresh()->nombre);
+        $this->assertSame('activo', $this->unidadA->fresh()->estado);
     }
 }

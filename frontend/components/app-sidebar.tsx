@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logoutThunk } from "@/store/slices/auth-slice";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -56,6 +57,15 @@ interface NavItem {
   icon: React.ElementType;
   /** Si no hay permiso en el catálogo para este módulo, es visible siempre. */
   permission?: string;
+  /**
+   * Módulo sin backend/frontend real todavía — sigue navegando a su
+   * página real de "pendiente de implementación" (nunca desaparece del
+   * sidebar), pero se marca visualmente como "Próximamente" para no
+   * confundirlo con un módulo funcional. Decisión confirmada
+   * explícitamente por el propietario del proyecto (2026-08-02): la
+   * navegación completa del ERP debe quedar siempre visible.
+   */
+  pending?: boolean;
 }
 
 /**
@@ -63,7 +73,9 @@ interface NavItem {
  * Administración según lo aprobado — no es una reorganización estética,
  * es la navegación oficial del release. Módulos sin backend/frontend
  * completo todavía apuntan a una página real de "pendiente de
- * implementación" (`components/pending-module.tsx`), nunca a datos mock.
+ * implementación" (`components/pending-module.tsx`), nunca a datos mock,
+ * y quedan marcados `pending: true` (badge "Próximamente") en vez de
+ * ocultarse o quitarse del menú.
  */
 const TOP_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -81,18 +93,18 @@ const INVENTARIO_ITEMS: NavItem[] = [
 
 const TERCEROS_ITEMS: NavItem[] = [
   { href: "/proveedores", label: "Proveedores", icon: Truck },
-  { href: "/clientes", label: "Clientes", icon: Contact },
+  { href: "/clientes", label: "Clientes", icon: Contact, pending: true },
 ];
 
 const ADMINISTRACION_ITEMS: NavItem[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog, permission: "usuarios.ver" },
-  { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver" },
-  { href: "/auditoria", label: "Auditoría", icon: ScrollText, permission: "auditoria.ver" },
+  { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver", pending: true },
+  { href: "/auditoria", label: "Auditoría", icon: ScrollText, permission: "auditoria.ver", pending: true },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 
 const BOTTOM_ITEMS: NavItem[] = [
-  { href: "/reportes", label: "Reportes", icon: FileBarChart2 },
+  { href: "/reportes", label: "Reportes", icon: FileBarChart2, pending: true },
   { href: "/perfil", label: "Perfil", icon: UserCircle },
 ];
 
@@ -145,11 +157,20 @@ export function AppSidebar() {
             <SidebarMenuButton
               size={menuButtonSize}
               isActive={isActive}
-              tooltip={item.label}
+              tooltip={item.pending ? `${item.label} (Próximamente)` : item.label}
+              className={item.pending ? "text-muted-foreground" : undefined}
               render={
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
+                  {item.pending && (
+                    <Badge
+                      variant="outline"
+                      className="ml-auto px-1.5 py-0 text-[10px] font-normal text-muted-foreground group-data-[collapsible=icon]:hidden"
+                    >
+                      Pronto
+                    </Badge>
+                  )}
                 </Link>
               }
             />

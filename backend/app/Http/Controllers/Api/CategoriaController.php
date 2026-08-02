@@ -33,6 +33,8 @@ class CategoriaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Categoria::class);
+
         $query = Categoria::query()->withCount('productos');
 
         if ($busqueda = $request->query('busqueda')) {
