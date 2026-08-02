@@ -86,11 +86,11 @@ Segundo módulo de la secuencia vertical-slice Roles→Auditoría→Reportes→P
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra en el commit de documentación posterior a este informe._
+- **Commit:** `9acf498` — `feat(auditoria): implement Auditoria as a complete read-only vertical slice (RC1 Module 2/4)`.
 
 ## Confirmación de push
 
-⏳ Pendiente.
+✅ Ejecutado correctamente: `0a5b967..9acf498  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
