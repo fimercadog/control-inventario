@@ -94,11 +94,11 @@ Segundo módulo construido bajo la metodología de vertical slice completo confi
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra en el commit de documentación posterior a este informe._
+- **Commit:** `fddbf3e` — `feat(roles): implement Role Management as a complete vertical slice (RC1 Module 5)`.
 
 ## Confirmación de push
 
-⏳ Pendiente.
+✅ Ejecutado correctamente: `73c3a86..fddbf3e  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
