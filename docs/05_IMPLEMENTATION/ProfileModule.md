@@ -84,11 +84,11 @@ Con este módulo se cierra la secuencia completa de 4 módulos — el propio `RC
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra en el commit de documentación posterior a este informe._
+- **Commit:** `944781b` — `feat(perfil): implement Profile as a complete vertical slice, closing the Roles->Audit->Reports->Profile sequence (RC1 Module 4/4)`.
 
 ## Confirmación de push
 
-⏳ Pendiente.
+✅ Ejecutado correctamente: `079819b..944781b  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
