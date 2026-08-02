@@ -92,7 +92,7 @@ Precede a esta unidad de trabajo una auditoría exhaustiva de los 16 módulos de
 
 ## Resultado de las pruebas
 
-- **Backend:** `php artisan test` → pendiente de confirmación final tras este informe (ver Control de versiones); `ClienteControllerTest` en solitario: **13/13 passing** (49 assertions).
+- **Backend:** `php artisan test` → **245/245 passing** (816 assertions; era 232/232 antes de esta unidad de trabajo — 13 tests nuevos, `ClienteControllerTest`).
 - **Frontend:** `npx tsc --noEmit` limpio.
 - **Browser tests (reales, Playwright + Microsoft Edge del sistema)**: login real, sidebar sin badges "Pronto" y sin Roles/Auditoría/Reportes/Perfil, listado de Clientes con 151 registros tras crear uno nuevo, búsqueda funcional, filtro de estado combinado con búsqueda funcional (confirmado con polling de red), crear/editar/deshabilitar confirmados directamente contra la base de datos (`tinker`) tras que los falsos negativos del script de verificación interrumpieran la corrida en vivo, rutas eliminadas devuelven 404 real sin crash, cero errores de consola.
 
@@ -103,11 +103,11 @@ Precede a esta unidad de trabajo una auditoría exhaustiva de los 16 módulos de
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra tras el commit._
+- **Commit:** `0662331` — `feat(clientes): build Customers module as a complete vertical slice, remove all placeholders`.
 
 ## Confirmación de push
 
-_pendiente — se registra tras el push._
+✅ Ejecutado correctamente: `8961c24..0662331  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
