@@ -224,6 +224,39 @@ export type StoreClientePayload = Partial<
 
 export type UpdateClientePayload = Partial<StoreClientePayload>;
 
+/**
+ * Espejo de App\Http\Resources\Role\RoleResource (Módulo 5, 2026-08-02,
+ * docs/security/ROLES_MATRIX.md). `permisos` solo viene poblado cuando el
+ * backend cargó la relación (`show`/`store`/`update`) — en el listado
+ * viene `permisos_count` en su lugar.
+ */
+export interface Role {
+  id: number;
+  name: string;
+  estado: "activo" | "inactivo";
+  permisos?: string[];
+  permisos_count?: number;
+  usuarios_count?: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface StoreRolePayload {
+  name: string;
+  estado?: "activo" | "inactivo";
+  permisos?: string[];
+}
+
+export type UpdateRolePayload = Partial<StoreRolePayload>;
+
+/** Usuario asignado a un rol — GET /roles/{id}/usuarios. */
+export interface UsuarioAsignadoRol {
+  id: number;
+  name: string;
+  email: string;
+  is_active: boolean;
+}
+
 /** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
 export interface Categoria {
   id: number;

@@ -8,6 +8,7 @@ use App\Exceptions\CannotDeactivateSelfException;
 use App\Exceptions\CapturaIAEstadoInvalidoException;
 use App\Exceptions\IdempotencyConflictException;
 use App\Exceptions\LastCompanyAdminException;
+use App\Exceptions\RoleHasAssignedUsersException;
 use App\Exceptions\StockInsuficienteException;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Support\ApiResponse;
@@ -72,7 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        $exceptions->render(function (StockInsuficienteException|CapturaIAEstadoInvalidoException|IdempotencyConflictException|CannotDeactivateSelfException|LastCompanyAdminException $e, $request) {
+        $exceptions->render(function (StockInsuficienteException|CapturaIAEstadoInvalidoException|IdempotencyConflictException|CannotDeactivateSelfException|LastCompanyAdminException|RoleHasAssignedUsersException $e, $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), [], 409);
             }

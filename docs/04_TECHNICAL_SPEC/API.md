@@ -96,11 +96,14 @@ Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitaci�
 
 Ver "Módulo Usuarios" arriba — construido, endpoints reales confirmados contra `routes/api.php`. Esta subsección solía duplicar (y contradecir en el verbo HTTP) esa sección; retirada en Fase 4.5 para no mantener dos fuentes de verdad sobre el mismo módulo ya construido.
 
-### Roles y permisos (Módulo 5 — Role Management, a construir desde docs/security/ROLES_MATRIX.md)
+### Roles y permisos (Módulo 5 — Role Management, Built 2026-08-02 — `RoleController`, `PermissionController`, ver `docs/05_IMPLEMENTATION/RolesModule.md`)
 
-- GET `/roles` (Listar) / GET `/roles/{id}` (Ver) / POST `/roles` (Crear) / PATCH `/roles/{id}` (Editar) / POST `/roles/{id}/activar` / POST `/roles/{id}/desactivar` — requiere `roles.gestionar` (o `roles.ver` para las de solo lectura); siempre acotado a la empresa del usuario (Teams de Spatie). **Sin `DELETE`, a propósito** — Roles nunca se elimina, solo se activa/desactiva, mismo patrón que el resto del ERP (corregido en Fase 4.5; este documento antes listaba un `DELETE /roles/{id}` que contradecía esa decisión).
-- Un rol con usuarios asignados no puede desactivarse hasta reasignarlos (409).
-- GET `/permisos` — catálogo global de solo lectura (para la UI de asignación de permisos a un rol).
+- GET `/roles` (Listar, paginado/buscable/filtrable por estado) / GET `/roles/{id}` (Ver) / POST `/roles` (Crear) / PATCH `/roles/{id}` (Editar) / POST `/roles/{id}/activar` / POST `/roles/{id}/desactivar` — requiere `roles.gestionar` (o `roles.ver` para las de solo lectura); siempre acotado a la empresa del usuario (Teams de Spatie). **Sin `DELETE`, a propósito** — Roles nunca se elimina, solo se activa/desactiva, mismo patrón que el resto del ERP (corregido en Fase 4.5; este documento antes listaba un `DELETE /roles/{id}` que contradecía esa decisión).
+- GET `/roles/{id}/usuarios` — requiere `roles.ver`; lista los usuarios de la empresa que tienen ese rol asignado (id/name/email/is_active). No estaba en el diseño original de este documento — se agregó durante la construcción para que el bloqueo de desactivación (línea siguiente) sea accionable desde la UI.
+- Un rol con usuarios asignados no puede desactivarse hasta reasignarlos (409, `RoleHasAssignedUsersException`).
+- `name` único por `(empresa_id, guard_name)` — validado en `StoreRoleRequest`/`UpdateRoleRequest` (422 con mensaje limpio); descubierto durante la construcción que sin esta regla, Spatie lanza `RoleAlreadyExists` sin capturar en un duplicado.
+- `permisos.*` rechaza namespace `plataforma.*` (422) y cualquier nombre fuera del catálogo (422).
+- GET `/permisos` — catálogo global de solo lectura (excluye `plataforma.*`), requiere `roles.ver`, para la UI de asignación de permisos a un rol.
 
 ### Invitaciones (Módulo 6)
 

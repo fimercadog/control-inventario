@@ -7,9 +7,11 @@ use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ClienteController;
 use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\MovimientoController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\UnidadMedidaController;
 use App\Http\Controllers\Api\UserController;
@@ -171,3 +173,19 @@ Route::prefix('v1/usuarios')->name('usuarios.')->middleware(['auth:api', 'tenant
     Route::post('{id}/activar', [UserController::class, 'activar'])->name('activar')->whereNumber('id');
     Route::post('{id}/desactivar', [UserController::class, 'desactivar'])->name('desactivar')->whereNumber('id');
 });
+
+// Módulo 5 — Role Management (2026-08-02, docs/security/ROLES_MATRIX.md).
+// Sin DELETE a propósito — un rol nunca se elimina físicamente, solo se
+// activa/desactiva (mismo verbo que Usuarios, el módulo más análogo).
+Route::prefix('v1/roles')->name('roles.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [RoleController::class, 'index'])->name('index');
+    Route::post('/', [RoleController::class, 'store'])->name('store');
+    Route::get('{role}', [RoleController::class, 'show'])->name('show');
+    Route::patch('{role}', [RoleController::class, 'update'])->name('update');
+    Route::post('{role}/activar', [RoleController::class, 'activar'])->name('activar');
+    Route::post('{role}/desactivar', [RoleController::class, 'desactivar'])->name('desactivar');
+    Route::get('{role}/usuarios', [RoleController::class, 'usuarios'])->name('usuarios');
+});
+
+// Catálogo global de solo lectura, para la UI de asignación de permisos a un rol.
+Route::get('v1/permisos', [PermissionController::class, 'index'])->name('permisos.index')->middleware(['auth:api', 'tenant']);

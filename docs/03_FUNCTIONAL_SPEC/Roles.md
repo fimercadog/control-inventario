@@ -1,8 +1,8 @@
 # Roles y Permisos (RBAC)
 
-**Status: Built (infraestructura de datos y motor de permisos) — sin enforcement por ruta ni UI de gestión todavía**
+**Status: Built (Módulo 5 — Role Management completo, 2026-08-02) — solo Módulo 3 (Authorization middleware por ruta) sigue pendiente**
 
-> Verificado contra `backend/app/Models/Role.php`, `backend/config/permission.php`, `backend/database/seeders/PermissionSeeder.php`, `backend/database/migrations/2026_07_28_183606_create_permission_tables.php`, `2026_07_28_183607_add_empresa_foreign_key_to_roles_table.php`, `2026_07_28_190001_add_empresa_foreign_keys_to_permission_pivot_tables.php`, `backend/app/Models/User.php` (trait `HasRoles`), `frontend/lib/api/types.ts` (`AuthenticatedUser.permissions: string[]`). Corresponde a los Módulos 0-2 (Fundamentos, Authentication, Company Isolation) del roadmap Auth & RBAC — completos. El **motor** de permisos (catálogo, roles por empresa vía Teams de Spatie, aislamiento por tenant) está construido y probado (25 tests adversariales de Company Isolation). Lo que **no** está construido es: el middleware que aplica un permiso específico a una ruta de negocio (Módulo 3 — Authorization, pendiente `[ ]` en el roadmap), el CRUD de roles por empresa (Módulo 5 — Role Management, pendiente), y el `PermissionContext`/sidebar dinámico en el frontend (también Módulo 3). Reemplaza el borrador de la sección 19 del master spec, que no anticipaba el modelo real (roles por empresa vía Teams, permisos globales fijos, regla dura de nunca usar nombres de rol en lógica de negocio).
+> Verificado contra `backend/app/Models/Role.php`, `backend/config/permission.php`, `backend/database/seeders/PermissionSeeder.php`, `backend/app/Repositories/RoleRepository.php`, `backend/app/Services/RoleService.php`, `backend/app/Policies/RolePolicy.php`, `backend/app/Http/Controllers/Api/RoleController.php`, `backend/app/Http/Controllers/Api/PermissionController.php`, `backend/routes/api.php`, `backend/tests/Feature/RoleControllerTest.php`, `frontend/app/(app)/roles/`. Corresponde a los Módulos 0, 1, 2, 4, 5 (Fundamentos, Authentication, Company Isolation, User Management, Role Management) del roadmap Auth & RBAC — todos completos. Toda ruta de negocio de todo módulo existente valida un permiso específico desde Fase 4.5/4.6 (docs/security/ROLES_MATRIX.md) — la afirmación anterior de este documento ("ningún endpoint valida un permiso") quedó obsoleta antes incluso de este módulo. Lo único que **no** está construido es el middleware genérico de permisos por ruta y el `PermissionContext`/sidebar dinámico (Módulo 3) — hoy cada Policy verifica el permiso explícitamente, sin ese middleware, exactamente como el resto del ERP.
 
 ## Purpose
 
@@ -13,8 +13,9 @@ Permitir que cada empresa administre sus propios roles (ej. "Bodeguero", "Superv
 1. El catálogo de permisos es global y fijo: se siembra vía `PermissionSeeder` (`productos.*`, `movimientos.*`, `captura-ia.*`, `usuarios.*`, `roles.*`, `auditoria.ver`, `plataforma.*`) y solo crece cuando se construye una feature nueva — nunca lo edita un cliente.
 2. Cada empresa gestiona sus propios roles (`roles.empresa_id` como `team_foreign_key` de Spatie) — un rol nunca es visible ni aplicable fuera de su empresa.
 3. Un usuario recibe uno o más roles (`model_has_roles`, con el `empresa_id` fijado por `TenantScope`); cada rol trae consigo un subconjunto de permisos del catálogo global (`role_has_permissions`).
-4. En cada request autenticada, `GET /auth/me` devuelve `permissions: string[]` — los permisos efectivos del usuario, ya resueltos, listos para que el frontend decida qué mostrar (cuando exista ese frontend — ver "Future Improvements").
-5. **Hoy**: ningún endpoint de negocio (Captura IA) valida un permiso específico — solo exige sesión válida + tenant identificado. La validación permiso-por-permiso es exactamente el trabajo del Módulo 3, pendiente.
+4. En cada request autenticada, `GET /auth/me` devuelve `permissions: string[]` — los permisos efectivos del usuario, ya resueltos, consumidos hoy por `puedeVerModulo()` en `app-sidebar.tsx` para decidir qué mostrar.
+5. **Desde Fase 4.5/4.6**: todo endpoint de negocio de todo módulo (Productos, Movimientos, Captura IA, Categorías, Marcas, Unidades de Medida, Stock, Proveedores, Producto↔Proveedor, Clientes) valida el permiso específico que su acción requiere, vía su Policy — `$user->can('recurso.accion')` AND-eado con pertenencia de empresa. Ver `docs/security/ROLES_MATRIX.md`.
+6. **Desde 2026-08-02 (este módulo)**: un usuario con `roles.gestionar` administra los roles de su empresa — crearlos, renombrarlos, asignarles/quitarles permisos del catálogo global, activarlos/desactivarlos. `roles.ver` solo permite lectura.
 
 ## Actors
 
@@ -23,7 +24,9 @@ Permitir que cada empresa administre sus propios roles (ej. "Bodeguero", "Superv
 
 ## Screens
 
-**Ninguna pantalla de gestión existe todavía.** No hay `/roles` ni `/roles/{id}` en `frontend/app`. La gestión de roles por empresa (CRUD + asignación de permisos del catálogo) es el Módulo 5 (Role Management), pendiente.
+- **`/roles`** (`frontend/app/(app)/roles/page.tsx`): lista de roles de la empresa — búsqueda por nombre, filtro por estado, columnas Rol/Permisos/Usuarios/Estado, paginación real, acciones Editar/Desactivar-Activar. Botón "Nuevo Rol" abre `new-role-dialog.tsx`.
+- **`/roles/{id}`** (`frontend/app/(app)/roles/[id]/page.tsx` → `role-detail-screen.tsx`): dos tabs — "Detalle" (ver/editar nombre y permisos vía `PermissionPicker`, chips de permisos cuando no está en edición) y "Usuarios" (lista de solo lectura de los usuarios asignados a ese rol, con email y estado activo/inactivo — existe explícitamente para que el mensaje 409 de "rol con usuarios asignados" sea accionable: el operador puede ver a quién tiene que reasignar).
+- **`permission-picker.tsx`** (componente reutilizable, no una pantalla): agrupa el catálogo plano de permisos por prefijo de recurso en grupos colapsables con checkbox de "seleccionar todo el grupo" (estado indeterminado cuando hay selección parcial). Reutilizable por cualquier futura UI de asignación de permisos.
 
 ## Fields
 
@@ -34,7 +37,7 @@ Modelo de datos ya construido:
 | `permissions` (Spatie) | `name` (`recurso.accion`), `guard_name` | catálogo global, `guard_name = 'api'` |
 | `roles` (Spatie + `App\Models\Role`) | `name`, `guard_name`, `empresa_id` | único por `(empresa_id, name, guard_name)` |
 | `model_has_roles` | `role_id`, `model_id`, `model_type`, `empresa_id` (team) | FK a `empresa_id` agregada explícitamente (migración `2026_07_28_190001`) |
-| `model_has_permissions` | ídem | permisos directos a un usuario, sin pasar por un rol (soportado por Spatie, uso no confirmado en el diseño real) |
+| `model_has_permissions` | ídem | permisos directos a un usuario, sin pasar por un rol (soportado por Spatie) — **no usado en este diseño**: `RoleRepository`/`RoleService` solo llaman `syncPermissions()` sobre `Role`, nunca `givePermissionTo()` sobre `User`; no existe endpoint para asignar un permiso directo a un usuario. Confirmado por grep, no solo por convención — "los roles son el único empaquetado de permisos" es una regla real, no solo documentada |
 | `role_has_permissions` | `permission_id`, `role_id` | conecta un rol de una empresa con permisos del catálogo global |
 
 ## Validation Rules
@@ -45,19 +48,24 @@ Modelo de datos ya construido:
 
 ## Permissions
 
-Catálogo completo ya sembrado (`PermissionSeeder`, 15 permisos): `productos.ver/crear/editar/eliminar`, `movimientos.ver/crear`, `captura-ia.usar/revisar/confirmar`, `usuarios.ver/editar/invitar`, `roles.ver/gestionar`, `auditoria.ver`, `plataforma.empresas.ver`, `plataforma.usuarios.ver`. Este mismo documento es, en cierto sentido, autorreferencial: `roles.ver`/`roles.gestionar` son los permisos que gatearán la futura pantalla de gestión de roles.
+Catálogo completo ya sembrado (`PermissionSeeder`, 45 permisos): `productos.ver/crear/editar/gestionar`, `categorias.ver/crear/editar/gestionar`, `marcas.ver/crear/editar/gestionar`, `unidades-medida.ver/crear/editar/gestionar`, `stock.ver/editar/gestionar`, `proveedores.ver/crear/editar/gestionar`, `clientes.ver/crear/editar/gestionar`, `producto-proveedor.ver/crear/editar/gestionar`, `movimientos.ver/crear`, `captura-ia.usar/revisar/confirmar/gestionar`, `usuarios.ver/editar/invitar`, `roles.ver/gestionar`, `auditoria.ver`, `plataforma.empresas.ver`, `plataforma.usuarios.ver`. Este mismo documento es, en cierto sentido, autorreferencial: `roles.ver`/`roles.gestionar` son los permisos que gatean la pantalla de gestión de roles (`/roles`), ya construida.
 
 ## Loading States
 
-No aplica — no hay pantalla.
+- Lista (`/roles`): mientras `loading` (Redux) es `true`, la fila de conteo muestra "Cargando..." y la tabla muestra una fila "Cargando roles...".
+- Detalle (`/roles/{id}`): "Cargando rol..." mientras se resuelve el fetch inicial.
+- Diálogo de creación/edición: `PermissionPicker` muestra su propio estado de carga (`catalogoLoading`) mientras trae el catálogo de permisos, independiente de la carga de la lista.
 
 ## Empty States
 
-No aplica — no hay pantalla.
+- Lista sin resultados (búsqueda/filtro sin coincidencias): `EmptyState` con ícono `SearchX`, título "No encontramos roles", descripción "Prueba con otro nombre, o crea el primero."
 
 ## Error States
 
-No aplica todavía a nivel de UI. A nivel de backend: cualquier intento de bypass de `TenantScope` (ej. `withoutGlobalScope`) queda cubierto por la segunda capa de defensa — verificación explícita en cada Policy (`$model->empresa_id === $user->empresa_id`).
+- **Backend**: cualquier intento de bypass de `TenantScope` (ej. `withoutGlobalScope`) queda cubierto por la segunda capa de defensa — verificación explícita en cada Policy (`$model->empresa_id === $user->empresa_id`).
+- **Frontend, genérico**: toda mutación fallida (crear, actualizar, cambiar estado) muestra `toast.error(...)` con el mensaje real del backend cuando es un string (422/409), o un fallback genérico ("No pudimos guardar los cambios.", "No pudimos actualizar el estado.") cuando no lo es.
+- **409 — rol con usuarios asignados**: al intentar desactivar, el toast muestra el mensaje real de `RoleHasAssignedUsersException` ("Este rol tiene usuarios asignados. Reasígnalos a otro rol antes de desactivarlo."), y el tab "Usuarios" del detalle deja ver exactamente a quién hay que reasignar — verificado en navegador, no solo por test.
+- **422 — nombre duplicado / permiso inválido**: `StoreRoleRequest`/`UpdateRoleRequest` devuelven un error de validación limpio (nunca la excepción cruda de Spatie `RoleAlreadyExists`) — ver bug corregido en el informe de implementación.
 
 ## Business Rules
 
@@ -71,18 +79,20 @@ No aplica todavía a nivel de UI. A nivel de backend: cualquier intento de bypas
 - [x] Un rol creado en la Empresa A nunca es visible ni aplicable a un usuario de la Empresa B (probado: 25 tests adversariales de Company Isolation).
 - [x] `GET /auth/me` devuelve los permisos efectivos del usuario ya resueltos.
 - [x] Un usuario normal nunca puede auto-asignarse `is_platform_admin = true`.
-- [ ] **Pendiente (Módulo 3)**: un endpoint de negocio (ej. Captura IA) rechaza con 403 a un usuario autenticado que no tiene el permiso específico requerido.
-- [ ] **Pendiente (Módulo 5)**: un usuario con `roles.gestionar` puede crear un rol, asignarle permisos del catálogo, y asignarlo a otro usuario de su empresa.
-- [ ] **Pendiente (Módulo 3, frontend)**: el sidebar oculta ítems de navegación para los que el usuario no tiene el permiso correspondiente.
+- [x] Todo endpoint de negocio de todo módulo existente rechaza con 403 a un usuario autenticado sin el permiso específico requerido, vía Policy (Fase 4.5/4.6) — cubre el caso concreto de Captura IA.
+- [x] Un usuario con `roles.gestionar` puede crear un rol, asignarle permisos del catálogo (`POST /v1/roles`), editarlo (`PATCH /v1/roles/{id}`), y ver los usuarios que lo tienen asignado (`GET /v1/roles/{id}/usuarios`) — no existe una acción de "asignar rol a usuario" en este módulo: eso ya lo cubre `UserController` (Módulo 4).
+- [x] Un rol no puede desactivarse mientras tenga usuarios asignados (409 + mensaje accionable) — probado en backend (`RoleControllerTest`) y verificado en navegador.
+- [ ] **Pendiente (Módulo 3)**: middleware genérico `EnsurePermission` aplicado uniformemente por ruta (hoy cada Policy lo hace explícitamente, sin ese middleware — funciona igual pero sin la capa centralizada).
+- [ ] **Pendiente (Módulo 3, frontend)**: `PermissionContext` + hook `usePermission(perm)` genérico; hoy el sidebar ya oculta ítems sin permiso vía `puedeVerModulo()`, pero sin ese hook reutilizable para el resto de la UI.
 
 ## Edge Cases
 
 - Usuario con múltiples roles cuyos permisos se solapan — el modelo de Spatie resuelve esto de forma nativa (unión de permisos de todos los roles); sin un caso de prueba específico documentado todavía en este repo.
-- Rol sin ningún permiso asignado — válido a nivel de esquema; comportamiento de UI (Módulo 5) ante ese caso, a definir.
+- Rol sin ningún permiso asignado — válido a nivel de esquema y de UI: `PermissionPicker` permite guardar sin ninguna casilla marcada, sin error; el rol queda creado con 0 permisos efectivos.
 - Platform Super Admin intentando una acción `productos.*` (no tiene empresa) — rechazado, porque no tiene ese permiso namespaced a ninguna empresa; su alcance real son exclusivamente los permisos `plataforma.*`.
 
 ## Future Improvements
 
-- **Módulo 3 (Authorization/RBAC)**: `PermissionCheckerInterface`, Policies aplicadas a rutas reales de Producto/Movimiento/CapturaIA/Role/User, middleware `EnsurePermission`, `PermissionContext` + hook `usePermission(perm)` en el frontend, sidebar dinámico que oculta ítems sin permiso.
-- **Módulo 5 (Role Management)**: `GET/POST/PATCH/DELETE /roles` (ya documentados en `04_TECHNICAL_SPEC/API.md`, sin Controller construido), `GET /permisos` (catálogo de solo lectura para la UI de asignación), y la pantalla `/roles` completa.
-- Considerar si `model_has_permissions` (permisos directos a un usuario, sin rol intermedio) se usa alguna vez en el diseño real, o si se prohíbe explícitamente para mantener "los roles son el único empaquetado de permisos" como regla simple.
+- **Módulo 3 (Authorization/RBAC), único pendiente real**: middleware genérico `EnsurePermission` centralizado por ruta (hoy cada Policy repite la verificación explícitamente — funciona, pero sin ese punto único), y `PermissionContext` + hook `usePermission(perm)` reutilizable en el frontend (hoy `puedeVerModulo()` en `app-sidebar.tsx` cubre solo la navegación, no componentes internos como botones de acción).
+- ~~Módulo 5 (Role Management)~~ — completo desde 2026-08-02: `GET/POST/PATCH /roles`, `POST /roles/{id}/activar|desactivar`, `GET /roles/{id}/usuarios`, `GET /permisos`, y la pantalla `/roles` + `/roles/{id}` completas.
+- `model_has_permissions` queda explícitamente sin usar por diseño (ver tabla de Fields) — no es un futuro a resolver, es una decisión ya tomada: todo permiso llega a un usuario a través de un rol.

@@ -14,6 +14,7 @@ import {
   Truck,
   Contact,
   UserCog,
+  ShieldCheck,
   Settings,
   LogOut,
   Boxes,
@@ -87,6 +88,7 @@ const TERCEROS_ITEMS: NavItem[] = [
 
 const ADMINISTRACION_ITEMS: NavItem[] = [
   { href: "/usuarios", label: "Usuarios", icon: UserCog, permission: "usuarios.ver" },
+  { href: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles.ver" },
   { href: "/configuracion", label: "Configuración", icon: Settings },
 ];
 

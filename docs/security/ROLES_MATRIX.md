@@ -1,8 +1,8 @@
 # Roles Matrix — RBAC de FidelOS
 
-**Status: Approved — referencia oficial del modelo de autorización, arquitectura de autorización completa** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día; Fase 4.6 — Authorization Completion — cerró el Gap 5 restante el mismo día)
+**Status: Approved — referencia oficial del modelo de autorización, arquitectura de autorización completa** (aprobado 2026-08-02; Fase 4.5 — Authorization Alignment — cerró los Gaps 2 y 3 originales el mismo día; Fase 4.6 — Authorization Completion — cerró el Gap 5 restante el mismo día; **Fase 5 — Role Management — construida y cerrada el mismo día**, ver sección 6 y Gap 7)
 
-> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 11 Policies existentes, incluye `StockPolicy` y `ClientePolicy`), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`, `database/migrations/2026_08_02_100000_rename_productos_eliminar_permission.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md` (diseño narrativo del motor RBAC) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento es la referencia obligatoria para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos".
+> Verificado contra código real, no inferencia: `backend/database/seeders/PermissionSeeder.php`, `RoleSeeder.php`, `backend/app/Policies/*.php` (las 12 Policies existentes, incluye `StockPolicy`, `ClientePolicy` y `RolePolicy`), `backend/routes/api.php` (fuente única de verdad de qué endpoints existen hoy), `backend/app/Models/Role.php`, `config/permission.php`, `backend/app/Repositories/RoleRepository.php`, `backend/app/Services/RoleService.php`, `database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`, `database/migrations/2026_08_02_100000_rename_productos_eliminar_permission.php`. Complementa — no reemplaza — `docs/03_FUNCTIONAL_SPEC/Roles.md` (diseño narrativo del motor RBAC) y `docs/04_TECHNICAL_SPEC/Security.md` (principios de seguridad generales, desactualizado respecto a los módulos construidos desde Fase 1). Este documento fue la referencia usada para construir el Módulo 5 (Role Management) — "el módulo Roles se construye desde esta matriz, no desde supuestos" — y sus reglas (sección 6) fueron seguidas sin desviaciones.
 >
 > **Fase 4.5 (Authorization Alignment, 2026-08-02)** alineó los seis módulos que esta matriz identificó sin permiso propio (Categorías, Marcas, Unidades de Medida, Stock, Proveedores, Producto↔Proveedor): cada uno ganó su propio namespace de permisos y sus Policies pasaron de "solo pertenencia de empresa" a **pertenencia de empresa Y permiso** (`AND`, nunca `OR`). 6 tests nuevos por módulo (36 en total) prueban explícitamente: usuario autorizado tiene éxito, usuario sin permiso recibe 403, acceso cross-company sigue prohibido. Suite completa: **228/228**. El detalle de qué se hizo por módulo vive en `docs/05_IMPLEMENTATION/AuthorizationAlignment.md`.
 >
@@ -22,7 +22,7 @@
 
 ### Roles de referencia (Demo Data, no roles "del sistema")
 
-`RoleSeeder` crea estos 5 roles como **ejemplo poblado para cada empresa demo** — una empresa real los puede editar, renombrar o borrar libremente una vez exista el Módulo 5. Se documentan aquí porque son el único conjunto de roles con datos reales verificables hoy, y son un punto de partida razonable para el "conjunto sugerido" que la UI de Módulo 5 podría ofrecer al dar de alta una empresa nueva (ver Gap 1 abajo).
+`RoleSeeder` crea estos 5 roles como **ejemplo poblado para cada empresa demo** — una empresa real los puede editar, renombrar o desactivar libremente desde `/roles` (Módulo 5, construido). Se documentan aquí porque son el único conjunto de roles con datos reales verificables hoy, y son un punto de partida razonable para un futuro "conjunto sugerido" al dar de alta una empresa nueva (ver Gap 1 abajo, todavía abierto).
 
 | Rol | Permisos asignados (`RoleSeeder`, verificado) |
 | --- | --- |
@@ -60,17 +60,17 @@ Hoy, la única forma de que un usuario tenga el rol "Administrador" con permiso 
 | `captura-ia.usar` | Crear una captura (foto/voz/foto+voz) y verla | **Sí** — `CapturaIAPolicy` (Fase 4.6) |
 | `captura-ia.revisar` | Corregir un detalle de baja confianza antes de confirmar (`actualizarDetalle`) | **Sí** — `CapturaIAPolicy` (Fase 4.6, ability `review` nueva, separada de `update`) |
 | `captura-ia.confirmar` | Confirmar/descartar una captura ya procesada | **Sí** — `CapturaIAPolicy` (Fase 4.6) |
-| `captura-ia.gestionar` | Configuración del pipeline de Captura IA | Sembrado, sin ninguna acción real que lo consuma todavía — no existe pantalla de configuración (mismo patrón que `roles.gestionar`/`usuarios.invitar`) |
+| `captura-ia.gestionar` | Configuración del pipeline de Captura IA | Sembrado, sin ninguna acción real que lo consuma todavía — no existe pantalla de configuración (mismo patrón que `usuarios.invitar`) |
 | `usuarios.ver` | Ver listado/ficha de usuarios | Ninguno todavía (solo pertenencia de empresa) |
 | `usuarios.editar` | Activar/desactivar usuarios | **Sí — lógica de negocio real** (`UserController::esElUltimoConGestion()`, RC1 Fase 4) |
 | `usuarios.invitar` | Invitar un usuario nuevo | Ninguno (Módulo 6, sin construir) |
-| `roles.ver` | Ver roles de la empresa | Ninguno (Módulo 5, sin construir) |
-| `roles.gestionar` | Crear/editar/activar/desactivar roles | Ninguno (Módulo 5, sin construir) |
+| `roles.ver` | Ver roles de la empresa | **Sí** — `RolePolicy` (Módulo 5, 2026-08-02) |
+| `roles.gestionar` | Crear/editar/activar/desactivar roles | **Sí** — `RolePolicy` (Módulo 5, 2026-08-02) |
 | `auditoria.ver` | Ver el módulo de Auditoría | Ninguno (Fase 7, sin construir) |
 | `plataforma.empresas.ver` | Platform Super Admin: ver empresas | Ninguno |
 | `plataforma.usuarios.ver` | Platform Super Admin: ver usuarios de cualquier empresa | Ninguno |
 
-**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.6 + el módulo Clientes, **10 de las 11 Policies existentes** (`ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy`, `CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`, `ClientePolicy`) verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Queda exactamente **una** excepción deliberada y anterior a Fase 4.5/4.6: `UserPolicy` (RC1 Fase 4) solo verifica pertenencia de empresa — `usuarios.ver` no tiene ningún consumidor todavía (ver fila arriba); la única lógica de negocio real hoy sobre Usuarios es la guarda del último administrador (`esElUltimoConGestion()`), no un chequeo de permiso Spatie. `roles.*`/`auditoria.*`/`usuarios.invitar` tampoco tienen Policy propia — esperan a los Módulos 5/6/7 que todavía no existen, no es un gap del modelo de autorización en sí.
+**"Módulo que lo consume hoy" = ¿algún `Policy`/`Controller` llama `$user->can('ese.permiso')` o equivalente?** Tras Fase 4.6 + los módulos Clientes y Roles, **11 de las 12 Policies existentes** (`ProductoPolicy`, `MovimientoPolicy`, `CapturaIAPolicy`, `CategoriaPolicy`, `MarcaPolicy`, `UnidadMedidaPolicy`, `StockPolicy`, `ProveedorPolicy`, `ProductoProveedorPolicy`, `ClientePolicy`, `RolePolicy`) verifican un permiso Spatie real, **AND**eado con la pertenencia de empresa preexistente — nunca reemplazándola. Queda exactamente **una** excepción deliberada y anterior a Fase 4.5/4.6: `UserPolicy` (RC1 Fase 4) solo verifica pertenencia de empresa — `usuarios.ver` no tiene ningún consumidor todavía (ver fila arriba); la única lógica de negocio real hoy sobre Usuarios es la guarda del último administrador (`esElUltimoConGestion()`), no un chequeo de permiso Spatie. `auditoria.*`/`usuarios.invitar` tampoco tienen Policy propia todavía — esperan a los Módulos 6/7 (Auditoría es ahora Módulo 2 del roadmap de 4 módulos vertical-slice activo), no es un gap del modelo de autorización en sí.
 
 Módulo 3 (Authorization/RBAC — middleware que aplica el permiso a nivel de ruta, `PermissionContext` en el frontend) sigue `[ ]` sin construir en `docs/00_VISION/Roadmap.md`. Ni Fase 4.5 ni Fase 4.6 lo reemplazan: mueven el chequeo de permiso a la capa de Policy (server-side, siempre evaluado, ahora sobre **todos** los recursos existentes), que es más fuerte que un middleware de ruta pero no incluye el `PermissionContext`/sidebar dinámico que Módulo 3 todavía debe construir para el frontend.
 
@@ -103,7 +103,7 @@ No era un gap de esta matriz — es un módulo nuevo. Documentado aquí porque c
 | Clientes | `Cliente` | Automático | `ClientePolicy` |
 | Captura IA | `CapturaIA` | Automático | `CapturaIAPolicy` |
 | **Usuarios** | `User` | **Manual** — `User` no usa `BelongsToEmpresa` a propósito (aplicar un scope global a un modelo que el propio guard de autenticación resuelve se consideró riesgo fuera de alcance de Fase 4); cada Controller filtra por `empresa_id` vía `TenantContext::empresaId()` | `UserPolicy` (segunda capa, sobre el resultado ya filtrado) |
-| Roles | `Role` (subclase de Spatie con `BelongsToEmpresa`; columna `estado` agregada en Fase 4.5) | Automático | **No existe todavía** — Módulo 5 |
+| Roles | `Role` (subclase de Spatie con `BelongsToEmpresa`; columna `estado` agregada en Fase 4.5) | Automático | `RolePolicy` (Módulo 5, 2026-08-02) |
 | Auditoría (`AuditLog`) | `AuditLog` | Automático (`BelongsToEmpresa`, per Módulo 2) | No existe todavía — no hay endpoint de consulta (Fase 7) |
 | Plataforma (multi-empresa) | `Empresa`, `User` sin scope | N/A — `TenantScope::bypass()` exclusivo de `is_platform_admin` | No existe todavía |
 
@@ -128,7 +128,7 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | Clientes | ✔ | ✔ | ✔ | ✔ | ✔ | — | `clientes.*` — **enforced desde el commit inicial (2026-08-02)** |
 | Captura IA | ✔ | ✔ | ✔ (foto/voz) | ✔ (corregir detalle) | ✔ (confirmar/descartar) | — | `captura-ia.*` — **enforced (Fase 4.6)**; crear/ver exige `.usar`, corregir detalle exige `.revisar`, confirmar/descartar exige `.confirmar` |
 | **Usuarios** | ✔ | ✔ | — (Módulo 6) | — (fuera de alcance, ver `Users.md`) | ✔ | — (nunca) | `usuarios.*` — enforcement parcial (solo la guarda del último administrador, RC1 Fase 4) |
-| **Roles** *(Fase 5, a construir)* | por construir | por construir | por construir | por construir | por construir | **—** (confirmado: sin Delete) | `roles.*` (ya existe, sin enforcement — lo construye Fase 5) |
+| **Roles** | ✔ | ✔ | ✔ | ✔ | ✔ (`activar`/`desactivar`, bloqueado con 409 si tiene usuarios asignados) | **—** (confirmado: sin Delete) | `roles.*` — **enforced (Módulo 5, 2026-08-02)** |
 
 ---
 
@@ -147,19 +147,20 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | `movimientos.ver/crear` | Módulo Movimientos (Listar/Ver/Crear) — **enforced (Fase 4.6)**. No hay `movimientos.editar` en el catálogo — la edición de metadata deliberadamente no tiene permiso propio (ver sección 4) |
 | `captura-ia.usar/revisar/confirmar/gestionar` | Pipeline de Captura IA completo — **enforced (Fase 4.6)** para `usar`/`revisar`/`confirmar`; `gestionar` sembrado para configuración futura, sin consumidor todavía |
 | `usuarios.ver/editar/invitar` | Módulo Usuarios (Fase 4, certificado construido) + futuro Módulo 6 |
-| `roles.ver/gestionar` | Módulo Roles (Fase 5, a construir desde este documento) |
-| `auditoria.ver` | Futura pantalla de Auditoría (Fase 7) |
-| `plataforma.empresas.ver`, `plataforma.usuarios.ver` | Superficie exclusiva de Platform Super Admin, namespace reservado — **nunca** asignable a un rol de empresa (validación de aplicación, no constraint de base de datos, a implementar en Módulo 5) |
+| `roles.ver/gestionar` | Módulo Roles — **enforced (Módulo 5, 2026-08-02)** |
+| `auditoria.ver` | Futura pantalla de Auditoría (siguiente módulo del roadmap vertical-slice activo) |
+| `plataforma.empresas.ver`, `plataforma.usuarios.ver` | Superficie exclusiva de Platform Super Admin, namespace reservado — **nunca** asignable a un rol de empresa (validación de aplicación implementada en Módulo 5: `not_regex:/^plataforma\./` en `StoreRoleRequest`/`UpdateRoleRequest`, no una constraint de base de datos) |
 
 ---
 
-## 6. Reglas de Fase 5 (Roles), confirmadas por el propietario del proyecto
+## 6. Reglas de Fase 5 (Roles) — confirmadas por el propietario del proyecto, **implementadas sin desviaciones (2026-08-02)**
 
-- **CRUD**: Listar, Ver, Crear, Editar, Activar, Desactivar. **Sin Delete** — `docs/04_TECHNICAL_SPEC/API.md` ya no documenta `DELETE /roles/{id}` (corregido en Fase 4.5, ver `docs/07_RELEASE` del changelog); el diseño de Fase 5 debe seguir exactamente el mismo patrón de Categorías/Marcas/Unidades de Medida/Proveedores.
-- **Un rol con usuarios asignados no puede desactivarse hasta reasignarlos.** Requiere, antes de desactivar, verificar `model_has_roles` por ese `role_id` — si algún usuario (activo o inactivo) todavía lo tiene asignado, rechazar con 409 (mismo patrón de excepción de negocio que `LastCompanyAdminException` en Usuarios) hasta que se reasignen a otro rol.
-- **Los permisos son exclusivamente vía rol.** Verificado en código: `model_has_permissions` (permiso directo a un usuario, sin rol intermedio) **nunca se usa** hoy — el único lugar que asigna permisos es `RoleSeeder::crear()`, siempre sobre un `Role`, nunca sobre un `User`. Esto cierra formalmente la pregunta abierta en `Roles.md` ("¿se usa `model_has_permissions` alguna vez?"): **no, queda prohibido por diseño**. El Módulo 5 nunca debe exponer una UI ni un endpoint que otorgue un permiso directamente a un usuario.
-- **Resuelto en Fase 4.5**: `roles.estado` (string, `activo`/`inactivo`, mismo patrón que el resto del ERP — **no** un booleano) ya existe (`database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`). Fase 5 construye la lógica de Activar/Desactivar sobre esta columna ya lista, sin necesitar su propia migración.
-- **Regla dura heredada, sin cambios**: ningún Policy/Controller de Roles debe verificar `hasRole('Admin')` — el propio motor de autorización no debe conocer nombres de rol como concepto de negocio, solo permisos (`Roles.md`, "Regla dura").
+- **CRUD**: Listar, Ver, Crear, Editar, Activar, Desactivar. **Sin Delete** — `docs/04_TECHNICAL_SPEC/API.md` ya no documenta `DELETE /roles/{id}` (corregido en Fase 4.5); Fase 5 siguió exactamente el mismo patrón de Categorías/Marcas/Unidades de Medida/Proveedores. Confirmado: `RoleController` no expone ningún método `destroy`.
+- **Un rol con usuarios asignados no puede desactivarse hasta reasignarlos.** Implementado: `RoleService::deshabilitar()` verifica `model_has_roles` vía `RoleRepository::contarUsuariosAsignados()` antes de desactivar — si algún usuario (activo o inactivo) todavía lo tiene asignado, rechaza con 409 (`RoleHasAssignedUsersException`, mismo patrón que `LastCompanyAdminException` en Usuarios). Probado en `RoleControllerTest` y verificado en navegador.
+- **Los permisos son exclusivamente vía rol.** Confirmado tras la implementación: `RoleRepository`/`RoleService` solo llaman `syncPermissions()` sobre `Role`, nunca `givePermissionTo()` sobre `User`. Esto cierra formalmente la pregunta que tenía `Roles.md` ("¿se usa `model_has_permissions` alguna vez?"): **no, queda prohibido por diseño**, y el Módulo 5 construido no expone ninguna UI ni endpoint que otorgue un permiso directamente a un usuario.
+- **Resuelto en Fase 4.5**: `roles.estado` (string, `activo`/`inactivo`, mismo patrón que el resto del ERP — **no** un booleano) ya existía (`database/migrations/2026_08_02_090000_add_estado_to_roles_table.php`). Fase 5 construyó Activar/Desactivar sobre esta columna ya lista, sin necesitar su propia migración.
+- **Regla dura heredada, sin cambios**: ningún Policy/Controller de Roles verifica `hasRole('Admin')` — `RolePolicy` (como las otras 10) verifica exclusivamente `$user->can('roles.ver')`/`$user->can('roles.gestionar')`, nunca el nombre de un rol (`Roles.md`, "Regla dura").
+- **Hallazgo real durante la construcción, no anticipado por esta sección**: Spatie lanza `RoleAlreadyExists` sin capturar ante un nombre de rol duplicado en la misma empresa — corregido con `Rule::unique('roles','name')->where('guard_name','api')->where('empresa_id', ...)` en `StoreRoleRequest`/`UpdateRoleRequest`. Detalle completo en `docs/05_IMPLEMENTATION/RolesModule.md`.
 
 ---
 
@@ -167,10 +168,10 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 
 1. **Cómo se agrega un permiso nuevo**: únicamente vía `PermissionSeeder::PERMISSIONS`, como parte de la unidad de trabajo que construye el módulo que lo necesita — nunca editable por una empresa, nunca vía UI. Ejecutar `php artisan migrate:fresh --seed` (o un seeder idempotente equivalente en producción) tras agregarlo.
 2. **Convención de nombres, formalizada en Fase 4.5**: `recurso.accion`, minúsculas, singular o plural según ya esté establecido para ese recurso (`productos` no `producto`), separados por punto (o guion para nombres compuestos: `unidades-medida`, `producto-proveedor`). Verbos: `ver`, `crear`, `editar`, `gestionar` (activar/desactivar), `usar`, `revisar`, `confirmar`, `invitar`. **Resuelto en Fase 4.6**: `productos.eliminar` (la única inconsistencia de nombres heredada que quedaba) se renombró a `productos.gestionar` vía migración de datos (`UPDATE permissions SET name = ...`, no delete+recreate) — preserva el `id` del permiso y todas sus asociaciones en `role_has_permissions`/`model_has_permissions`. Los 9 módulos con `gestionar` (los 6 de Fase 4.5 + Productos/Stock ya lo tenían) ahora comparten el mismo verbo para la misma acción; no queda ningún permiso nombrado con un verbo que no refleje el comportamiento real.
-3. **`plataforma.*` es namespace reservado permanente** — ningún rol de empresa puede recibirlo, sin excepción, validado a nivel de aplicación cuando exista el Módulo 5.
+3. **`plataforma.*` es namespace reservado permanente** — ningún rol de empresa puede recibirlo, sin excepción; validado a nivel de aplicación desde Módulo 5 (`not_regex:/^plataforma\./` en `StoreRoleRequest`/`UpdateRoleRequest`, y `PermissionController::index()` excluye el namespace del catálogo servido al frontend).
 4. **Todo módulo nuevo que exponga un recurso propio nace con su propio namespace de permisos** desde su primera unidad de trabajo — Fase 4.5 cerró el gap retroactivo para los seis módulos que no lo tenían; ningún módulo futuro debería volver a acumular esta deuda.
-5. **Enforcement real de ruta (Módulo 3) es un prerrequisito de producto, no de este módulo específico** — Roles puede construirse y ser funcional (gestionar roles y sus permisos) sin que Módulo 3 exista todavía, exactamente como Usuarios y Fase 4.5 se construyeron sobre el mismo nivel incremental (permiso verificado en la Policy, sin middleware de ruta ni `PermissionContext` en el frontend todavía). Cuando Módulo 3 se construya, debe consumir esta misma matriz (sección 4/5) para decidir qué permiso exige cada ruta — no debe inventar un mapeo nuevo.
-6. **Resuelto en Fase 4.6**: ~~Productos, Movimientos y Captura IA quedan con el mismo gap que tenían los 6 módulos de Fase 4.5~~ — `ProductoPolicy`, `MovimientoPolicy` y `CapturaIAPolicy` ya exigen permiso real. La arquitectura de autorización se considera completa: todo módulo existente comparte exactamente el mismo modelo RBAC (pertenencia de empresa AND permiso). No debería requerirse trabajo de autorización adicional salvo para módulos futuros (Roles, Auditoría, Módulo 6).
+5. **Enforcement real de ruta (Módulo 3) es un prerrequisito de producto, no de módulos de negocio específicos** — Roles se construyó y es funcional (gestionar roles y sus permisos) sin que Módulo 3 exista todavía, exactamente como Usuarios y Fase 4.5/4.6 se construyeron sobre el mismo nivel incremental (permiso verificado en la Policy, sin middleware de ruta ni `PermissionContext` en el frontend todavía). Cuando Módulo 3 se construya, debe consumir esta misma matriz (sección 4/5) para decidir qué permiso exige cada ruta — no debe inventar un mapeo nuevo.
+6. **Resuelto en Fase 4.6**: ~~Productos, Movimientos y Captura IA quedan con el mismo gap que tenían los 6 módulos de Fase 4.5~~ — `ProductoPolicy`, `MovimientoPolicy` y `CapturaIAPolicy` ya exigen permiso real. La arquitectura de autorización se considera completa: todo módulo existente comparte exactamente el mismo modelo RBAC (pertenencia de empresa AND permiso). No debería requerirse trabajo de autorización adicional salvo para módulos futuros (Auditoría, Módulo 6) — Roles ya no es uno de ellos, ver Gap 7.
 
 ---
 
@@ -184,9 +185,10 @@ Columnas: acción existente hoy (✔/✘) y el permiso que la gatea. `—` = la 
 | 4 | `API.md` documentaba `DELETE /roles/{id}` | **Cerrado (Fase 4.5)** — removido |
 | 5 | Productos/Movimientos/Captura IA tienen el mismo gap que tenían los 6 módulos de Fase 4.5 | **Cerrado (Fase 4.6)** — 3 Policies actualizadas, 1 permiso renombrado, 1 permiso nuevo, 1 ability nueva, tests nuevos, 232/232 suite completa |
 | 6 | Módulo Clientes no existía | **Cerrado (2026-08-02)** — vertical slice completo, `ClientePolicy` construida ya con el modelo de autorización estándar, 13 tests nuevos |
+| 7 | Módulo Roles (Fase 5) no existía | **Cerrado (2026-08-02)** — vertical slice completo (`RoleRepository`/`RoleService`/`RolePolicy`/`RoleController`/`PermissionController`), 24 tests nuevos, incluye la corrección de `RoleAlreadyExists` (Spatie) sin capturar en nombres duplicados. Ver `docs/05_IMPLEMENTATION/RolesModule.md` |
 
-Gap 1 es el único abierto — fuera del roadmap de 8 fases actual, no bloquea Fase 5.
+Gap 1 es el único abierto — fuera del roadmap de 8 fases actual, no bloquea ningún módulo activo.
 
 ---
 
-**Aprobado como referencia oficial del modelo de autorización — arquitectura de autorización completa. Fase 5 (Roles UI) puede comenzar sin trabajo de autorización pendiente en los módulos existentes.**
+**Aprobado como referencia oficial del modelo de autorización — arquitectura de autorización completa. Fase 5 (Roles) completa (2026-08-02): construida exactamente según las reglas de la sección 6, sin desviaciones. Próximo módulo del roadmap vertical-slice activo: Auditoría (read-only).**
