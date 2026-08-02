@@ -126,6 +126,13 @@ Distinto de "Seguridad" abajo — audita **acciones de negocio** (`audit_logs`),
 - GET `/auditoria/{id}` — requiere `auditoria.ver`; detalle completo de un evento, incluyendo `valores_anteriores`/`valores_nuevos`.
 - **Regla de privacidad no negociable**: el campo `usuario` de cada registro expone únicamente `email` y `roles` (resueltos en vivo, no un snapshot histórico) — **nunca** `name`. Ver `Auditoria.md` para el detalle completo de esta decisión.
 
+### Reportes (Built 2026-08-02 — `ReporteController`, ver `docs/03_FUNCTIONAL_SPEC/Reports.md` y `docs/05_IMPLEMENTATION/ReportesModule.md`)
+
+Estadísticas reales sobre Productos/Inventario/Movimientos/Clientes/Proveedores — los 5 módulos de negocio que existen hoy (Ventas/Compras, del borrador original, siguen bloqueados por no existir esos módulos). Un único endpoint compuesto, sin CRUD — "Reportes" es una vista, no un recurso persistido.
+
+- GET `/reportes` — requiere `reportes.ver`; `desde`/`hasta` opcionales (por defecto, últimos 30 días). Devuelve `{rango, inventario, movimientos, clientes, proveedores}`. **Solo `movimientos` depende del rango de fechas** — `inventario`/`clientes`/`proveedores` son siempre el estado actual, no una foto del período.
+- Sin `POST`/`PATCH`/`DELETE`, a propósito (405 si se intenta — la ruta existe con otro verbo).
+
 ### Seguridad — intentos de inicio de sesión (Módulo 8, sin construir)
 
 - GET `/seguridad/intentos-login` — requiere `auditoria.ver`; listaría `security_logs` de la empresa (tabla ya existe y se escribe activamente desde Módulo 1, sin superficie de consulta todavía). No confundir con `/auditoria` arriba — son dos tablas y dos módulos distintos.

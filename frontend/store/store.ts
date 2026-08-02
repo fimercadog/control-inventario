@@ -3,6 +3,7 @@ import authReducer from "@/store/slices/auth-slice";
 import clientesReducer from "@/store/slices/clientes-slice";
 import rolesReducer from "@/store/slices/roles-slice";
 import auditoriaReducer from "@/store/slices/auditoria-slice";
+import reportesReducer from "@/store/slices/reportes-slice";
 
 export function makeStore() {
   return configureStore({
@@ -11,6 +12,7 @@ export function makeStore() {
       clientes: clientesReducer,
       roles: rolesReducer,
       auditoria: auditoriaReducer,
+      reportes: reportesReducer,
     },
   });
 }

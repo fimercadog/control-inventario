@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
                 'productos.ver', 'productos.crear', 'productos.editar',
                 'movimientos.ver', 'movimientos.crear',
                 'captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar',
-                'usuarios.ver', 'auditoria.ver',
+                'usuarios.ver', 'auditoria.ver', 'reportes.ver',
                 'clientes.ver', 'clientes.crear', 'clientes.editar', 'clientes.gestionar',
             ],
             'Bodeguero' => [
@@ -42,7 +42,7 @@ class RoleSeeder extends Seeder
                 'clientes.ver', 'clientes.crear', 'clientes.editar',
             ],
             'Auxiliar Contable' => [
-                'productos.ver', 'auditoria.ver', 'clientes.ver',
+                'productos.ver', 'auditoria.ver', 'reportes.ver', 'clientes.ver',
             ],
         ];
 
@@ -53,7 +53,14 @@ class RoleSeeder extends Seeder
             $rol->empresa_id = $empresa->id;
             $rol->save();
 
-            $rol->syncPermissions($permisos->only($nombresPermisos)->values());
+            // `$permisos` es un Eloquent\Collection (viene de ::get()) — su
+            // only() está sobreescrito para filtrar por PRIMARY KEY, no por
+            // las claves de keyBy('name'). Sin toBase(), esto silenciosamente
+            // devuelve una colección vacía (ningún permiso es un id numérico
+            // igual a un nombre de permiso) y syncPermissions() limpia el rol
+            // en vez de asignarle los permisos correctos — bug real
+            // encontrado el 2026-08-02 construyendo el módulo Reportes.
+            $rol->syncPermissions($permisos->toBase()->only($nombresPermisos)->values());
 
             $roles[$nombre] = $rol;
         }

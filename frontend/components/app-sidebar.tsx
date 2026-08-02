@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  BarChart3,
   Sparkles,
   Package,
   Tags,
@@ -70,6 +71,7 @@ interface NavItem {
  */
 const TOP_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/reportes", label: "Reportes", icon: BarChart3, permission: "reportes.ver" },
   { href: "/captura", label: "Captura IA", icon: Sparkles, permission: "captura-ia.usar" },
 ];
 

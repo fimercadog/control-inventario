@@ -299,6 +299,45 @@ export interface PaginatedAuditLogs {
   };
 }
 
+/**
+ * Espejo del payload de App\Services\ReporteService::generarResumen()
+ * (2026-08-02, docs/03_FUNCTIONAL_SPEC/Reports.md). "Reportes" es una
+ * vista computada, no un recurso paginable — un único fetch trae todas
+ * las secciones.
+ */
+export interface ReporteResumen {
+  rango: { desde: string; hasta: string };
+  inventario: {
+    total_productos: number;
+    valor_total_inventario: number;
+    productos_stock_bajo: number;
+    productos_sin_stock: number;
+    productos_por_categoria: { categoria_id: number; categoria: string; total: number }[];
+  };
+  movimientos: {
+    entradas: { total: number; cantidad: number };
+    salidas: { total: number; cantidad: number };
+    ajustes: { total: number; cantidad: number };
+    por_dia: { fecha: string; entradas: number; salidas: number; ajustes: number }[];
+    productos_mas_movidos: { producto_id: number; producto: string; total_movimientos: number; cantidad_total: number }[];
+  };
+  clientes: {
+    total_activos: number;
+    total_inactivos: number;
+    nuevos_ultimos_30_dias: number;
+  };
+  proveedores: {
+    total_activos: number;
+    total_inactivos: number;
+    top_proveedores: { proveedor_id: number; proveedor: string; total_productos: number }[];
+  };
+}
+
+export interface ReporteFiltros {
+  desde?: string;
+  hasta?: string;
+}
+
 /** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
 export interface Categoria {
   id: number;

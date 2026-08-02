@@ -88,6 +88,12 @@ class PermissionSeeder extends Seeder
         // Auditoría y seguridad (Módulo 8)
         'auditoria.ver',
 
+        // Reportes (2026-08-02) — estadísticas agregadas de solo lectura
+        // sobre Productos/Inventario/Movimientos/Clientes/Proveedores.
+        // Un único permiso, mismo patrón que auditoria.ver: no hay nada
+        // que "gestionar" en un módulo 100% de solo lectura.
+        'reportes.ver',
+
         // Plataforma — exclusivo de is_platform_admin, nunca asignable
         // a un rol de empresa (ver docs/04_ARCHITECTURE.md).
         'plataforma.empresas.ver',

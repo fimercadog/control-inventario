@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
+use App\Http\Controllers\Api\ReporteController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\UnidadMedidaController;
@@ -199,3 +200,8 @@ Route::prefix('v1/auditoria')->name('auditoria.')->middleware(['auth:api', 'tena
     Route::get('/', [AuditLogController::class, 'index'])->name('index');
     Route::get('{auditLog}', [AuditLogController::class, 'show'])->name('show');
 });
+
+// Reportes (2026-08-02, docs/03_FUNCTIONAL_SPEC/Reports.md). Un único
+// endpoint compuesto — "Reportes" es una vista, no una lista paginable de
+// recursos, así que no sigue el shape index/show del resto del ERP.
+Route::get('v1/reportes', [ReporteController::class, 'index'])->name('reportes.index')->middleware(['auth:api', 'tenant']);
