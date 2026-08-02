@@ -93,11 +93,11 @@ Con esto, **la arquitectura de autorización de Fidel OS se considera completa**
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _pendiente — se registra tras el commit._
+- **Commit:** `89b69eb` — `feat(auth): Phase 4.6 - close authorization layer for Productos, Movimientos, Captura IA (RC1)`.
 
 ## Confirmación de push
 
-_pendiente — se registra tras el push._
+✅ Ejecutado correctamente: `3e74bc6..89b69eb  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
