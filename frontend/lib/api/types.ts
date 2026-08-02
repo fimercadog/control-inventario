@@ -334,6 +334,27 @@ export interface UpdateMovimientoPayload {
 }
 
 /**
+ * Espejo de App\Http\Resources\User\UserResource (RC1 Fase 4,
+ * docs/03_FUNCTIONAL_SPEC/Users.md). Módulo administrativo — distinto de
+ * `AuthenticatedUser` (siempre el propio usuario autenticado). Sin campos
+ * editables desde aquí más allá de `is_active` (activar/desactivar); nombre/
+ * email pertenecen a Perfil, rol pertenece al futuro módulo Roles.
+ */
+export interface Usuario {
+  id: number;
+  name: string;
+  email: string;
+  is_active: boolean;
+  role: string | null;
+  last_activity_at: string | null;
+  last_login_ip: string | null;
+  last_user_agent: string | null;
+  invited_at: string | null;
+  invited_by: string | null;
+  created_at: string | null;
+}
+
+/**
  * Espejo de App\Http\Resources\ProductoProveedor\ProductoProveedorResource
  * (FEATURE-005, docs/03_FUNCTIONAL_SPEC/Suppliers.md) — asociación
  * Producto↔Proveedor con atributos propios (precio de compra, código del

@@ -21,7 +21,7 @@
 | 8 | Movimientos | 🟢 Completo (implementado 2026-08-02) | 90% |
 | 9 | Proveedores | 🟡 Parcial | 85% |
 | 10 | Clientes | 🔴 No Implementado | 0% |
-| 11 | Usuarios | 🔴 No Implementado | 0% |
+| 11 | Usuarios | 🟢 Completo (implementado 2026-08-02) | 85% |
 | 12 | Roles | 🔴 No Implementado | 15% |
 | 13 | Auditoría | 🔴 No Implementado | 20% |
 | 14 | Configuración | 🟡 Parcial | 25% |
@@ -43,7 +43,7 @@
 - [x] Movimientos (completo, implementado 2026-08-02 — cierra Fase 3)
 - [x] Proveedores (parcial — falta retrofit + verificación en navegador de tabs nuevas)
 - [ ] Clientes
-- [ ] Usuarios
+- [x] Usuarios (completo, implementado 2026-08-02 — cierra Fase 4)
 - [ ] Roles
 - [ ] Auditoría
 - [x] Configuración (parcial)
@@ -224,9 +224,24 @@ Con esto se cierra la **Fase 3** del roadmap de 8 fases aprobado.
 
 Cero código en ninguna capa. `FUTURE/Customers.md`: `Status: Planned — not yet implemented`.
 
-### 11. Usuarios — 🔴 No Implementado
+### 11. Usuarios — 🟢 Completo (implementado 2026-08-02)
 
-Solo existe `AuthController` (login/logout/me/refresh) — cero CRUD administrativo, cero rutas de gestión, cero frontend. `Users.md`: `Status: Planned`.
+| Capa | Ítem | Estado |
+| --- | --- | :---: |
+| Backend | Controller/Rutas (`/api/v1/usuarios`) | ✔ `UserController` (index/show/activar/desactivar, sin `store`/`destroy`) |
+| Backend | Policy | ✔ `UserPolicy` (view/update, pertenencia de empresa — sin `TenantScope` automático en `User`, filtrado manual) |
+| Backend | Guardas de negocio | ✔ nunca la propia cuenta, nunca el último usuario activo con `usuarios.editar` — ambas 409, con test dedicado |
+| Backend | Revocación de sesiones al desactivar | ✔ `RefreshTokenServiceInterface::revokeAllForUser()` |
+| Frontend | Pantalla `/usuarios` | ✔ listado real, búsqueda, filtro de estado, paginación, badge de estado |
+| Frontend | Ficha `/usuarios/{id}` | ✔ solo lectura (Actividad + Trazabilidad), acción Activar/Desactivar |
+| Frontend | Crear/Editar | ✘ deliberadamente no existen — creación es Módulo 6 (Invitaciones, sin construir), edición de nombre/email pertenece a Perfil |
+| Tests | Feature | ✔ `UserControllerTest` (14 casos: listar/buscar/filtrar por empresa, ver detalle con rol, activar, desactivar con auditoría y revocación de sesiones, auto-desactivación rechazada, último admin rechazado, desactivar permitido con otro admin disponible, Platform Admin nunca listado, sin crear/eliminar, aislamiento multi-tenant) |
+| Tests | Browser | ✔ verificado en navegador real: login, listado con datos reales de Demo Data (14 usuarios, roles reales), badge de estado, desactivar/reactivar real, fila propia marcada "(tú)" con acción de desactivar deshabilitada, ficha de detalle, responsive, sidebar completo |
+| Docs | Functional Spec | ✔ `Users.md` — de "Planned" con preguntas sin resolver a "Approved", con las dos decisiones de negocio (auto-desactivación, último admin) confirmadas explícitamente antes de escribir código (Golden Rule, `AGENTS.md`) |
+
+**Funcionalidades:** ✔ Listar (búsqueda, filtro de estado, filtro de rol vía API) ✔ Ver detalle ✔ Activar ✔ Desactivar (con las dos guardas de negocio) ✘ Crear (Módulo 6, sin construir) ✘ Editar nombre/email/rol (fuera de alcance por diseño — ver `Users.md`) ✘ Eliminar (nunca existe para Usuarios)
+
+Con esto se cierra la **Fase 4** del roadmap de 8 fases aprobado. Nota heredada sin cambios: Módulo 3 (Authorization/RBAC — middleware de permisos granular) sigue sin construir; este módulo usa el mismo nivel de enforcement (aislamiento por empresa real, catálogo de permisos sembrado pero no enforced por ruta) que el resto del roadmap RC1.
 
 ### 12. Roles — 🔴 No Implementado (como módulo)
 
@@ -278,39 +293,39 @@ No existe `ProfileController`, no existe ruta `/perfil` ni `PATCH` de ningún ca
 ## Estadísticas
 
 - **Total módulos definidos:** 17
-- **Completos (🟢):** 7 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida, Stock, Movimientos — Movimientos implementado 2026-08-02, cierra Fase 3 completa)
+- **Completos (🟢):** 8 (Captura IA, Productos, Categorías, Marcas, Unidades de Medida, Stock, Movimientos, Usuarios — Usuarios implementado 2026-08-02, cierra Fase 4 completa)
 - **Parciales (🟡):** 2 (Proveedores, Configuración)
 - **Mock (⚫):** 1 (Dashboard)
-- **No implementados (🔴):** 7 (Clientes, Usuarios, Roles, Auditoría, Reportes, Notificaciones, Perfil)
-- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Movimientos): **~47%**
+- **No implementados (🔴):** 6 (Clientes, Roles, Auditoría, Reportes, Notificaciones, Perfil)
+- **Porcentaje real de avance del proyecto** (promedio simple de la columna % Completado de los 17 módulos, actualizado tras Usuarios): **~52%**
 
 ---
 
 ## Gaps
 
 ### Módulos faltantes
-Clientes, Usuarios, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil. (Categorías, Marcas, Unidades de Medida — Fase 1 — y Stock — Fase 2 — ya se cerraron el 2026-07-30.)
+Clientes, Roles (como CRUD), Auditoría (como módulo de consulta), Reportes, Notificaciones, Perfil. (Categorías, Marcas, Unidades de Medida — Fase 1 —, Stock — Fase 2 —, Movimientos — Fase 3 — y Usuarios — Fase 4 — ya se cerraron.)
 
 ### Funcionalidades faltantes
-Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; persistencia real de Configuración. (CRUD de Movimientos — Fase 3 — ya se cerró el 2026-08-02, adaptado a su naturaleza de ledger append-only: sin Eliminar/Desactivar, por diseño.)
+Logical Delete de Productos (✔ ya corregido 2026-07-30); refresco automático estandarizado en Productos/Proveedores (`useCrudList` aún sin retrofit en Proveedores); selector de catálogo real (`Select` + "+ Crear nuevo") para categoría/marca/unidad en el formulario de Producto — hoy solo existen inputs de texto libre find-or-create para marca/unidad y ningún campo de categoría; persistencia real de Configuración. (CRUD de Movimientos — Fase 3 — y de Usuarios — Fase 4 — ya se cerraron, ambos adaptados a su naturaleza propia: Movimientos es un ledger append-only sin Eliminar/Desactivar; Usuarios es Listar/Ver/Activar/Desactivar sin Crear — ambas decisiones de arquitectura confirmadas, no gaps.)
 
 ### APIs faltantes
-`/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida`, `/stock` y `/movimientos` ya se implementaron — Fases 1, 2 y 3 completas.)
+`/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida`, `/stock`, `/movimientos` y `/usuarios` ya se implementaron — Fases 1 a 4 completas.)
 
 ### Pantallas faltantes
-`/clientes`, `/usuarios`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida` y `/stock` ya se implementaron el 2026-07-30.)
+`/clientes`, `/roles`, `/auditoria`, `/reportes`, `/perfil`. (`/categorias`, `/marcas`, `/unidades-medida`, `/stock`, `/movimientos` y `/usuarios` ya se implementaron.)
 
 ### CRUD incompletos
-Configuración (no es CRUD real, es un formulario decorativo). (Movimientos ya no aplica aquí: su alcance de "Listar/Ver/Crear, nunca Editar-contable/Eliminar" es una decisión de arquitectura confirmada, no un gap — ver `Movements.md`.)
+Configuración (no es CRUD real, es un formulario decorativo). (Movimientos y Usuarios ya no aplican aquí: sus alcances reducidos — "Listar/Ver/Crear" para Movimientos, "Listar/Ver/Activar/Desactivar" para Usuarios — son decisiones de arquitectura confirmadas, no gaps — ver `Movements.md`/`Users.md`.)
 
 ### Permisos faltantes
-No existen Policies para Cliente, User (administrativo), Role, AuditLog, Reporte. (Categoria/Marca/UnidadMedida ya tienen Policy + controller propio; Stock reutiliza `ProductoPolicy` — los cuatro desde el 2026-07-30.)
+No existen Policies para Cliente, Role, AuditLog, Reporte. (Categoria/Marca/UnidadMedida ya tienen Policy + controller propio; Stock reutiliza `ProductoPolicy`; Usuarios tiene `UserPolicy` propia desde el 2026-08-02.)
 
 ### Relaciones faltantes
-Ninguna pendiente en Fases 1-2 — `productos.categoria_id`/`marca_id`/`unidad_medida_id`/`stock_estado` aplicadas, en uso, y expuestas por sus respectivos controllers desde el 2026-07-30.
+Ninguna pendiente en Fases 1-4 — `productos.categoria_id`/`marca_id`/`unidad_medida_id`/`stock_estado` aplicadas, en uso, y expuestas por sus respectivos controllers.
 
 ### Tests faltantes
-`UserControllerTest`, `RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest`, `StockControllerTest` y `MovimientoControllerTest` ya existen.)
+`RoleControllerTest`, `AuditoriaControllerTest`, y toda prueba de navegador para Reportes/Perfil/Notificaciones (no aplica, no existen). (`CategoriaControllerTest`, `MarcaControllerTest`, `UnidadMedidaControllerTest`, `StockControllerTest`, `MovimientoControllerTest` y `UserControllerTest` ya existen.)
 
 ### Documentación faltante
 `Suppliers.md` real sigue en `FUTURE/` marcado `Planned` pese a estar construido — nunca se actualizó su estado. `TestExecutionReport.md` no refleja FEATURE-005/008 todavía. (`Stock.md` ya se escribió el 2026-07-30, cerrando el gap que esta misma sección señalaba.)

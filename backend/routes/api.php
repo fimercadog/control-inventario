@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ProductoProveedorController;
 use App\Http\Controllers\Api\ProveedorController;
 use App\Http\Controllers\Api\StockController;
 use App\Http\Controllers\Api\UnidadMedidaController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Módulo Auth (Fase 5, docs/06_API.md). login/refresh/olvide/restablecer no
@@ -144,4 +145,17 @@ Route::prefix('v1/movimientos')->name('movimientos.')->middleware(['auth:api', '
     Route::post('/', [MovimientoController::class, 'store'])->name('store');
     Route::get('{movimiento}', [MovimientoController::class, 'show'])->name('show');
     Route::patch('{movimiento}', [MovimientoController::class, 'update'])->name('update');
+});
+
+// RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md). Listar/Ver/Activar/
+// Desactivar únicamente — sin POST / (creación es Módulo 6, Invitaciones,
+// sin construir) y sin ningún endpoint de eliminar (Usuarios nunca se
+// elimina, física ni lógicamente). `{id}` en vez de route-model-binding
+// implícito a propósito: User no tiene TenantScope automático, así que
+// cada acción resuelve el usuario ya acotado por empresa a mano.
+Route::prefix('v1/usuarios')->name('usuarios.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [UserController::class, 'index'])->name('index');
+    Route::get('{id}', [UserController::class, 'show'])->name('show')->whereNumber('id');
+    Route::post('{id}/activar', [UserController::class, 'activar'])->name('activar')->whereNumber('id');
+    Route::post('{id}/desactivar', [UserController::class, 'desactivar'])->name('desactivar')->whereNumber('id');
 });

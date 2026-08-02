@@ -58,6 +58,12 @@ Ledger append-only — sin `PUT`/`DELETE`/`deshabilitar`/`habilitar` a propósit
 
 - GET `/api/v1/movimientos` (con `producto_id`, `tipo`, `busqueda`, `desde`, `hasta`, `page`; `paginate(100)`), GET `/api/v1/movimientos/{id}`, POST `/api/v1/movimientos` (Entrada/Salida/Ajuste, vía `InventoryService::registrarMovimiento()`), PATCH `/api/v1/movimientos/{id}` (Built 2026-08-02 — `MovimientoController`, ver `docs/05_IMPLEMENTATION/MovimientosModule.md`). `PATCH` solo acepta `documento`/`observacion`/`lote`/`vencimiento` — `UpdateMovimientoRequest` no declara `cantidad`/`tipo`/`producto_id`/`proveedor_id`/`stock_anterior`/`stock_nuevo`, así que un payload que los incluya los ignora siempre.
 
+## Módulo Usuarios (RC1 Fase 4, docs/03_FUNCTIONAL_SPEC/Users.md)
+
+Listar/Ver/Activar/Desactivar únicamente — sin `POST /` (creación es Módulo 6, Invitaciones, sin construir) y sin ningún endpoint de eliminar. `{id}` en vez de route-model-binding implícito: `User` no tiene `TenantScope` automático, así que cada acción resuelve el usuario ya acotado por `empresa_id` a mano (404, no 403, para un id de otra empresa).
+
+- GET `/api/v1/usuarios` (con `busqueda`, `estado`, `rol`, `page`; `paginate(100)`), GET `/api/v1/usuarios/{id}`, POST `/api/v1/usuarios/{id}/activar`, POST `/api/v1/usuarios/{id}/desactivar` (Built 2026-08-02 — `UserController`, ver `docs/05_IMPLEMENTATION/UsersModule.md`). `desactivar` responde 409 si el objetivo es la propia cuenta del actor, o si es el último usuario activo de la empresa con el permiso `usuarios.editar`; en ambos casos ningún cambio se aplica. Un `desactivar` exitoso revoca todas las `auth_sessions` activas del usuario afectado.
+
 ## Módulo Auth & RBAC (Fase 5)
 
 Todos bajo `/api/v1/`. Todo endpoint (excepto login, refresh, y los de invitación/reset/verificación con token firmado) exige `Authorization: Bearer <access_token>`; toda acción de negocio valida un permiso específico, nunca un nombre de rol. Entre paréntesis, el módulo donde se construye.
