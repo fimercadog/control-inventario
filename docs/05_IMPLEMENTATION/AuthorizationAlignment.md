@@ -78,11 +78,11 @@ Con esto, **Fase 4.5 queda completa** y `docs/security/ROLES_MATRIX.md` pasa a `
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** _(pendiente — se completa en el commit de seguimiento tras el push)_.
+- **Commit:** `114255e` — `feat(auth): Phase 4.5 - align 6 modules with RBAC, roles.estado, sidebar coming-soon (RC1)`.
 
 ## Confirmación de push
 
-_(pendiente)_
+✅ Ejecutado correctamente: `9d3fbcb..114255e  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
