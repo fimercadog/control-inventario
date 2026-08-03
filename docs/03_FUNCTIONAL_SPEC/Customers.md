@@ -36,7 +36,7 @@ Administrar el catálogo de clientes de cada empresa — alta, edición, búsque
 | `nit` | string, opcional | Documento/identificación tributaria — mismo campo que Proveedores usa para el mismo propósito. |
 | `contacto` | string, opcional | Nombre de la persona de contacto. |
 | `telefono` | string, opcional | |
-| `email` | string, opcional | Validado como email si se envía. |
+| `email` | string, opcional | Validado como email si se envía. Único por `empresa_id` (ampliación 2026-08-03) — dos clientes de la misma empresa no pueden compartir email; dos clientes de empresas distintas sí pueden. |
 | `direccion` | string, opcional | |
 | `ciudad` | string, opcional | |
 | `pais` | string, opcional | |
@@ -71,6 +71,7 @@ Toast de error con el mensaje real del backend (`ApiError.message`) en cualquier
 - Borrado siempre lógico — `estado = inactivo`, nunca un DELETE físico (GLOBAL RULE, sesión 2026-07-29).
 - `empresa_id` siempre viene de `TenantScope`/`TenantContext`, nunca del payload del cliente.
 - Toda mutación exitosa escribe una entrada real en `AuditLog` (`clientes.crear`/`clientes.editar`/`clientes.deshabilitar`/`clientes.habilitar`).
+- `clientes.editar` audita el diff real (`getChanges()`, ampliación 2026-08-03) — cualquier campo que de verdad cambió, no una lista fija; una edición que no cambia ningún valor no escribe entrada de auditoría.
 
 ## Acceptance Criteria
 
@@ -87,6 +88,7 @@ Toast de error con el mensaje real del backend (`ApiError.message`) en cualquier
 
 - Cliente con `nit` duplicado dentro de la misma empresa — **no se valida como error** (mismo comportamiento que Proveedores: `nit` no tiene constraint de unicidad, es un campo de referencia, no una clave). Documentado aquí para que no se asuma unicidad implícita.
 - Campo `nullable` enviado explícitamente como `null` en una edición — se vacía de verdad, cubierto por test dedicado.
+- Email duplicado **dentro de la misma empresa** — sí se valida como error (`422`, ampliación 2026-08-03), a diferencia de `nit`. Email duplicado **entre empresas distintas** — permitido, cubierto por test dedicado.
 
 ## Future Improvements
 

@@ -105,14 +105,53 @@ Ninguno — `movimientos` y su migración ya existían desde antes de este roadm
 
 Con este módulo, la **Fase 3 del roadmap RC1 queda oficialmente completa**. La siguiente fase del roadmap aprobado es Fase 4 (Usuarios), pendiente de aprobación explícita del propietario del proyecto.
 
+## Ampliación 2026-08-03 — Legibilidad del historial (stock antes/después, origen, evidencia)
+
+### Contexto
+
+El propietario del proyecto reportó que la pantalla, aunque técnicamente correcta, no era clara: mostrar solo "Salida -12,03" da la impresión de que el inventario puede quedar negativo, porque el usuario no ve el stock resultante sin calcularlo mentalmente. Pidió mostrar para cada movimiento: tipo, cantidad, stock antes, stock después, unidad de medida, usuario, fecha, origen (Manual/Captura IA/Import) y disponibilidad de evidencia — explícitamente **sin cambiar la lógica de negocio**, solo la presentación. Verificado antes de codificar: el stock antes/después ya se guardaba y se mostraba (por separado); lo que faltaba era unidad de medida, origen y evidencia, y una presentación que conectara ambos valores visualmente.
+
+### Funcionalidades implementadas (ampliación)
+
+- `Movimiento::capturaDetalle()` — relación `HasOne` nueva hacia `CapturaIADetalle`, únicamente para poder derivar evidencia; no es un campo de negocio nuevo.
+- `MovimientoResource` expone 3 campos derivados, solo de presentación: `unidad_medida` (abreviatura desde `producto.unidadMedida`), `origen` (`manual`/`captura_ia`, derivado de la convención ya existente `documento === 'captura_ia'`), `tiene_evidencia` (bool, `true` solo si hay un `CapturaIADetalle` vinculado con `archivo_path` no nulo).
+- Los 4 call sites de eager loading en `MovimientoController` (`index`/`show`/`store`/`update`) amplían su `with()`/`load()` a `producto.unidadMedida` y `capturaDetalle.captura`.
+- Frontend `/movimientos`: cada fila agrega una sub-línea "Stock: X → Y `unidad`" con ícono de flecha, badge de origen, e ícono de evidencia con tooltip.
+- Frontend `/movimientos/{id}`: stock antes/después combinados en una sola fila "X → Y"; filas nuevas Origen y Evidencia.
+
+### Correcciones realizadas (ampliación)
+
+- **Bug real de framework, encontrado por verificación directa antes de dar el campo por terminado**: la primera versión de `tiene_evidencia` usaba `whenLoaded('capturaDetalle', fn (...) => ..., false)`. `ConditionallyLoadsAttributes::whenLoaded()` de Laravel corta en corto y devuelve `null` (sin invocar el closure) cuando el valor de la relación cargada es en sí `null` — es decir, para cualquier movimiento SIN evidencia (la mayoría), el campo nunca se computaba y el `default` tampoco se aplicaba correctamente. Corregido comprobando `relationLoaded('capturaDetalle')` explícitamente en vez de depender de `whenLoaded()`, confirmado con test dedicado.
+
+### Cambios en Backend (ampliación)
+
+**Archivos modificados:** `backend/app/Models/Movimiento.php`, `backend/app/Http/Controllers/Api/MovimientoController.php`, `backend/app/Http/Resources/Movimiento/MovimientoResource.php`, `backend/tests/Feature/MovimientoControllerTest.php` (4 casos nuevos).
+
+### Cambios en Frontend (ampliación)
+
+**Archivos modificados:** `frontend/lib/api/types.ts` (`unidad_medida`/`origen`/`tiene_evidencia` en `Movimiento`), `frontend/app/(app)/movimientos/page.tsx`, `frontend/components/movimiento-detail-screen.tsx`.
+
+### Resultado de las pruebas (ampliación)
+
+- **Backend:** `php artisan test` → **380/380 passing** (era 366/366 antes de esta ampliación — 4 tests nuevos en `MovimientoControllerTest`, el resto del delta corresponde a la ampliación paralela de Clientes/Proveedores en la misma unidad de trabajo, ver `CustomersModule.md`).
+- **Frontend:** `npx tsc --noEmit` limpio.
+- **Browser tests (reales)**: fila de listado muestra "Stock: X → Y" con ícono de flecha y sufijo de unidad; ficha de detalle muestra la fila combinada Stock anterior→nuevo más Origen/Evidencia; cero errores de consola.
+
+## Estado final del módulo (post-ampliación)
+
+🟢 **Completo** — el historial de movimientos ahora se explica solo, sin requerir cálculo mental: cada fila y cada ficha muestran tipo, cantidad, stock antes→después, unidad, usuario, fecha, origen y evidencia. Sin cambios de lógica de negocio — únicamente presentación, tal como se pidió explícitamente.
+
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** `d31eaa7` — `feat(movimientos): implement complete Movimientos module as an append-only ledger (RC1)`.
+- **Commit original (módulo base, RC1 Fase 3):** `d31eaa7` — `feat(movimientos): implement complete Movimientos module as an append-only ledger (RC1)`.
+- **Commits de esta ampliación:**
+  1. `b609456` — `fix(clientes,proveedores): capture full audit diff, enforce unique email per company`. **Nota de transparencia:** el mensaje de este commit solo describe el lado Clientes/Proveedores, pero su diff real también incluye completo el trabajo de esta ampliación de Movimientos (`MovimientoController.php`, `MovimientoResource.php`, `Movimiento.php`, `MovimientoControllerTest.php`, y los 3 archivos de frontend) — ambas unidades de trabajo se codificaron en paralelo en la misma sesión y se comitearon juntas por error de alcance del mensaje, no del contenido. Verificado con `git show --stat b609456` antes de escribir esta nota. Se decidió no usar `git commit --amend` (regla permanente del propietario del proyecto: crear commits nuevos, nunca amend) — se documenta aquí en su lugar.
+  2. `2c14cec` — `style(backend): apply Pint formatting to previously touched files` (formato únicamente, sin cambio de comportamiento).
 
 ## Confirmación de push
 
-✅ Ejecutado correctamente: `b08000a..d31eaa7  main -> main` contra `origin` (GitHub).
+✅ Ejecutado correctamente: `795f878..2c14cec  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 

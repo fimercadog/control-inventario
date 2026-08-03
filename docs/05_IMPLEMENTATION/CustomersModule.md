@@ -100,14 +100,51 @@ Precede a esta unidad de trabajo una auditoría exhaustiva de los 16 módulos de
 
 🟢 **Completo** — Clientes es ahora un vertical slice real: base de datos, dominio con Repository+Service+DTO+Policy, API con tests, frontend con Redux y las 9 capacidades pedidas (Listar/Crear/Editar/Ver/Filtros/Búsqueda/Paginación/Redux/integración real), persistencia real, y documentación. Los otros 4 módulos placeholder (Roles, Auditoría, Reportes, Perfil) fueron removidos de la navegación por completo, no solo marcados "Próximamente" — quedan pendientes de la misma reconstrucción como vertical slice cuando el propietario del proyecto lo indique, uno a la vez.
 
+## Ampliación 2026-08-03 — Auditoría de diff real y unicidad de email (Clientes y Proveedores)
+
+### Contexto
+
+El propietario del proyecto reportó que "los formularios de edición de Clientes y Proveedores son demasiado restrictivos" y pidió clasificar cada campo como Editable/Inmutable, con el email obligatoriamente editable (validando unicidad, actualizando la base de datos, y quedando registrado en Auditoría). Verificado contra el código antes de escribir nada: la afirmación era **falsa** — todos los campos, incluyendo email, ya eran editables tanto en `UpdateClienteRequest`/`UpdateProveedorRequest` como en los formularios de frontend de ambas entidades (`Customers.md` línea 80 ya documentaba "Editar cualquier campo" como criterio de aceptación cumplido). Dos gaps reales sí se encontraron dentro de esa verificación: la auditoría de `editar` guardaba un `->only(['nombre', 'nit', 'estado'])` fijo, así que un cambio de email/teléfono/etc. se guardaba correctamente pero nunca aparecía en Auditoría; y la unicidad de email nunca se había exigido. Consultado con el propietario del proyecto vía pregunta directa antes de codificar: confirmó exigir unicidad de email, con alcance por empresa (dos clientes/proveedores de la misma empresa no pueden compartir email; de empresas distintas sí pueden — mismo principio de aislamiento multi-tenant que el resto del ERP).
+
+**Nota de alcance:** Proveedores no tiene su propio informe de implementación (`docs/05_IMPLEMENTATION/`) — se construyó junto con el resto de módulos de catálogo antes de que esa convención de documentación existiera, y `docs/03_FUNCTIONAL_SPEC/Suppliers.md` no existe fuera de `FUTURE/` (gap de documentación preexistente, no introducido por esta ampliación). Como Proveedor comparte el mismo shape y patrón que Cliente en todo el ERP, el trabajo de Proveedores de esta ampliación se documenta aquí junto al de Clientes en vez de crear un documento nuevo sin la aprobación de arquitectura que exige `CLAUDE.md` para un módulo nuevo.
+
+### Funcionalidades implementadas (ampliación)
+
+- `ClienteService::actualizar()` / `ProveedorController::update()`: la auditoría de `editar` ahora captura `collect($modelo->getChanges())->except('updated_at')->all()` — el diff real, no una lista fija — y omite la escritura si no cambió nada.
+- `StoreClienteRequest`/`UpdateClienteRequest`/`StoreProveedorRequest`/`UpdateProveedorRequest`: regla `Rule::unique(tabla, 'email')->where('empresa_id', ...)` (Update además `->ignore($id)`), con mensaje de error dedicado.
+
+### Correcciones realizadas (ampliación)
+
+Ninguna — a diferencia de otras ampliaciones de esta sesión, no se encontró ningún bug de framework ni de UI durante esta unidad de trabajo, solo los dos gaps de diseño ya descritos en Contexto.
+
+### Cambios en Backend (ampliación)
+
+**Archivos modificados:** `backend/app/Services/ClienteService.php`, `backend/app/Http/Controllers/Api/ProveedorController.php`, `backend/app/Http/Requests/Cliente/StoreClienteRequest.php`, `UpdateClienteRequest.php`, `backend/app/Http/Requests/Proveedor/StoreProveedorRequest.php`, `UpdateProveedorRequest.php`, `backend/tests/Feature/ClienteControllerTest.php` (+5 casos), `backend/tests/Feature/ProveedorControllerTest.php` (+5 casos).
+
+### Cambios en Frontend (ampliación)
+
+Ninguno — ambos formularios ya exponían todos los campos como editables antes de esta ampliación; el gap era exclusivamente de auditoría y validación en el backend.
+
+### Resultado de las pruebas (ampliación)
+
+- **Backend:** `php artisan test` → **380/380 passing** (era 366/366 antes de esta ampliación — 10 tests nuevos entre `ClienteControllerTest`/`ProveedorControllerTest`; el resto del delta corresponde a la ampliación paralela de Movimientos en la misma unidad de trabajo, ver `MovimientosModule.md`).
+- **Frontend:** sin cambios, `npx tsc --noEmit` limpio (ya verificado en la ampliación de Movimientos de la misma sesión).
+
+## Estado final del módulo (post-ampliación)
+
+🟢 **Completo** — la auditoría de Clientes/Proveedores ahora refleja el diff real de cualquier edición, y el email es único por empresa en ambas entidades. La afirmación original de "demasiado restrictivo" quedó descartada con evidencia antes de tocar código.
+
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** `0662331` — `feat(clientes): build Customers module as a complete vertical slice, remove all placeholders`.
+- **Commit original (módulo base):** `0662331` — `feat(clientes): build Customers module as a complete vertical slice, remove all placeholders`.
+- **Commits de esta ampliación:**
+  1. `b609456` — `fix(clientes,proveedores): capture full audit diff, enforce unique email per company`. **Nota de transparencia:** el diff real de este commit también incluye completo el trabajo de la ampliación paralela de Movimientos (ver nota idéntica en `MovimientosModule.md`) — ambas unidades de trabajo se codificaron en la misma sesión y se comitearon juntas por error de alcance del mensaje, no del contenido. No se usó `git commit --amend` (regla permanente del propietario del proyecto).
+  2. `2c14cec` — `style(backend): apply Pint formatting to previously touched files` (formato únicamente).
 
 ## Confirmación de push
 
-✅ Ejecutado correctamente: `8961c24..0662331  main -> main` contra `origin` (GitHub).
+✅ Ejecutado correctamente: `795f878..2c14cec  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 

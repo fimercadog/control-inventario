@@ -28,8 +28,8 @@ Un movimiento se crea por exactamente dos caminos, ambos convergiendo siempre en
 
 ## Screens
 
-- **`/movimientos`** (`frontend/app/(app)/movimientos/page.tsx`): línea de tiempo agrupada por día ("Hoy", "Ayer", fecha completa), búsqueda por producto/documento, filtro por tipo (Todos / Entradas / Salidas / Ajustes / Conteos / Transferencias), botón "Nuevo Movimiento", paginación (Anterior/Siguiente + "Página X de Y", 100 movimientos por página). Cada ítem muestra ícono según tipo, color según signo del delta, nombre de producto, hora, usuario, badge de tipo, y cantidad con signo (verde `+` / rojo `-`).
-- **`/movimientos/{id}`** (`frontend/components/movimiento-detail-screen.tsx`): ficha de un movimiento — Producto/Cantidad/Stock anterior/Stock nuevo/Proveedor siempre de solo lectura (marcados explícitamente "(solo lectura)" en la UI), con nota explicando la regla de inmutabilidad. Sección "Metadata" (Documento/Observación/Lote/Vencimiento) editable inline vía botón "Editar". **Sin botón "Eliminar" en ningún lugar de esta pantalla.**
+- **`/movimientos`** (`frontend/app/(app)/movimientos/page.tsx`): línea de tiempo agrupada por día ("Hoy", "Ayer", fecha completa), búsqueda por producto/documento, filtro por tipo (Todos / Entradas / Salidas / Ajustes / Conteos / Transferencias), botón "Nuevo Movimiento", paginación (Anterior/Siguiente + "Página X de Y", 100 movimientos por página). Cada ítem muestra ícono según tipo, color según signo del delta, nombre de producto, hora, usuario, badge de tipo, y cantidad con signo (verde `+` / rojo `-`) con sufijo de unidad de medida. **Ampliación 2026-08-03** (legibilidad — mostrar solo el delta daba la impresión de que el stock podía quedar negativo): cada fila agrega una sub-línea "Stock: X → Y `unidad`" con ícono de flecha, badge/ícono de origen (Manual vs Captura IA, `Sparkles`), e ícono `Paperclip` con tooltip cuando el movimiento tiene evidencia adjunta (foto/audio de Captura IA).
+- **`/movimientos/{id}`** (`frontend/components/movimiento-detail-screen.tsx`): ficha de un movimiento — Producto/Cantidad/Proveedor siempre de solo lectura (marcados explícitamente "(solo lectura)" en la UI), con nota explicando la regla de inmutabilidad. **Ampliación 2026-08-03**: Stock anterior/Stock nuevo combinados en una sola fila "X → Y" en vez de dos filas separadas; filas nuevas "Origen" (badge Captura IA o texto "Manual") y "Evidencia" ("Disponible"/"No disponible"). Sección "Metadata" (Documento/Observación/Lote/Vencimiento) editable inline vía botón "Editar". **Sin botón "Eliminar" en ningún lugar de esta pantalla.**
 - Diálogo "Nuevo Movimiento" (`frontend/components/new-movimiento-dialog.tsx`): único mecanismo de creación manual — Tipo (Entrada/Salida/Ajuste), Producto (selector, hasta 100 productos activos — mismo límite conocido que el resto de selectores del proyecto), Cantidad, Dirección (solo si Ajuste), Proveedor (solo si Entrada), Documento, Observación.
 
 ## Fields
@@ -45,6 +45,9 @@ Columnas reales de `movimientos` (`Movimiento::$fillable`) expuestas por `Movimi
 | cantidad | decimal | magnitud siempre positiva |
 | delta | decimal, derivado | `stock_nuevo - stock_anterior`, con signo — uniforme para todos los tipos incluyendo un Ajuste negativo |
 | stock_anterior / stock_nuevo | decimal | snapshot al momento exacto de la escritura, nunca recalculado después |
+| unidad_medida | string, derivado | ampliación 2026-08-03 — abreviatura desde `producto.unidadMedida`, presentación únicamente |
+| origen | string, derivado | ampliación 2026-08-03 — `manual` o `captura_ia`, derivado de la convención `documento === 'captura_ia'`, no es una columna nueva |
+| tiene_evidencia | bool, derivado | ampliación 2026-08-03 — `true` solo si existe `CapturaIADetalle` vinculado con `archivo_path` no nulo |
 | documento | string, nullable | editable (metadata) |
 | observacion | text, nullable | editable (metadata) |
 | proveedor / proveedor_id | derivado / FK, nullable | solo lectura tras la creación — se fija una sola vez, solo en Entrada |
