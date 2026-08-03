@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   ShieldCheck,
@@ -15,6 +13,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { NewRoleDialog } from "@/components/new-role-dialog";
+import { RoleFormModal } from "@/components/role-form-modal";
+import { RoleViewModal } from "@/components/role-view-modal";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchRoles, desactivarRoleThunk, activarRoleThunk } from "@/store/slices/roles-slice";
 import type { Role } from "@/lib/api/types";
@@ -59,10 +59,10 @@ const ESTADO_FILTROS: Record<string, string> = {
  * Mismo shape que Clientes: búsqueda, filtro de estado, paginación real,
  * Redux. Desactivar puede rechazarse con 409 si el rol tiene usuarios
  * asignados — el mensaje real del backend se muestra tal cual, no un
- * genérico.
+ * genérico. Global UI Standard (2026-08-03): Crear/Editar/Ver vía modal,
+ * la tabla nunca se abandona.
  */
 export default function RolesPage() {
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const { items: roles, meta, loading } = useAppSelector((state) => state.roles);
 
@@ -70,6 +70,9 @@ export default function RolesPage() {
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [page, setPage] = useState(1);
   const [roleAConfirmar, setRoleAConfirmar] = useState<Role | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<Role | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   useEffect(() => {
     setPage(1);
@@ -110,7 +113,10 @@ export default function RolesPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? roles.length)} roles.`}
           </p>
         </div>
-        <NewRoleDialog onCreated={() => refetch()} />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nuevo Rol
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -162,23 +168,13 @@ export default function RolesPage() {
                 </TableHeader>
                 <TableBody>
                   {roles.map((role) => (
-                    <TableRow
-                      key={role.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/roles/${role.id}`)}
-                    >
+                    <TableRow key={role.id} className="cursor-pointer" onClick={() => setViewingId(role.id)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                             <ShieldCheck className="size-4" />
                           </div>
-                          <Link
-                            href={`/roles/${role.id}`}
-                            className="font-medium hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {role.name}
-                          </Link>
+                          <span className="font-medium">{role.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
@@ -208,7 +204,7 @@ export default function RolesPage() {
                             }
                           />
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/roles/${role.id}?editar=1`)}>
+                            <DropdownMenuItem onClick={() => setEditando(role)}>
                               <Pencil />
                               Editar
                             </DropdownMenuItem>
@@ -279,18 +275,36 @@ export default function RolesPage() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={roleAConfirmar !== null}
-        onOpenChange={(open) => !open && setRoleAConfirmar(null)}
-        title={roleAConfirmar?.estado === "activo" ? "¿Desactivar este rol?" : "¿Activar este rol?"}
-        description={
-          roleAConfirmar?.estado === "activo"
-            ? `"${roleAConfirmar?.name}" se marcará como inactivo. Si tiene usuarios asignados, la desactivación se rechazará hasta que se reasignen a otro rol.`
-            : `"${roleAConfirmar?.name}" volverá a estar activo y disponible.`
-        }
-        confirmLabel={roleAConfirmar?.estado === "activo" ? "Desactivar" : "Activar"}
-        destructive={roleAConfirmar?.estado === "activo"}
-        onConfirm={confirmarCambioEstado}
+      {roleAConfirmar && (
+        <ConfirmDialog
+          open={roleAConfirmar !== null}
+          onOpenChange={(open) => !open && setRoleAConfirmar(null)}
+          title={roleAConfirmar.estado === "activo" ? "¿Desactivar este rol?" : "¿Activar este rol?"}
+          description={
+            roleAConfirmar.estado === "activo"
+              ? `"${roleAConfirmar.name}" se marcará como inactivo. Si tiene usuarios asignados, la desactivación se rechazará hasta que se reasignen a otro rol.`
+              : `"${roleAConfirmar.name}" volverá a estar activo y disponible.`
+          }
+          confirmLabel={roleAConfirmar.estado === "activo" ? "Desactivar" : "Activar"}
+          destructive={roleAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <RoleFormModal open={creating} onOpenChange={setCreating} onSaved={() => refetch()} />
+
+      <RoleFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        role={editando}
+        onSaved={() => refetch()}
+      />
+
+      <RoleViewModal
+        roleId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   UserCog,
@@ -42,6 +41,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { InvitarUsuarioDialog } from "@/components/invitar-usuario-dialog";
+import { UsuarioViewModal } from "@/components/usuario-view-modal";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, listUsuarios } from "@/lib/api/usuarios";
@@ -63,12 +63,12 @@ const ESTADO_FILTROS: Record<string, string> = {
  * al aceptar (`/aceptar-invitacion`), nunca un admin eligiendo su contraseña.
  */
 export default function UsuariosPage() {
-  const router = useRouter();
   const usuarioActual = useAppSelector((state) => state.auth.user);
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [page, setPage] = useState(1);
   const [itemAConfirmar, setItemAConfirmar] = useState<Usuario | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   const {
     items: usuarios,
@@ -167,7 +167,7 @@ export default function UsuariosPage() {
                     <TableRow
                       key={usuario.id}
                       className="cursor-pointer"
-                      onClick={() => router.push(`/usuarios/${usuario.id}`)}
+                      onClick={() => setViewingId(usuario.id)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -278,18 +278,27 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      <ConfirmDialog
-        open={itemAConfirmar !== null}
-        onOpenChange={(open) => !open && setItemAConfirmar(null)}
-        title={itemAConfirmar?.is_active ? "¿Desactivar este usuario?" : "¿Activar este usuario?"}
-        description={
-          itemAConfirmar?.is_active
-            ? `"${itemAConfirmar?.name}" perderá acceso inmediatamente — se cierran todas sus sesiones activas.`
-            : `"${itemAConfirmar?.name}" podrá volver a iniciar sesión.`
-        }
-        confirmLabel={itemAConfirmar?.is_active ? "Desactivar" : "Activar"}
-        destructive={itemAConfirmar?.is_active}
-        onConfirm={confirmarCambioEstado}
+      {itemAConfirmar && (
+        <ConfirmDialog
+          open={itemAConfirmar !== null}
+          onOpenChange={(open) => !open && setItemAConfirmar(null)}
+          title={itemAConfirmar.is_active ? "¿Desactivar este usuario?" : "¿Activar este usuario?"}
+          description={
+            itemAConfirmar.is_active
+              ? `"${itemAConfirmar.name}" perderá acceso inmediatamente — se cierran todas sus sesiones activas.`
+              : `"${itemAConfirmar.name}" podrá volver a iniciar sesión.`
+          }
+          confirmLabel={itemAConfirmar.is_active ? "Desactivar" : "Activar"}
+          destructive={itemAConfirmar.is_active}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <UsuarioViewModal
+        usuarioId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );
