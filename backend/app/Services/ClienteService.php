@@ -18,11 +18,10 @@ class ClienteService
     public function __construct(
         private readonly ClienteRepository $clientes,
         private readonly AuditLogger $auditoria,
-    ) {
-    }
+    ) {}
 
     /**
-     * @param array{busqueda?: string, estado?: string} $filtros
+     * @param  array{busqueda?: string, estado?: string}  $filtros
      */
     public function listar(array $filtros): LengthAwarePaginator
     {
@@ -82,7 +81,7 @@ class ClienteService
     }
 
     /**
-     * @param array<string, mixed> $valoresNuevos
+     * @param  array<string, mixed>  $valoresNuevos
      */
     private function registrarAuditoria(Request $request, Cliente $cliente, string $accion, array $valoresNuevos): void
     {

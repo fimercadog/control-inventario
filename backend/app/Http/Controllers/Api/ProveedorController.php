@@ -24,8 +24,7 @@ class ProveedorController extends Controller
 {
     public function __construct(
         private readonly AuditLogger $auditoria,
-    ) {
-    }
+    ) {}
 
     /**
      * Búsqueda simple por nombre/NIT/contacto — volumen esperado es bajo
@@ -148,7 +147,7 @@ class ProveedorController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $valoresNuevos
+     * @param  array<string, mixed>  $valoresNuevos
      */
     private function registrarAuditoria(Request $request, Proveedor $proveedor, string $accion, array $valoresNuevos): void
     {

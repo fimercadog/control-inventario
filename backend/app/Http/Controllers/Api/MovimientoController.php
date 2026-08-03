@@ -40,8 +40,7 @@ class MovimientoController extends Controller
     public function __construct(
         private readonly InventoryService $inventario,
         private readonly AuditLogger $auditoria,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {

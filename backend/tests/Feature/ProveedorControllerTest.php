@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
+use App\Models\Categoria;
 use App\Models\Empresa;
 use App\Models\Movimiento;
 use App\Models\Producto;
@@ -158,7 +160,7 @@ class ProveedorControllerTest extends TestCase
             ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['email' => 'nuevo@empresa-a.test'])
             ->assertOk();
 
-        $log = \App\Models\AuditLog::where('modulo', 'proveedores')->where('accion', 'proveedores.editar')->latest('id')->first();
+        $log = AuditLog::where('modulo', 'proveedores')->where('accion', 'proveedores.editar')->latest('id')->first();
         $this->assertNotNull($log);
         $this->assertSame('nuevo@empresa-a.test', $log->valores_nuevos['email'] ?? null);
         $this->assertArrayNotHasKey('updated_at', $log->valores_nuevos);
@@ -168,13 +170,13 @@ class ProveedorControllerTest extends TestCase
     public function test_updating_with_no_actual_field_changes_writes_no_audit_log(): void
     {
         $this->proveedorA->update(['telefono' => '3001112222']);
-        $antes = \App\Models\AuditLog::count();
+        $antes = AuditLog::count();
 
         $this->actingAs($this->userA, 'api')
             ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['telefono' => '3001112222'])
             ->assertOk();
 
-        $this->assertSame($antes, \App\Models\AuditLog::count());
+        $this->assertSame($antes, AuditLog::count());
     }
 
     public function test_two_suppliers_in_the_same_company_cannot_share_an_email(): void
@@ -326,7 +328,7 @@ class ProveedorControllerTest extends TestCase
 
     public function test_registrar_ingreso_accepts_an_existing_supplier_by_id(): void
     {
-        $categoria = \App\Models\Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
+        $categoria = Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
         $producto = Producto::create(['categoria_id' => $categoria->id, 'codigo' => 'P-001', 'nombre' => 'Producto Test']);
 
         $this->actingAs($this->userA, 'api')
@@ -343,7 +345,7 @@ class ProveedorControllerTest extends TestCase
 
     public function test_registrar_ingreso_can_quick_create_a_new_supplier(): void
     {
-        $categoria = \App\Models\Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
+        $categoria = Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
         $producto = Producto::create(['categoria_id' => $categoria->id, 'codigo' => 'P-002', 'nombre' => 'Producto Test 2']);
 
         $this->actingAs($this->userA, 'api')
@@ -364,7 +366,7 @@ class ProveedorControllerTest extends TestCase
 
     public function test_company_b_cannot_use_company_as_supplier_id_in_registrar_ingreso(): void
     {
-        $categoria = \App\Models\Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
+        $categoria = Categoria::create(['nombre' => 'Test', 'estado' => 'activo']);
 
         app(TenantContext::class)->setEmpresaId($this->empresaB->id);
         $producto = Producto::create(['categoria_id' => $categoria->id, 'codigo' => 'P-003', 'nombre' => 'Producto B']);

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\Role;
@@ -150,7 +151,7 @@ class ClienteControllerTest extends TestCase
             ->patchJson("/api/v1/clientes/{$this->clienteA->id}", ['email' => 'nuevo@empresa-a.test'])
             ->assertOk();
 
-        $log = \App\Models\AuditLog::where('modulo', 'clientes')->where('accion', 'clientes.editar')->latest('id')->first();
+        $log = AuditLog::where('modulo', 'clientes')->where('accion', 'clientes.editar')->latest('id')->first();
         $this->assertNotNull($log);
         $this->assertSame('nuevo@empresa-a.test', $log->valores_nuevos['email'] ?? null);
         $this->assertArrayNotHasKey('updated_at', $log->valores_nuevos);
@@ -160,13 +161,13 @@ class ClienteControllerTest extends TestCase
     public function test_updating_with_no_actual_field_changes_writes_no_audit_log(): void
     {
         $this->clienteA->update(['telefono' => '3001112222']);
-        $antes = \App\Models\AuditLog::count();
+        $antes = AuditLog::count();
 
         $this->actingAs($this->userA, 'api')
             ->patchJson("/api/v1/clientes/{$this->clienteA->id}", ['telefono' => '3001112222'])
             ->assertOk();
 
-        $this->assertSame($antes, \App\Models\AuditLog::count());
+        $this->assertSame($antes, AuditLog::count());
     }
 
     public function test_two_clients_in_the_same_company_cannot_share_an_email(): void
