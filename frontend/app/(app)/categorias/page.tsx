@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Tags, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2 } from "lucide-react";
+import { Tags, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { NewCategoriaDialog } from "@/components/new-categoria-dialog";
+import { CategoriaFormModal } from "@/components/categoria-form-modal";
+import { CategoriaViewModal } from "@/components/categoria-view-modal";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { listCategorias, disableCategoria, enableCategoria } from "@/lib/api/categorias";
 import type { Categoria } from "@/lib/api/types";
@@ -49,10 +48,12 @@ const ESTADO_FILTROS: Record<string, string> = {
  * Logical Delete con confirmación, refresco automático vía `useCrudList`.
  */
 export default function CategoriasPage() {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [categoriaAConfirmar, setCategoriaAConfirmar] = useState<Categoria | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<Categoria | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   const {
     items: categorias,
@@ -89,7 +90,10 @@ export default function CategoriasPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? categorias.length)} categorías.`}
           </p>
         </div>
-        <NewCategoriaDialog onCreated={() => refetch()} />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nueva Categoría
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -143,20 +147,14 @@ export default function CategoriasPage() {
                   <TableRow
                     key={categoria.id}
                     className="cursor-pointer"
-                    onClick={() => router.push(`/categorias/${categoria.id}`)}
+                    onClick={() => setViewingId(categoria.id)}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                           <Tags className="size-4" />
                         </div>
-                        <Link
-                          href={`/categorias/${categoria.id}`}
-                          className="font-medium hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {categoria.nombre}
-                        </Link>
+                        <span className="font-medium">{categoria.nombre}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{categoria.descripcion ?? "—"}</TableCell>
@@ -184,7 +182,7 @@ export default function CategoriasPage() {
                           }
                         />
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/categorias/${categoria.id}?editar=1`)}>
+                          <DropdownMenuItem onClick={() => setEditando(categoria)}>
                             <Pencil />
                             Editar
                           </DropdownMenuItem>
@@ -224,18 +222,36 @@ export default function CategoriasPage() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={categoriaAConfirmar !== null}
-        onOpenChange={(open) => !open && setCategoriaAConfirmar(null)}
-        title={categoriaAConfirmar?.estado === "activo" ? "¿Eliminar esta categoría?" : "¿Habilitar esta categoría?"}
-        description={
-          categoriaAConfirmar?.estado === "activo"
-            ? `"${categoriaAConfirmar?.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
-            : `"${categoriaAConfirmar?.nombre}" volverá a estar activa y disponible.`
-        }
-        confirmLabel={categoriaAConfirmar?.estado === "activo" ? "Eliminar" : "Habilitar"}
-        destructive={categoriaAConfirmar?.estado === "activo"}
-        onConfirm={confirmarCambioEstado}
+      {categoriaAConfirmar && (
+        <ConfirmDialog
+          open={categoriaAConfirmar !== null}
+          onOpenChange={(open) => !open && setCategoriaAConfirmar(null)}
+          title={categoriaAConfirmar.estado === "activo" ? "¿Eliminar esta categoría?" : "¿Habilitar esta categoría?"}
+          description={
+            categoriaAConfirmar.estado === "activo"
+              ? `"${categoriaAConfirmar.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
+              : `"${categoriaAConfirmar.nombre}" volverá a estar activa y disponible.`
+          }
+          confirmLabel={categoriaAConfirmar.estado === "activo" ? "Eliminar" : "Habilitar"}
+          destructive={categoriaAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <CategoriaFormModal open={creating} onOpenChange={setCreating} onSaved={() => refetch()} />
+
+      <CategoriaFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        categoria={editando}
+        onSaved={() => refetch()}
+      />
+
+      <CategoriaViewModal
+        categoriaId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );

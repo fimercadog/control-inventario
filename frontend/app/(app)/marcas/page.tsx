@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Award, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2 } from "lucide-react";
+import { Award, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { NewMarcaDialog } from "@/components/new-marca-dialog";
+import { MarcaFormModal } from "@/components/marca-form-modal";
+import { MarcaViewModal } from "@/components/marca-view-modal";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { listMarcas, disableMarca, enableMarca } from "@/lib/api/marcas";
 import type { Marca } from "@/lib/api/types";
@@ -47,12 +46,16 @@ const ESTADO_FILTROS: Record<string, string> = {
  * RC1 (docs/03_FUNCTIONAL_SPEC/Brands.md). Mismo nivel de funcionalidad
  * que Productos/Proveedores/Categorías: búsqueda, filtro de estado,
  * Logical Delete con confirmación, refresco automático vía `useCrudList`.
+ * Global UI Standard (2026-08-03): Crear/Editar/Ver vía modal, la tabla
+ * nunca se abandona.
  */
 export default function MarcasPage() {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [marcaAConfirmar, setMarcaAConfirmar] = useState<Marca | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<Marca | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   const {
     items: marcas,
@@ -89,7 +92,10 @@ export default function MarcasPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? marcas.length)} marcas.`}
           </p>
         </div>
-        <NewMarcaDialog onCreated={() => refetch()} />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nueva Marca
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -139,23 +145,13 @@ export default function MarcasPage() {
               </TableHeader>
               <TableBody>
                 {marcas.map((marca) => (
-                  <TableRow
-                    key={marca.id}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/marcas/${marca.id}`)}
-                  >
+                  <TableRow key={marca.id} className="cursor-pointer" onClick={() => setViewingId(marca.id)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                           <Award className="size-4" />
                         </div>
-                        <Link
-                          href={`/marcas/${marca.id}`}
-                          className="font-medium hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {marca.nombre}
-                        </Link>
+                        <span className="font-medium">{marca.nombre}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
@@ -182,7 +178,7 @@ export default function MarcasPage() {
                           }
                         />
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/marcas/${marca.id}?editar=1`)}>
+                          <DropdownMenuItem onClick={() => setEditando(marca)}>
                             <Pencil />
                             Editar
                           </DropdownMenuItem>
@@ -222,18 +218,36 @@ export default function MarcasPage() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={marcaAConfirmar !== null}
-        onOpenChange={(open) => !open && setMarcaAConfirmar(null)}
-        title={marcaAConfirmar?.estado === "activo" ? "¿Eliminar esta marca?" : "¿Habilitar esta marca?"}
-        description={
-          marcaAConfirmar?.estado === "activo"
-            ? `"${marcaAConfirmar?.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
-            : `"${marcaAConfirmar?.nombre}" volverá a estar activa y disponible.`
-        }
-        confirmLabel={marcaAConfirmar?.estado === "activo" ? "Eliminar" : "Habilitar"}
-        destructive={marcaAConfirmar?.estado === "activo"}
-        onConfirm={confirmarCambioEstado}
+      {marcaAConfirmar && (
+        <ConfirmDialog
+          open={marcaAConfirmar !== null}
+          onOpenChange={(open) => !open && setMarcaAConfirmar(null)}
+          title={marcaAConfirmar.estado === "activo" ? "¿Eliminar esta marca?" : "¿Habilitar esta marca?"}
+          description={
+            marcaAConfirmar.estado === "activo"
+              ? `"${marcaAConfirmar.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
+              : `"${marcaAConfirmar.nombre}" volverá a estar activa y disponible.`
+          }
+          confirmLabel={marcaAConfirmar.estado === "activo" ? "Eliminar" : "Habilitar"}
+          destructive={marcaAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <MarcaFormModal open={creating} onOpenChange={setCreating} onSaved={() => refetch()} />
+
+      <MarcaFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        marca={editando}
+        onSaved={() => refetch()}
+      />
+
+      <MarcaViewModal
+        marcaId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );

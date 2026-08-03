@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Ruler, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2 } from "lucide-react";
+import { Ruler, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +30,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { NewUnidadMedidaDialog } from "@/components/new-unidad-medida-dialog";
+import { UnidadMedidaFormModal } from "@/components/unidad-medida-form-modal";
+import { UnidadMedidaViewModal } from "@/components/unidad-medida-view-modal";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { listUnidadesMedida, disableUnidadMedida, enableUnidadMedida } from "@/lib/api/unidades-medida";
 import type { UnidadMedida } from "@/lib/api/types";
@@ -47,13 +46,16 @@ const ESTADO_FILTROS: Record<string, string> = {
  * RC1 (docs/03_FUNCTIONAL_SPEC/UnitsOfMeasure.md). Mismo nivel de
  * funcionalidad que Productos/Proveedores/Categorías/Marcas: búsqueda,
  * filtro de estado, Logical Delete con confirmación, refresco automático
- * vía `useCrudList`.
+ * vía `useCrudList`. Global UI Standard (2026-08-03): Crear/Editar/Ver
+ * vía modal, la tabla nunca se abandona.
  */
 export default function UnidadesMedidaPage() {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [unidadAConfirmar, setUnidadAConfirmar] = useState<UnidadMedida | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<UnidadMedida | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   const {
     items: unidades,
@@ -90,7 +92,10 @@ export default function UnidadesMedidaPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? unidades.length)} unidades de medida.`}
           </p>
         </div>
-        <NewUnidadMedidaDialog onCreated={() => refetch()} />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nueva Unidad de Medida
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -141,23 +146,13 @@ export default function UnidadesMedidaPage() {
               </TableHeader>
               <TableBody>
                 {unidades.map((unidad) => (
-                  <TableRow
-                    key={unidad.id}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/unidades-medida/${unidad.id}`)}
-                  >
+                  <TableRow key={unidad.id} className="cursor-pointer" onClick={() => setViewingId(unidad.id)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                           <Ruler className="size-4" />
                         </div>
-                        <Link
-                          href={`/unidades-medida/${unidad.id}`}
-                          className="font-medium hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {unidad.nombre}
-                        </Link>
+                        <span className="font-medium">{unidad.nombre}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{unidad.abreviatura ?? "—"}</TableCell>
@@ -185,9 +180,7 @@ export default function UnidadesMedidaPage() {
                           }
                         />
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => router.push(`/unidades-medida/${unidad.id}?editar=1`)}
-                          >
+                          <DropdownMenuItem onClick={() => setEditando(unidad)}>
                             <Pencil />
                             Editar
                           </DropdownMenuItem>
@@ -227,22 +220,40 @@ export default function UnidadesMedidaPage() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={unidadAConfirmar !== null}
-        onOpenChange={(open) => !open && setUnidadAConfirmar(null)}
-        title={
-          unidadAConfirmar?.estado === "activo"
-            ? "¿Eliminar esta unidad de medida?"
-            : "¿Habilitar esta unidad de medida?"
-        }
-        description={
-          unidadAConfirmar?.estado === "activo"
-            ? `"${unidadAConfirmar?.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
-            : `"${unidadAConfirmar?.nombre}" volverá a estar activa y disponible.`
-        }
-        confirmLabel={unidadAConfirmar?.estado === "activo" ? "Eliminar" : "Habilitar"}
-        destructive={unidadAConfirmar?.estado === "activo"}
-        onConfirm={confirmarCambioEstado}
+      {unidadAConfirmar && (
+        <ConfirmDialog
+          open={unidadAConfirmar !== null}
+          onOpenChange={(open) => !open && setUnidadAConfirmar(null)}
+          title={
+            unidadAConfirmar.estado === "activo"
+              ? "¿Eliminar esta unidad de medida?"
+              : "¿Habilitar esta unidad de medida?"
+          }
+          description={
+            unidadAConfirmar.estado === "activo"
+              ? `"${unidadAConfirmar.nombre}" se marcará como inactiva. No se elimina físicamente ni afecta a los productos que ya la usan — puedes habilitarla de nuevo en cualquier momento.`
+              : `"${unidadAConfirmar.nombre}" volverá a estar activa y disponible.`
+          }
+          confirmLabel={unidadAConfirmar.estado === "activo" ? "Eliminar" : "Habilitar"}
+          destructive={unidadAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <UnidadMedidaFormModal open={creating} onOpenChange={setCreating} onSaved={() => refetch()} />
+
+      <UnidadMedidaFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        unidad={editando}
+        onSaved={() => refetch()}
+      />
+
+      <UnidadMedidaViewModal
+        unidadMedidaId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );
