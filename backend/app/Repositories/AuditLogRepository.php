@@ -23,9 +23,15 @@ use Illuminate\Support\Collection;
 class AuditLogRepository
 {
     /**
-     * @param array{busqueda?: ?string, modulo?: ?string, accion?: ?string, usuario_id?: ?int, resultado?: ?string, desde?: ?string, hasta?: ?string} $filtros
+     * @param  array{busqueda?: ?string, modulo?: ?string, accion?: ?string, usuario_id?: ?int, resultado?: ?string, desde?: ?string, hasta?: ?string}  $filtros
      */
-    public function paginar(array $filtros, int $porPagina = 25): LengthAwarePaginator
+    /**
+     * `$pagina` explícito agregado 2026-08-03 (módulo Reportes,
+     * `ReporteAuditoria`) — opcional, no rompe la firma existente:
+     * `AuditLogController` sigue sin pasarlo y usa el resolver implícito
+     * de Laravel (`?page=` de la request), como siempre.
+     */
+    public function paginar(array $filtros, int $porPagina = 25, ?int $pagina = null): LengthAwarePaginator
     {
         $query = AuditLog::query()->with(['usuario:id,email', 'usuario.roles:id,name']);
 
@@ -63,7 +69,7 @@ class AuditLogRepository
             $query->where('created_at', '<=', $filtros['hasta']);
         }
 
-        return $query->latest('created_at')->paginate($porPagina);
+        return $query->latest('created_at')->paginate($porPagina, ['*'], 'page', $pagina);
     }
 
     /** @return Collection<int, string> */

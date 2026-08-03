@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
                 'productos.ver', 'productos.crear', 'productos.editar',
                 'movimientos.ver', 'movimientos.crear',
                 'captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar',
-                'usuarios.ver', 'auditoria.ver', 'reportes.ver',
+                'usuarios.ver', 'auditoria.ver', 'reportes.ver', 'reportes.gestionar',
                 'clientes.ver', 'clientes.crear', 'clientes.editar', 'clientes.gestionar',
             ],
             'Bodeguero' => [

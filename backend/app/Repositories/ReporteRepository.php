@@ -7,15 +7,21 @@ use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\ProductoProveedor;
 use App\Models\Proveedor;
+use App\Models\ReporteHistorial;
+use App\Models\ReporteProgramado;
+use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 /**
- * Reportes (2026-08-02). Estadísticas agregadas de solo lectura sobre
- * Productos/Inventario/Movimientos/Clientes/Proveedores — sin tabla ni
- * Model propio, "Reportes" es una vista computada sobre datos que ya
- * existen, mismo espíritu que Stock es una vista sobre `Producto`.
- * `TenantScope` (ya existente en los 5 modelos fuente) aísla cada
- * consulta por empresa automáticamente — este Repository nunca filtra
- * `empresa_id` a mano.
+ * Reportes (2026-08-02, ampliado 2026-08-03 a centro de reportes
+ * completo). Los métodos `resumen*` siguen siendo estadísticas agregadas
+ * de solo lectura sobre Productos/Inventario/Movimientos/Clientes/
+ * Proveedores para el dashboard — sin tabla ni Model propio. Los métodos
+ * `historial*`/`*Programado*` sí tienen modelo propio (`ReporteHistorial`,
+ * `ReporteProgramado`, nuevos en esta ampliación). `TenantScope` (ya
+ * existente en todos los modelos fuente) aísla cada consulta por empresa
+ * automáticamente — este Repository nunca filtra `empresa_id` a mano.
  */
 class ReporteRepository
 {
@@ -45,7 +51,7 @@ class ReporteRepository
     }
 
     /**
-     * @return array{entradas: array, salidas: array, ajustes: array, por_dia: array, productos_mas_movidos: \Illuminate\Support\Collection}
+     * @return array{entradas: array, salidas: array, ajustes: array, por_dia: array, productos_mas_movidos: Collection}
      */
     public function resumenMovimientos(string $desde, string $hasta): array
     {
@@ -115,5 +121,57 @@ class ReporteRepository
                 ->limit(10)
                 ->get(),
         ];
+    }
+
+    /**
+     * Registra una ejecución en el historial — llamado por
+     * `ReporteService::generarReporte()` cada vez que se genera un
+     * preview o se exporta un reporte. Nunca falla el flujo principal si
+     * algo sale mal aquí: es un registro auxiliar, no la operación en sí.
+     */
+    public function registrarEjecucion(string $tipoReporte, string $formato, array $filtros, int $totalFilas, ?User $usuario): ReporteHistorial
+    {
+        return ReporteHistorial::create([
+            'empresa_id' => $usuario?->empresa_id,
+            'usuario_id' => $usuario?->id,
+            'tipo_reporte' => $tipoReporte,
+            'formato' => $formato,
+            'filtros' => $filtros,
+            'total_filas' => $totalFilas,
+        ]);
+    }
+
+    /**
+     * @param  array{tipo_reporte?: ?string, formato?: ?string, desde?: ?string, hasta?: ?string}  $filtros
+     */
+    public function historial(array $filtros, int $porPagina = 25): LengthAwarePaginator
+    {
+        return ReporteHistorial::query()
+            ->with('usuario:id,email')
+            ->when($filtros['tipo_reporte'] ?? null, fn ($q, $v) => $q->where('tipo_reporte', $v))
+            ->when($filtros['formato'] ?? null, fn ($q, $v) => $q->where('formato', $v))
+            ->when($filtros['desde'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', $v))
+            ->when($filtros['hasta'] ?? null, fn ($q, $v) => $q->where('created_at', '<=', "{$v} 23:59:59"))
+            ->latest('created_at')
+            ->paginate($porPagina);
+    }
+
+    public function listarProgramados(): Collection
+    {
+        return ReporteProgramado::query()->with('usuario:id,email')->latest()->get();
+    }
+
+    public function crearProgramado(array $datos, User $usuario): ReporteProgramado
+    {
+        return ReporteProgramado::create($datos + [
+            'empresa_id' => $usuario->empresa_id,
+            'usuario_id' => $usuario->id,
+            'estado' => 'activo',
+        ]);
+    }
+
+    public function eliminarProgramado(ReporteProgramado $programado): void
+    {
+        $programado->delete();
     }
 }

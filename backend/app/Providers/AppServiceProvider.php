@@ -7,12 +7,16 @@ use App\Contracts\AI\SpeechTranscriberInterface;
 use App\Contracts\AI\StructuredExtractorInterface;
 use App\Contracts\AI\VisionAnalyzerInterface;
 use App\Contracts\Auth\RefreshTokenServiceInterface;
+use App\Models\ReporteHistorial;
+use App\Models\ReporteProgramado;
+use App\Policies\ReportePolicy;
 use App\Services\AI\OpenAIProvider;
 use App\Services\AI\OpenAIResponsesService;
 use App\Services\AI\OpenAISpeechService;
 use App\Services\AI\OpenAIVisionService;
 use App\Services\Auth\RefreshTokenService;
 use App\Services\Auth\TenantContext;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -49,6 +53,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Módulo Reportes — ampliación 2026-08-03: una sola Policy para
+        // dos modelos, fuera de la convención 1:1 de auto-discovery —
+        // ver el docblock de ReportePolicy.
+        Gate::policy(ReporteHistorial::class, ReportePolicy::class);
+        Gate::policy(ReporteProgramado::class, ReportePolicy::class);
     }
 }
