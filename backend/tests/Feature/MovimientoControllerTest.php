@@ -143,9 +143,72 @@ class MovimientoControllerTest extends TestCase
                 'tipo' => 'salida',
                 'cantidad' => 999,
             ])
-            ->assertStatus(409);
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Stock insuficiente para el producto #'.$this->productoA->id.'. Disponible: 10.00. Solicitado: 999.00.');
 
         $this->assertEquals(10, $this->productoA->fresh()->stock_actual);
+    }
+
+    /**
+     * Caso límite explícito: una salida que consume EXACTAMENTE el stock
+     * disponible debe tener éxito y dejar el producto en 0 — 0 no es
+     * negativo. Distingue el límite real (`$stockNuevo < 0`) de un límite
+     * off-by-one incorrecto (`<= 0`) que rechazaría este caso válido.
+     */
+    public function test_a_salida_that_leaves_stock_at_exactly_zero_succeeds(): void
+    {
+        $this->productoA->forceFill(['stock_actual' => 10])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', [
+                'producto_id' => $this->productoA->id,
+                'tipo' => 'salida',
+                'cantidad' => 10,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.stock_nuevo', fn ($v) => (float) $v === 0.0);
+
+        $this->assertEquals(0, $this->productoA->fresh()->stock_actual);
+    }
+
+    /**
+     * `InventoryService::registrarMovimiento()` bloquea la fila del
+     * producto con `lockForUpdate()` dentro de una transacción — bajo
+     * concurrencia real, dos salidas simultáneas para el mismo producto se
+     * serializan sobre ese lock: la segunda solo empieza a leer
+     * `stock_actual` después de que la primera ya hizo commit. PHPUnit
+     * ejecuta el cliente HTTP de test de forma síncrona en un solo
+     * proceso, así que este test no puede disparar dos requests en
+     * paralelo de verdad — en su lugar, verifica la MISMA garantía de
+     * comportamiento que ese lock produce: dos salidas consecutivas cuya
+     * suma excede el stock disponible nunca dejan el stock en negativo, y
+     * la segunda ve el efecto ya aplicado de la primera (nunca lee un
+     * valor obsoleto/pre-commit).
+     */
+    public function test_two_salidas_that_together_exceed_stock_never_leave_it_negative(): void
+    {
+        $this->productoA->forceFill(['stock_actual' => 10])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', [
+                'producto_id' => $this->productoA->id,
+                'tipo' => 'salida',
+                'cantidad' => 6,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.stock_nuevo', fn ($v) => (float) $v === 4.0);
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', [
+                'producto_id' => $this->productoA->id,
+                'tipo' => 'salida',
+                'cantidad' => 6,
+            ])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Stock insuficiente para el producto #'.$this->productoA->id.'. Disponible: 4.00. Solicitado: 6.00.');
+
+        $this->assertEquals(4, $this->productoA->fresh()->stock_actual);
+        $this->assertEquals(1, $this->productoA->fresh()->movimientos()->count());
     }
 
     public function test_an_ajuste_can_increase_stock_with_direccion_incremento(): void

@@ -71,6 +71,14 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
       .catch(() => {});
   }, [open]);
 
+  const productoSeleccionado = productos.find((p) => p.id === form.producto_id);
+  const esSalidaDeStock =
+    form.tipo === "salida" || (form.tipo === "ajuste" && form.direccion === "decremento");
+  const excedeStockDisponible =
+    esSalidaDeStock &&
+    productoSeleccionado !== undefined &&
+    (form.cantidad ?? 0) > productoSeleccionado.stock_actual;
+
   async function save() {
     if (!form.producto_id) {
       toast.error("Selecciona un producto.");
@@ -82,6 +90,12 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
     }
     if (form.tipo === "ajuste" && !form.direccion) {
       toast.error("Selecciona si el ajuste incrementa o decrementa el stock.");
+      return;
+    }
+    if (excedeStockDisponible && productoSeleccionado) {
+      toast.error(
+        `Stock insuficiente. Disponible: ${productoSeleccionado.stock_actual}. Solicitado: ${form.cantidad}.`
+      );
       return;
     }
 
@@ -166,9 +180,18 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
               type="number"
               min={0.01}
               step="0.01"
+              aria-invalid={excedeStockDisponible}
+              className={excedeStockDisponible ? "border-destructive" : undefined}
               value={form.cantidad ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, cantidad: Number(e.target.value) }))}
             />
+            {esSalidaDeStock && productoSeleccionado && (
+              <p className={excedeStockDisponible ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+                {excedeStockDisponible
+                  ? `Stock insuficiente. Disponible: ${productoSeleccionado.stock_actual}.`
+                  : `Disponible: ${productoSeleccionado.stock_actual}`}
+              </p>
+            )}
           </Field>
 
           {form.tipo === "ajuste" && (
@@ -229,7 +252,7 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
           </Field>
         </div>
         <DialogFooter>
-          <Button className="gap-2" onClick={save} disabled={saving}>
+          <Button className="gap-2" onClick={save} disabled={saving || excedeStockDisponible}>
             <Save className="size-4" />
             {saving ? "Registrando..." : "Registrar movimiento"}
           </Button>

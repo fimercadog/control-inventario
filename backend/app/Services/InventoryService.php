@@ -21,17 +21,17 @@ use Illuminate\Support\Facades\DB;
 class InventoryService
 {
     /**
-     * @param float $cantidad Magnitud siempre positiva. La dirección
-     *                        (sumar o restar) la decide este Service según
-     *                        $tipo, nunca el llamador — excepto para
-     *                        Ajuste, el único tipo inherentemente
-     *                        bidireccional (un conteo físico puede
-     *                        encontrar más o menos stock del esperado),
-     *                        donde el llamador debe pasar $direccion
-     *                        explícitamente (+1/-1). Para todo lo demás,
-     *                        $direccion debe quedar en null y la dirección
-     *                        la sigue decidiendo direccion($tipo) como
-     *                        siempre (RC1 Fase 3, docs/03_FUNCTIONAL_SPEC/Movements.md).
+     * @param  float  $cantidad  Magnitud siempre positiva. La dirección
+     *                           (sumar o restar) la decide este Service según
+     *                           $tipo, nunca el llamador — excepto para
+     *                           Ajuste, el único tipo inherentemente
+     *                           bidireccional (un conteo físico puede
+     *                           encontrar más o menos stock del esperado),
+     *                           donde el llamador debe pasar $direccion
+     *                           explícitamente (+1/-1). Para todo lo demás,
+     *                           $direccion debe quedar en null y la dirección
+     *                           la sigue decidiendo direccion($tipo) como
+     *                           siempre (RC1 Fase 3, docs/03_FUNCTIONAL_SPEC/Movements.md).
      */
     public function registrarMovimiento(
         Producto $producto,
@@ -62,9 +62,12 @@ class InventoryService
             $stockNuevo = $stockAnterior + $delta;
 
             if ($stockNuevo < 0) {
-                throw new StockInsuficienteException(
-                    "El movimiento dejaría stock negativo para el producto #{$productoBloqueado->id}."
-                );
+                throw new StockInsuficienteException(sprintf(
+                    'Stock insuficiente para el producto #%d. Disponible: %s. Solicitado: %s.',
+                    $productoBloqueado->id,
+                    number_format($stockAnterior, 2),
+                    number_format($cantidad, 2),
+                ));
             }
 
             $productoBloqueado->stock_actual = $stockNuevo;
