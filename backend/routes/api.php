@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ClienteController;
+use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\MarcaController;
 use App\Http\Controllers\Api\MovimientoController;
 use App\Http\Controllers\Api\PermissionController;
@@ -164,17 +165,32 @@ Route::prefix('v1/movimientos')->name('movimientos.')->middleware(['auth:api', '
     Route::patch('{movimiento}', [MovimientoController::class, 'update'])->name('update');
 });
 
-// RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md). Listar/Ver/Activar/
-// Desactivar únicamente — sin POST / (creación es Módulo 6, Invitaciones,
-// sin construir) y sin ningún endpoint de eliminar (Usuarios nunca se
-// elimina, física ni lógicamente). `{id}` en vez de route-model-binding
-// implícito a propósito: User no tiene TenantScope automático, así que
-// cada acción resuelve el usuario ya acotado por empresa a mano.
+// RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03.
+// Listar/Ver/Activar/Desactivar/Asignar rol — sin POST / propio (crear
+// sigue siendo exclusivo de InvitationController::aceptar()) y sin
+// ningún endpoint de eliminar (Usuarios nunca se elimina, física ni
+// lógicamente). `{id}` en vez de route-model-binding implícito a
+// propósito: User no tiene TenantScope automático, así que cada acción
+// resuelve el usuario ya acotado por empresa a mano. `invitar` declarada
+// antes de `{id}` a propósito, aunque `whereNumber('id')` ya evita
+// cualquier colisión real.
 Route::prefix('v1/usuarios')->name('usuarios.')->middleware(['auth:api', 'tenant'])->group(function () {
     Route::get('/', [UserController::class, 'index'])->name('index');
+    Route::post('invitar', [InvitationController::class, 'store'])->name('invitar');
     Route::get('{id}', [UserController::class, 'show'])->name('show')->whereNumber('id');
     Route::post('{id}/activar', [UserController::class, 'activar'])->name('activar')->whereNumber('id');
     Route::post('{id}/desactivar', [UserController::class, 'desactivar'])->name('desactivar')->whereNumber('id');
+    Route::post('{id}/rol', [UserController::class, 'asignarRol'])->name('asignar-rol')->whereNumber('id');
+});
+
+// Módulo 6 — Invitaciones (2026-08-03, docs/03_FUNCTIONAL_SPEC/Users.md).
+// Deliberadamente PÚBLICAS (sin 'auth:api'/'tenant') — quien las llama
+// todavía no tiene cuenta ni sesión; la posesión del token crudo es la
+// única prueba de identidad en este punto, mismo principio que
+// /auth/password/restablecer.
+Route::prefix('v1/invitaciones')->name('invitaciones.')->group(function () {
+    Route::get('{token}', [InvitationController::class, 'show'])->name('show');
+    Route::post('{token}/aceptar', [InvitationController::class, 'aceptar'])->name('aceptar');
 });
 
 // Módulo 5 — Role Management (2026-08-02, docs/security/ROLES_MATRIX.md).

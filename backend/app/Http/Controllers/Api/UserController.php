@@ -6,8 +6,10 @@ use App\Contracts\Auth\RefreshTokenServiceInterface;
 use App\Exceptions\CannotDeactivateSelfException;
 use App\Exceptions\LastCompanyAdminException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\User\AssignRoleRequest;
 use App\Http\Resources\User\UserResource;
 use App\Http\Support\ApiResponse;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
 use App\Services\Auth\TenantContext;
@@ -15,12 +17,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md). Alcance confirmado
- * explícitamente por el propietario del proyecto antes de esta unidad de
- * trabajo: Listar/Ver/Activar/Desactivar únicamente. Sin `store()` (la
- * creación es Módulo 6 — Invitaciones, sin construir); sin edición de
- * campos de perfil (nombre/email pertenecen a Perfil); sin reasignación de
- * rol (Módulo 5 — Roles, sin construir); sin ningún endpoint de eliminar.
+ * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 con
+ * Módulo 6 (Invitaciones, ver `InvitationController`) y `asignarRol()`.
+ * Alcance confirmado explícitamente por el propietario del proyecto: sin
+ * `store()` propio aquí — la creación de cuentas sigue siendo exclusiva
+ * de `InvitationController::aceptar()`; sin edición de campos de perfil
+ * (nombre/email pertenecen a Perfil); sin ningún endpoint de eliminar.
+ * Reasignación de rol y "empresa" del usuario permanecen dos decisiones
+ * separadas y deliberadas: `asignarRol()` sí se construyó (Módulo 5 ya
+ * está completo); mover un usuario de empresa sigue fuera de alcance a
+ * propósito — no existe ningún precedente en esta arquitectura para
+ * reasignar `empresa_id` sin invalidar el resto de las garantías de
+ * aislamiento por empresa (audit logs, movimientos, etc. de ese usuario).
  *
  * `User` no tiene `TenantScope` automático (a diferencia de Producto/
  * Categoria/Movimiento) — cada método de este controller filtra
@@ -33,8 +41,7 @@ class UserController extends Controller
     public function __construct(
         private readonly AuditLogger $auditoria,
         private readonly RefreshTokenServiceInterface $refreshTokens,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -132,6 +139,34 @@ class UserController extends Controller
         );
     }
 
+    /**
+     * Reemplaza el rol del usuario — este ERP modela "un usuario, un rol"
+     * de punta a punta (UserResource ya expone un `role` singular, no una
+     * lista), así que `syncRoles()` (nunca `assignRole()` acumulativo) es
+     * la operación correcta aquí.
+     */
+    public function asignarRol(AssignRoleRequest $request, int $id): JsonResponse
+    {
+        $usuario = $this->resolverUsuarioDeLaEmpresa($id);
+
+        $this->authorize('update', $usuario);
+
+        $rol = Role::where('empresa_id', $usuario->empresa_id)->findOrFail($request->validated('role_id'));
+
+        $rolAnterior = $usuario->getRoleNames()->first();
+        $usuario->syncRoles([$rol]);
+
+        $this->registrarAuditoria($request, $usuario, 'usuarios.asignar_rol', [
+            'rol_anterior' => $rolAnterior,
+            'rol_nuevo' => $rol->name,
+        ]);
+
+        return ApiResponse::success(
+            new UserResource($usuario->fresh()->load('invitedBy')),
+            'Rol asignado correctamente'
+        );
+    }
+
     private function resolverUsuarioDeLaEmpresa(int $id): User
     {
         return User::where('empresa_id', app(TenantContext::class)->empresaId())
@@ -150,7 +185,7 @@ class UserController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $valoresNuevos
+     * @param  array<string, mixed>  $valoresNuevos
      */
     private function registrarAuditoria(Request $request, User $usuario, string $accion, array $valoresNuevos): void
     {

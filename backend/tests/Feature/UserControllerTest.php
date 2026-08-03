@@ -33,6 +33,10 @@ class UserControllerTest extends TestCase
 
     private Role $roleConGestion;
 
+    private Role $roleAlterno;
+
+    private Role $roleEmpresaB;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -49,6 +53,7 @@ class UserControllerTest extends TestCase
         $registrar->setPermissionsTeamId($this->empresaA->id);
         $this->roleConGestion = Role::create(['name' => 'Administrador', 'guard_name' => 'api']);
         $this->roleConGestion->givePermissionTo('usuarios.editar', 'usuarios.ver');
+        $this->roleAlterno = Role::create(['name' => 'Bodeguero', 'guard_name' => 'api']);
 
         $this->adminA = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $this->adminA->assignRole($this->roleConGestion);
@@ -56,6 +61,14 @@ class UserControllerTest extends TestCase
         $this->userB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
 
         $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $this->roleEmpresaB = Role::create(['name' => 'Rol de Empresa B', 'guard_name' => 'api']);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaA->id);
+        $registrar->setPermissionsTeamId($this->empresaA->id);
     }
 
     public function test_a_user_can_list_their_own_companys_users(): void
@@ -224,6 +237,75 @@ class UserControllerTest extends TestCase
             ->getJson('/api/v1/usuarios')
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1);
+    }
+
+    public function test_a_user_with_usuarios_editar_can_assign_a_role(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega->assignRole($this->roleAlterno);
+
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/rol", ['role_id' => $this->roleConGestion->id])
+            ->assertOk()
+            ->assertJsonPath('data.role', 'Administrador');
+
+        $this->assertTrue($colega->fresh()->hasRole('Administrador'));
+    }
+
+    public function test_assigning_a_role_replaces_the_previous_one_not_adds_to_it(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega->assignRole($this->roleAlterno);
+
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/rol", ['role_id' => $this->roleConGestion->id])
+            ->assertOk();
+
+        $roles = $colega->fresh()->getRoleNames();
+        $this->assertCount(1, $roles);
+        $this->assertSame('Administrador', $roles->first());
+    }
+
+    public function test_assigning_a_role_from_another_company_fails_validation(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/rol", ['role_id' => $this->roleEmpresaB->id])
+            ->assertStatus(422);
+
+        $this->assertFalse($colega->fresh()->hasRole('Rol de Empresa B'));
+    }
+
+    /**
+     * `UserPolicy::update()` (que gatea activar/desactivar/asignarRol por
+     * igual) solo verifica pertenencia de empresa, nunca un permiso
+     * Spatie real — estado documentado explícitamente en Users.md
+     * ("enforcement granular por nombre de permiso todavía no
+     * implementado, depende de Módulo 3, sin construir"), verdadero para
+     * las tres acciones por igual, no una laguna nueva de `asignarRol()`.
+     * Este test fija ese comportamiento actual, no lo aprueba como
+     * destino final.
+     */
+    public function test_assigning_a_role_only_requires_company_membership_today_not_usuarios_editar(): void
+    {
+        $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $this->actingAs($sinPermiso, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/rol", ['role_id' => $this->roleConGestion->id])
+            ->assertOk();
+    }
+
+    public function test_company_b_cannot_assign_a_role_to_company_as_user(): void
+    {
+        // role_id debe existir en la propia empresa del actor (empresaB)
+        // para que la validación del FormRequest no dispare un 422 antes
+        // de llegar al controller — lo que este test aísla es el 404 de
+        // "el usuario destino no es de mi empresa", no la validación del rol.
+        $this->actingAs($this->userB, 'api')
+            ->postJson("/api/v1/usuarios/{$this->adminA->id}/rol", ['role_id' => $this->roleEmpresaB->id])
+            ->assertNotFound();
     }
 
     public function test_there_is_no_create_or_delete_endpoint_for_users(): void
