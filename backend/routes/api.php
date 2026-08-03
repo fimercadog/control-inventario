@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
-use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ClienteController;
@@ -202,10 +202,25 @@ Route::prefix('v1/auditoria')->name('auditoria.')->middleware(['auth:api', 'tena
     Route::get('{auditLog}', [AuditLogController::class, 'show'])->name('show');
 });
 
-// Reportes (2026-08-02, docs/03_FUNCTIONAL_SPEC/Reports.md). Un único
-// endpoint compuesto — "Reportes" es una vista, no una lista paginable de
-// recursos, así que no sigue el shape index/show del resto del ERP.
-Route::get('v1/reportes', [ReporteController::class, 'index'])->name('reportes.index')->middleware(['auth:api', 'tenant']);
+// Reportes (2026-08-02, ampliado 2026-08-03 a centro de reportes
+// completo, docs/03_FUNCTIONAL_SPEC/Reports.md). Rutas estáticas
+// (catalogo/historial/programados) declaradas ANTES de la wildcard
+// '{clave}' a propósito — si fueran después, Laravel intentaría resolver
+// "catalogo"/"historial" como si fueran una clave de reporte.
+Route::prefix('v1/reportes')->name('reportes.')->middleware(['auth:api', 'tenant'])->group(function () {
+    Route::get('/', [ReporteController::class, 'index'])->name('index');
+    Route::get('catalogo', [ReporteController::class, 'catalogo'])->name('catalogo');
+    Route::get('historial', [ReporteController::class, 'historial'])->name('historial');
+
+    Route::get('programados', [ReporteController::class, 'programadosIndex'])->name('programados.index');
+    Route::post('programados', [ReporteController::class, 'programadosStore'])->name('programados.store');
+    Route::delete('programados/{programado}', [ReporteController::class, 'programadosDestroy'])->name('programados.destroy');
+
+    Route::get('{clave}/preview', [ReporteController::class, 'preview'])->name('preview');
+    Route::get('{clave}/exportar/pdf', [ReporteController::class, 'exportarPdf'])->name('exportar.pdf');
+    Route::get('{clave}/exportar/excel', [ReporteController::class, 'exportarExcel'])->name('exportar.excel');
+    Route::get('{clave}/exportar/csv', [ReporteController::class, 'exportarCsv'])->name('exportar.csv');
+});
 
 // Perfil (2026-08-02, docs/03_FUNCTIONAL_SPEC/Profile.md). Cada método
 // opera exclusivamente sobre $request->user() — sin {id} en ninguna ruta,
