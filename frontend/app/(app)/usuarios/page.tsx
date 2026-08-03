@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { InvitarUsuarioDialog } from "@/components/invitar-usuario-dialog";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, listUsuarios } from "@/lib/api/usuarios";
@@ -54,11 +55,12 @@ const ESTADO_FILTROS: Record<string, string> = {
 };
 
 /**
- * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md). Alcance confirmado
- * explícitamente por el propietario del proyecto: Listar/Ver/Activar/
- * Desactivar únicamente. Sin botón "Nuevo" (la creación es Módulo 6 —
- * Invitaciones, sin construir) y sin ninguna acción "Eliminar" — Usuarios
- * nunca se elimina, solo se desactiva.
+ * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 con
+ * Módulo 6 (Invitaciones). Listar/Ver/Activar/Desactivar/Invitar/Asignar
+ * rol — sin ninguna acción "Eliminar", Usuarios nunca se elimina, solo se
+ * desactiva. "Nuevo Usuario" abre `InvitarUsuarioDialog`, no un formulario
+ * de creación directo — la cuenta la termina de crear el propio invitado
+ * al aceptar (`/aceptar-invitacion`), nunca un admin eligiendo su contraseña.
  */
 export default function UsuariosPage() {
   const router = useRouter();
@@ -108,6 +110,7 @@ export default function UsuariosPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? usuarios.length)} usuarios en tu empresa.`}
           </p>
         </div>
+        <InvitarUsuarioDialog onInvited={refetch} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

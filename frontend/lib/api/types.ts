@@ -552,10 +552,12 @@ export interface UpdateMovimientoPayload {
 
 /**
  * Espejo de App\Http\Resources\User\UserResource (RC1 Fase 4,
- * docs/03_FUNCTIONAL_SPEC/Users.md). Módulo administrativo — distinto de
- * `AuthenticatedUser` (siempre el propio usuario autenticado). Sin campos
- * editables desde aquí más allá de `is_active` (activar/desactivar); nombre/
- * email pertenecen a Perfil, rol pertenece al futuro módulo Roles.
+ * docs/03_FUNCTIONAL_SPEC/Users.md, ampliado 2026-08-03). Módulo
+ * administrativo — distinto de `AuthenticatedUser` (siempre el propio
+ * usuario autenticado). Sin edición de nombre/email desde aquí (pertenece
+ * a Perfil); `role` sí es editable vía `asignarRolUsuario()` (Módulo 5,
+ * ya construido) — activar/desactivar/asignar rol son las tres únicas
+ * mutaciones de este módulo, crear sigue siendo exclusivo de Invitaciones.
  */
 export interface Usuario {
   id: number;
@@ -569,6 +571,28 @@ export interface Usuario {
   invited_at: string | null;
   invited_by: string | null;
   created_at: string | null;
+}
+
+/**
+ * Módulo 6 — Invitaciones (2026-08-03, docs/03_FUNCTIONAL_SPEC/Users.md,
+ * Decisión 1). Único mecanismo real de alta de usuarios de este ERP.
+ */
+export interface InviteUsuarioPayload {
+  email: string;
+  role_id?: number;
+}
+
+/** Espejo del payload de InvitationController::show() — datos públicos de una invitación, sin exponer el token en sí. */
+export interface InvitacionInfo {
+  email: string;
+  empresa: string;
+  rol: string | null;
+}
+
+export interface AcceptInvitationPayload {
+  name: string;
+  password: string;
+  password_confirmation: string;
 }
 
 /**

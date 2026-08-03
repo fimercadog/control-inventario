@@ -9,17 +9,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { AsignarRolDialog } from "@/components/asignar-rol-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, getUsuario } from "@/lib/api/usuarios";
 import type { Usuario } from "@/lib/api/types";
 import { formatRelativeTime } from "@/lib/format";
 
 /**
- * Ficha de Usuario (RC1 Fase 4, docs/03_FUNCTIONAL_SPEC/Users.md). Todos
- * los campos son de solo lectura — este módulo no tiene formulario de
- * edición (nombre/email pertenecen a Perfil, rol pertenece al futuro
- * módulo Roles). La única acción es Activar/Desactivar, nunca disponible
- * sobre la propia cuenta.
+ * Ficha de Usuario (RC1 Fase 4, docs/03_FUNCTIONAL_SPEC/Users.md, rol
+ * conectado 2026-08-03). Nombre/correo siguen siendo de solo lectura
+ * (pertenecen a Perfil) — el rol ya es editable vía `AsignarRolDialog`
+ * ahora que Módulo 5 (Roles) está completo. Activar/Desactivar sigue
+ * nunca disponible sobre la propia cuenta.
  */
 export function UsuarioDetailScreen({ usuarioId }: { usuarioId: number }) {
   const router = useRouter();
@@ -135,7 +136,10 @@ export function UsuarioDetailScreen({ usuarioId }: { usuarioId: number }) {
 
       <Card className="border-border/60">
         <CardContent className="flex flex-col gap-4 pt-6">
-          <h2 className="text-sm font-semibold">Actividad</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Actividad</h2>
+            <AsignarRolDialog usuario={usuario} onAssigned={setUsuario} />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <InfoRow label="Rol">{usuario.role ?? "Sin rol asignado"}</InfoRow>
             <InfoRow label="Última actividad">
@@ -158,8 +162,7 @@ export function UsuarioDetailScreen({ usuarioId }: { usuarioId: number }) {
             </InfoRow>
           </div>
           <p className="text-xs text-muted-foreground">
-            Nombre, correo y rol no son editables desde aquí — nombre/correo son responsabilidad del propio usuario
-            en su Perfil, y la asignación de rol pertenece al futuro módulo Roles.
+            Nombre y correo no son editables desde aquí — son responsabilidad del propio usuario en su Perfil.
           </p>
         </CardContent>
       </Card>
