@@ -357,6 +357,67 @@ export interface ReporteFiltros {
   hasta?: string;
 }
 
+/**
+ * Espejo del catálogo de 13 reportes (ampliación 2026-08-03,
+ * docs/03_FUNCTIONAL_SPEC/Reports.md). `filtros_disponibles` es lo que le
+ * dice al frontend qué formulario de filtros construir para cada reporte
+ * SIN hardcodear supuestos por reporte — agregar un reporte nuevo en el
+ * backend nunca requiere tocar esta página.
+ */
+export interface ReporteFiltroDisponible {
+  clave: string;
+  etiqueta: string;
+  tipo: "select" | "texto" | "fecha";
+  requerido: boolean;
+}
+
+export interface ReporteCatalogoItem {
+  clave: string;
+  nombre: string;
+  descripcion: string;
+  filtros_disponibles: ReporteFiltroDisponible[];
+}
+
+export interface ReporteColumna {
+  clave: string;
+  etiqueta: string;
+}
+
+/** Espejo de App\DTO\Report\ReporteResultadoDTO::toArray(). */
+export interface ReporteResultado {
+  clave: string;
+  titulo: string;
+  columnas: ReporteColumna[];
+  filas: Record<string, string | number | null>[];
+  resumen: Record<string, unknown>;
+  filtros_aplicados: Record<string, unknown>;
+  total: number;
+}
+
+export interface ReporteHistorialItem {
+  id: number;
+  uuid: string;
+  tipo_reporte: string;
+  formato: string;
+  filtros: Record<string, unknown> | null;
+  total_filas: number | null;
+  created_at: string;
+  usuario: { id: number; email: string } | null;
+}
+
+export interface ReporteHistorialFiltros {
+  tipo_reporte?: string;
+  formato?: string;
+  desde?: string;
+  hasta?: string;
+  page?: number;
+}
+
+export interface PaginatedReporteHistorial {
+  items: ReporteHistorialItem[];
+  meta: PaginatedItems<ReporteHistorialItem>["meta"];
+}
+
 /** Espejo de App\Http\Resources\Categoria\CategoriaResource (RC1, docs/03_FUNCTIONAL_SPEC/Categories.md). */
 export interface Categoria {
   id: number;

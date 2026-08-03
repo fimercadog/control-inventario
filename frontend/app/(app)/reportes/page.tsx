@@ -17,19 +17,23 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchReporteResumen } from "@/store/slices/reportes-slice";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { ReportesCatalogoTab } from "@/components/reportes/reportes-catalogo-tab";
+import { ReportesHistorialTab } from "@/components/reportes/reportes-historial-tab";
+import type { ReporteResumen } from "@/lib/api/types";
 
 /**
- * Reportes (2026-08-02, docs/03_FUNCTIONAL_SPEC/Reports.md). Estadísticas
- * reales calculadas sobre Productos/Inventario/Movimientos/Clientes/
- * Proveedores — sin exportación ni panel de estadísticas históricas
- * (fuera de alcance, ver Future Improvements en el spec). El rango de
- * fechas solo afecta la sección Movimientos: Inventario/Clientes/
- * Proveedores son estado actual, no datos de un período.
+ * Reportes (2026-08-02, ampliado 2026-08-03 al centro de reportes
+ * completo de Fidel OS, docs/03_FUNCTIONAL_SPEC/Reports.md). Tres
+ * pestañas dentro de UN único módulo — "Resumen" es el dashboard
+ * original sin cambios, "Catálogo" abre cualquiera de los 13 reportes
+ * con filtros/exportación, "Historial" lista ejecuciones pasadas. Nunca
+ * un segundo módulo de reportes en el ERP.
  */
 export default function ReportesPage() {
   const dispatch = useAppDispatch();
@@ -42,6 +46,58 @@ export default function ReportesPage() {
     dispatch(fetchReporteResumen({ desde: desde || undefined, hasta: hasta || undefined }));
   }, [dispatch, desde, hasta]);
 
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Reportes</h1>
+        <p className="text-sm text-muted-foreground">Centro de reportes de tu operación.</p>
+      </div>
+
+      <Tabs defaultValue="resumen">
+        <TabsList>
+          <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
+          <TabsTrigger value="historial">Historial</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="resumen" className="mt-6">
+          <ReporteResumenTab
+            resumen={resumen}
+            loading={loading}
+            desde={desde}
+            hasta={hasta}
+            onDesdeChange={setDesde}
+            onHastaChange={setHasta}
+          />
+        </TabsContent>
+
+        <TabsContent value="catalogo" className="mt-6">
+          <ReportesCatalogoTab />
+        </TabsContent>
+
+        <TabsContent value="historial" className="mt-6">
+          <ReportesHistorialTab />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function ReporteResumenTab({
+  resumen,
+  loading,
+  desde,
+  hasta,
+  onDesdeChange,
+  onHastaChange,
+}: {
+  resumen: ReporteResumen | null;
+  loading: boolean;
+  desde: string;
+  hasta: string;
+  onDesdeChange: (value: string) => void;
+  onHastaChange: (value: string) => void;
+}) {
   if (loading && !resumen) {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-sm text-muted-foreground">
@@ -65,20 +121,14 @@ export default function ReportesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Reportes</h1>
-          <p className="text-sm text-muted-foreground">Estadísticas reales de tu operación.</p>
+      <div className="flex items-end justify-end gap-3">
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-muted-foreground">Desde</Label>
+          <Input type="date" className="w-40" value={desde} onChange={(e) => onDesdeChange(e.target.value)} />
         </div>
-        <div className="flex items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Desde</Label>
-            <Input type="date" className="w-40" value={desde} onChange={(e) => setDesde(e.target.value)} />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Hasta</Label>
-            <Input type="date" className="w-40" value={hasta} onChange={(e) => setHasta(e.target.value)} />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs text-muted-foreground">Hasta</Label>
+          <Input type="date" className="w-40" value={hasta} onChange={(e) => onHastaChange(e.target.value)} />
         </div>
       </div>
 
