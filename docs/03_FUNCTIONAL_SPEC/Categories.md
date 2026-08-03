@@ -23,8 +23,8 @@ Catálogo administrable de categorías de producto, reutilizado por Productos (`
 
 ## Screens
 
-- **`/categorias`**: listado con columnas Nombre, Descripción, Productos asociados (conteo), Estado. Botón "Nueva Categoría", búsqueda por nombre/descripción, filtro de Estado (Activas/Todas).
-- **`/categorias/{id}`**: detalle + edición inline (mismo patrón que `supplier-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta categoría (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
+- **`/categorias`**: listado con columnas Nombre, Descripción, Productos asociados (conteo), Estado. Botón "Nueva Categoría", búsqueda por nombre/descripción, filtro de Estado (Activas/Todas). Único punto de entrada del módulo — no existe una ruta `/categorias/{id}` (Global UI Standard "CRUD en Modal", 2026-08-03).
+- **Ver/Editar/Deshabilitar** ocurren en modales sobre este mismo listado (`CategoriaViewModal`/`CategoriaFormModal`), nunca navegando a otra página — pestaña "Productos" de solo lectura dentro del modal de vista, listando los productos que usan esta categoría (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 
 ## Fields
 

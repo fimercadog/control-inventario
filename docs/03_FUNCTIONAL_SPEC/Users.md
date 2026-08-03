@@ -36,8 +36,8 @@ Permitir que un usuario con permiso de gestión (`usuarios.ver`/`usuarios.editar
 
 ## Screens
 
-- **`/usuarios`**: tabla de usuarios de la empresa actual — nombre, email, rol, badge de estado, última actividad. Búsqueda por nombre/email, filtro de estado, filtro de rol, paginación real (100/página, Anterior/Siguiente). Botón "Nuevo Usuario" (2026-08-03) abre un diálogo de invitación (email + rol opcional) — no un formulario de creación directo. Acción de fila para Activar/Desactivar con confirmación obligatoria.
-- **`/usuarios/{id}`**: ficha de un usuario — nombre/correo siguen de solo lectura; el campo Rol gana una acción "Cambiar rol" (2026-08-03, diálogo con selector); botón Activar/Desactivar.
+- **`/usuarios`**: tabla de usuarios de la empresa actual — nombre, email, rol, badge de estado, última actividad. Búsqueda por nombre/email, filtro de estado, filtro de rol, paginación real (100/página, Anterior/Siguiente). Botón "Nuevo Usuario" (2026-08-03) abre un diálogo de invitación (email + rol opcional) — no un formulario de creación directo. Acción de fila para Activar/Desactivar con confirmación obligatoria. Único punto de entrada del módulo — no existe una ruta `/usuarios/{id}` (Global UI Standard "CRUD en Modal", 2026-08-03).
+- **Ver** ocurre en un modal de solo lectura sobre este mismo listado (`UsuarioViewModal`), nunca navegando a otra página — nombre/correo siguen de solo lectura; el campo Rol gana una acción "Cambiar rol" (diálogo con selector, sin cambios); botón Activar/Desactivar. Este módulo nunca tuvo Crear/Editar genérico, así que no hay `UsuarioFormModal` — "crear" es Invitar (arriba), "editar" es únicamente reasignar rol.
 - **`/aceptar-invitacion`** (2026-08-03, pública, fuera del grupo de rutas autenticadas): resuelve el token primero para mostrar a qué empresa se une el invitado y detectar un enlace inválido/expirado antes de mostrar el formulario; formulario de nombre + contraseña; redirige a `/login` al aceptar.
 
 ## Fields

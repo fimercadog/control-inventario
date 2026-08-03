@@ -22,8 +22,7 @@ Mantener el catálogo de productos de cada empresa: qué existe, en qué present
 
 ## Screens
 
-- **`/productos`** (`frontend/app/(app)/productos/page.tsx`): tabla con búsqueda por nombre/marca, filtro por categoría, columnas Producto (con miniatura de color), Categoría, Presentación, Stock (resaltado en rojo si está por debajo del mínimo), Precio, y un menú de acciones (`Editar`, `Ver movimientos`) — **ninguna de las dos acciones del menú está implementada**, son elementos de UI sin handler.
-- No existe una pantalla de "Nuevo producto" ni un formulario de edición en ningún punto del frontend.
+- **`/productos`** (`frontend/app/(app)/productos/page.tsx`): tabla con búsqueda por nombre/marca, filtro por categoría, columnas Producto (con miniatura de color), Categoría, Presentación, Stock (resaltado en rojo si está por debajo del mínimo), Precio, y un menú de acciones (`Editar`, `Ver movimientos`). **Sección desactualizada** — ver Adenda 1/2/3 más abajo para el estado real ya construido (Ficha de Producto, creación/edición, ingreso manual, Logical Delete). Global UI Standard "CRUD en Modal" (2026-08-03): Crear/Editar/Ver ahora ocurren en modales sobre este mismo listado (`ProductoFormModal`/`ProductoViewModal`) — no existe una ruta `/productos/{id}`; otros módulos que enlazan a un producto usan `/productos?ver={id}` (abre el modal automáticamente y limpia la URL al cerrar).
 
 ## Fields
 
@@ -103,6 +102,8 @@ No implementado — sin llamada de red real, no hay manejo de error de API en es
 **Alcance deliberadamente acotado** — esta adenda cubre ÚNICAMENTE una ficha de producto de solo-consulta-y-edición-básica más su historial de movimientos ya existentes. **Explícitamente fuera de alcance** (permanecen en sus propios documentos `Status: Planned`, sin tocar): auditoría genérica (`03_FUNCTIONAL_SPEC/FUTURE/Auditoria.md`), Kardex como módulo/reporte independiente con exportación (`03_FUNCTIONAL_SPEC/FUTURE/Kardex.md`), exportaciones PDF/Excel/CSV (`03_FUNCTIONAL_SPEC/FUTURE/Export.md`). BUG-006 pide que la ficha eventualmente exponga también auditoría/historial completo — eso se deja explícitamente para cuando esos módulos se construyan; esta adenda no los simula ni los adelanta.
 
 ### Nueva pantalla: `/productos/[id]` (Ficha de Producto)
+
+> **Nota 2026-08-03:** esta ruta fue reemplazada por un modal (`ProductoViewModal`/`ProductoFormModal`) sobre `/productos` como parte del Global UI Standard "CRUD en Modal" (`docs/05_IMPLEMENTATION/ModalCrudStandard.md`) — la ruta `/productos/[id]` ya no existe. El resto de esta sección describe correctamente la Ficha en sí (pestañas, campos, flujo de negocio); solo el mecanismo de navegación cambió, de página completa a modal con deep-link `/productos?ver={id}`.
 
 **Purpose:** único destino de navegación para "ver el detalle de un producto", consistente sin importar desde qué pantalla se llega (BUG-003/006) — resuelve la ausencia total de una página de detalle.
 

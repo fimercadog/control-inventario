@@ -26,8 +26,8 @@ Catálogo administrable de marcas de producto. Reemplaza el campo `productos.mar
 
 ## Screens
 
-- **`/marcas`**: listado (Nombre, Productos asociados, Estado). Botón "Nueva Marca", búsqueda por nombre, filtro de Estado (Activas/Todas).
-- **`/marcas/{id}`**: detalle + edición inline (mismo patrón que `categoria-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta marca (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
+- **`/marcas`**: listado (Nombre, Productos asociados, Estado). Botón "Nueva Marca", búsqueda por nombre, filtro de Estado (Activas/Todas). Único punto de entrada del módulo — no existe una ruta `/marcas/{id}` (Global UI Standard "CRUD en Modal", 2026-08-03).
+- **Ver/Editar/Deshabilitar** ocurren en modales sobre este mismo listado (`MarcaViewModal`/`MarcaFormModal`), nunca navegando a otra página — pestaña "Productos" de solo lectura dentro del modal de vista, listando los productos que usan esta marca (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 - Selector de Marca en "Nuevo Producto"/edición de producto: mismo componente `Select` + "+ Crear marca nueva" ya usado para Proveedor en `registrar-ingreso-dialog.tsx`.
 
 ## Fields

@@ -26,8 +26,8 @@ Catálogo administrable de unidades de medida (ej. "Unidad", "Caja", "Kg", "Litr
 
 ## Screens
 
-- **`/unidades-medida`**: listado (Nombre, Abreviatura, Productos asociados, Estado). Botón "Nueva Unidad de Medida", búsqueda por nombre/abreviatura, filtro de Estado (Activas/Todas).
-- **`/unidades-medida/{id}`**: detalle + edición inline (mismo patrón que `categoria-detail-screen.tsx`/`marca-detail-screen.tsx`), con pestaña "Productos" de solo lectura listando los productos que usan esta unidad (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
+- **`/unidades-medida`**: listado (Nombre, Abreviatura, Productos asociados, Estado). Botón "Nueva Unidad de Medida", búsqueda por nombre/abreviatura, filtro de Estado (Activas/Todas). Único punto de entrada del módulo — no existe una ruta `/unidades-medida/{id}` (Global UI Standard "CRUD en Modal", 2026-08-03).
+- **Ver/Editar/Deshabilitar** ocurren en modales sobre este mismo listado (`UnidadMedidaViewModal`/`UnidadMedidaFormModal`), nunca navegando a otra página — pestaña "Productos" de solo lectura dentro del modal de vista, listando los productos que usan esta unidad (enlazan a su propia ficha — la edición de un producto nunca ocurre desde aquí).
 - Selector de Unidad en "Nuevo Producto"/edición: mismo componente `Select` + "+ Crear unidad nueva".
 
 ## Fields

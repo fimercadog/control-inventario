@@ -25,8 +25,8 @@ Administrar el catálogo de clientes de cada empresa — alta, edición, búsque
 
 ## Screens
 
-- `/clientes` — listado con búsqueda, filtro de estado, paginación real (Anterior/Siguiente), badge de estado, menú de acciones por fila (Editar / Eliminar-deshabilitar / Habilitar).
-- `/clientes/{id}` — ficha de detalle con modo edición inline y cambio de estado con confirmación.
+- `/clientes` — listado con búsqueda, filtro de estado, paginación real (Anterior/Siguiente), badge de estado, menú de acciones por fila (Editar / Eliminar-deshabilitar / Habilitar). Único punto de entrada del módulo — no existe una ruta `/clientes/{id}` (Global UI Standard "CRUD en Modal", 2026-08-03).
+- Ver/Editar/Eliminar-deshabilitar ocurren en modales sobre este mismo listado (`ClienteViewModal`/`ClienteFormModal`), nunca navegando a otra página — sin pestañas (Cliente nunca tuvo una relación "usado por" que mostrar).
 
 ## Fields
 
