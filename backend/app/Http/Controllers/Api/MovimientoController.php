@@ -47,7 +47,7 @@ class MovimientoController extends Controller
     {
         $this->authorize('viewAny', Movimiento::class);
 
-        $query = Movimiento::query()->with(['producto', 'usuario']);
+        $query = Movimiento::query()->with(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura']);
 
         if ($productoId = $request->query('producto_id')) {
             $query->where('producto_id', $productoId);
@@ -92,7 +92,7 @@ class MovimientoController extends Controller
     {
         $this->authorize('view', $movimiento);
 
-        return ApiResponse::success(new MovimientoResource($movimiento->load(['producto', 'usuario'])));
+        return ApiResponse::success(new MovimientoResource($movimiento->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])));
     }
 
     /**
@@ -149,7 +149,7 @@ class MovimientoController extends Controller
         );
 
         return ApiResponse::success(
-            new MovimientoResource($movimiento->load(['producto', 'usuario'])),
+            new MovimientoResource($movimiento->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])),
             'Movimiento registrado correctamente',
             201
         );
@@ -179,7 +179,7 @@ class MovimientoController extends Controller
         );
 
         return ApiResponse::success(
-            new MovimientoResource($movimiento->fresh()->load(['producto', 'usuario'])),
+            new MovimientoResource($movimiento->fresh()->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])),
             'Movimiento actualizado correctamente'
         );
     }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowDownLeft, ArrowUpRight, ExternalLink, Loader2, Pencil, RefreshCw, Save, ScrollText, X } from "lucide-react";
+import { ArrowLeft, ArrowDownLeft, ArrowUpRight, ExternalLink, Loader2, Paperclip, Pencil, RefreshCw, Save, ScrollText, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -119,6 +119,7 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
 
   const Icon = TIPO_ICON[movimiento.tipo] ?? ScrollText;
   const esPositivo = movimiento.delta >= 0;
+  const unidad = movimiento.unidad_medida ? ` ${movimiento.unidad_medida}` : "";
 
   return (
     <div className="flex flex-col gap-6">
@@ -167,11 +168,37 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
               <span className={`font-medium tabular-nums ${esPositivo ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                 {esPositivo ? "+" : ""}
                 {formatNumber(movimiento.delta)}
+                {unidad}
               </span>
             </InfoRow>
-            <InfoRow label="Stock anterior (solo lectura)">{formatNumber(movimiento.stock_anterior)}</InfoRow>
-            <InfoRow label="Stock nuevo (solo lectura)">{formatNumber(movimiento.stock_nuevo)}</InfoRow>
+            <InfoRow label="Stock anterior → nuevo (solo lectura)">
+              <span className="tabular-nums">
+                {formatNumber(movimiento.stock_anterior)}
+                {unidad} → {formatNumber(movimiento.stock_nuevo)}
+                {unidad}
+              </span>
+            </InfoRow>
             {movimiento.proveedor && <InfoRow label="Proveedor (solo lectura)">{movimiento.proveedor}</InfoRow>}
+            <InfoRow label="Origen (solo lectura)">
+              {movimiento.origen === "captura_ia" ? (
+                <Badge variant="outline" className="gap-1 text-primary">
+                  <Sparkles className="size-3" />
+                  Captura IA
+                </Badge>
+              ) : (
+                <span>Manual</span>
+              )}
+            </InfoRow>
+            <InfoRow label="Evidencia (solo lectura)">
+              {movimiento.tiene_evidencia ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Paperclip className="size-3.5" />
+                  Disponible
+                </span>
+              ) : (
+                <span className="text-muted-foreground">No disponible</span>
+              )}
+            </InfoRow>
           </div>
 
           <p className="text-xs text-muted-foreground">

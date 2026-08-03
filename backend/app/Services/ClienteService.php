@@ -45,7 +45,15 @@ class ClienteService
     {
         $cliente = $this->clientes->actualizar($cliente, $datos->toArray());
 
-        $this->registrarAuditoria($request, $cliente, 'clientes.editar', $cliente->only(['nombre', 'nit', 'estado']));
+        // getChanges(), no un ->only() fijo — captura exactamente los
+        // campos que de verdad cambiaron (email/teléfono/etc. incluidos),
+        // en vez de solo nombre/nit/estado. `updated_at` se excluye: se
+        // toca en cada save, no es un cambio de negocio real.
+        $cambios = collect($cliente->getChanges())->except('updated_at')->all();
+
+        if ($cambios !== []) {
+            $this->registrarAuditoria($request, $cliente, 'clientes.editar', $cambios);
+        }
 
         return $cliente;
     }

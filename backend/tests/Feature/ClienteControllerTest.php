@@ -140,6 +140,75 @@ class ClienteControllerTest extends TestCase
     }
 
     /**
+     * El snapshot de auditoría debe reflejar el campo real que cambió
+     * (email en este caso), no un `->only(['nombre','nit','estado'])` fijo
+     * que lo omitiría en silencio — encontrado auditando el módulo.
+     */
+    public function test_updating_the_email_field_specifically_is_captured_in_the_audit_log(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/clientes/{$this->clienteA->id}", ['email' => 'nuevo@empresa-a.test'])
+            ->assertOk();
+
+        $log = \App\Models\AuditLog::where('modulo', 'clientes')->where('accion', 'clientes.editar')->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame('nuevo@empresa-a.test', $log->valores_nuevos['email'] ?? null);
+        $this->assertArrayNotHasKey('updated_at', $log->valores_nuevos);
+    }
+
+    /** Sin cambios reales (mismo valor reenviado), no debe escribirse un log de auditoría vacío. */
+    public function test_updating_with_no_actual_field_changes_writes_no_audit_log(): void
+    {
+        $this->clienteA->update(['telefono' => '3001112222']);
+        $antes = \App\Models\AuditLog::count();
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/clientes/{$this->clienteA->id}", ['telefono' => '3001112222'])
+            ->assertOk();
+
+        $this->assertSame($antes, \App\Models\AuditLog::count());
+    }
+
+    public function test_two_clients_in_the_same_company_cannot_share_an_email(): void
+    {
+        Cliente::create(['nombre' => 'Otro Cliente', 'email' => 'duplicado@test.com']);
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/clientes', ['nombre' => 'Tercer Cliente', 'email' => 'duplicado@test.com'])
+            ->assertStatus(422);
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/clientes/{$this->clienteA->id}", ['email' => 'duplicado@test.com'])
+            ->assertStatus(422);
+    }
+
+    /** El mismo email en OTRA empresa no es un conflicto — único por empresa, no global. */
+    public function test_two_clients_in_different_companies_can_share_an_email(): void
+    {
+        Cliente::create(['nombre' => 'Cliente Empresa A', 'email' => 'compartido@test.com']);
+
+        app(TenantContext::class)->setEmpresaId($this->empresaB->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaB->id);
+
+        $this->actingAs($this->userB, 'api')
+            ->postJson('/api/v1/clientes', ['nombre' => 'Cliente Empresa B', 'email' => 'compartido@test.com'])
+            ->assertCreated();
+    }
+
+    /** Reenviar el mismo email sin cambiarlo nunca debe contar como conflicto consigo mismo. */
+    public function test_updating_a_client_without_changing_its_own_email_does_not_conflict_with_itself(): void
+    {
+        $this->clienteA->update(['email' => 'propio@test.com']);
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/clientes/{$this->clienteA->id}", [
+                'email' => 'propio@test.com',
+                'telefono' => '3005551234',
+            ])
+            ->assertOk();
+    }
+
+    /**
      * Un campo `nullable` enviado explícitamente como `null` debe vaciarse
      * de verdad — no quedarse igual. Prueba directa de que `ClienteDTO` no
      * colapsa "campo no enviado" con "campo enviado como null" (ver el

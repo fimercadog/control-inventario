@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\CapturaIA;
+use App\Models\CapturaIADetalle;
 use App\Models\Empresa;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\Role;
+use App\Models\UnidadMedida;
 use App\Models\User;
 use App\Services\Auth\TenantContext;
 use Database\Seeders\PermissionSeeder;
@@ -466,5 +469,79 @@ class MovimientoControllerTest extends TestCase
             ->assertOk();
 
         $this->assertSame('Editado sin permisos de movimientos', $movimiento->fresh()->observacion);
+    }
+
+    /**
+     * Ampliación de UX 2026-08-03 (docs/03_FUNCTIONAL_SPEC/Movements.md):
+     * la lista mostraba solo "Salida -12.03" sin contexto. `unidad_medida`/
+     * `origen`/`tiene_evidencia` son campos derivados, puramente de
+     * presentación — no tocan `stock_actual` ni el ledger.
+     */
+    public function test_movement_response_exposes_the_products_unit_of_measure(): void
+    {
+        $unidad = UnidadMedida::create(['nombre' => 'Kilogramo', 'abreviatura' => 'kg']);
+        $this->productoA->update(['unidad_medida_id' => $unidad->id]);
+
+        $response = $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+
+        $response->assertJsonPath('data.unidad_medida', 'kg');
+    }
+
+    public function test_movement_origin_defaults_to_manual_for_a_regular_entry(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+
+        $response->assertJsonPath('data.origen', 'manual')
+            ->assertJsonPath('data.tiene_evidencia', false);
+    }
+
+    /**
+     * El único "origen" real distinguible hoy es la convención existente
+     * `documento === 'captura_ia'` (`ApplyInventoryMovementAction`) — no
+     * hay una columna/enum de origen real. Se construye ese caso
+     * directamente para probar la derivación, sin pasar por el pipeline
+     * completo de Captura IA (fuera de alcance de este test).
+     */
+    public function test_movement_origin_is_captura_ia_when_the_documento_convention_matches(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+        $movimiento = $this->productoA->movimientos()->first();
+        $movimiento->forceFill(['documento' => 'captura_ia'])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson("/api/v1/movimientos/{$movimiento->id}")
+            ->assertJsonPath('data.origen', 'captura_ia');
+    }
+
+    public function test_movement_evidence_flag_is_true_only_when_a_linked_captura_has_a_file(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 10]);
+        $movimiento = $this->productoA->movimientos()->first();
+
+        $captura = CapturaIA::create([
+            'empresa_id' => $this->empresaA->id,
+            'usuario_id' => $this->userA->id,
+            'tipo' => 'foto',
+            'archivo_path' => 'capturas/evidencia-test.jpg',
+            'estado' => 'aplicado',
+        ]);
+        CapturaIADetalle::create([
+            'captura_id' => $captura->id,
+            'producto_id' => $this->productoA->id,
+            'movimiento_id' => $movimiento->id,
+            'nombre_detectado' => $this->productoA->nombre,
+            'cantidad_detectada' => 10,
+            'confianza' => 0.95,
+            'es_producto_nuevo' => false,
+            'estado' => 'aplicado',
+        ]);
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson("/api/v1/movimientos/{$movimiento->id}")
+            ->assertJsonPath('data.tiene_evidencia', true);
     }
 }

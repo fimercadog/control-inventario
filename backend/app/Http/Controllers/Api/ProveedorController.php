@@ -93,7 +93,14 @@ class ProveedorController extends Controller
 
         $proveedor->update($request->validated());
 
-        $this->registrarAuditoria($request, $proveedor, 'proveedores.editar', $proveedor->only(['nombre', 'nit', 'estado']));
+        // getChanges(), no un ->only() fijo — mismo fix que ClienteService,
+        // captura exactamente los campos que cambiaron (email/teléfono/
+        // etc. incluidos). `updated_at` excluido: se toca en cada save.
+        $cambios = collect($proveedor->getChanges())->except('updated_at')->all();
+
+        if ($cambios !== []) {
+            $this->registrarAuditoria($request, $proveedor, 'proveedores.editar', $cambios);
+        }
 
         return ApiResponse::success(new ProveedorResource($proveedor), 'Proveedor actualizado correctamente');
     }

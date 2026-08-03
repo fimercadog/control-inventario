@@ -508,6 +508,8 @@ export interface Movimiento {
   producto_id: number;
   producto: string | null;
   producto_codigo: string | null;
+  /** Abreviatura (ej. "kg") — null si el producto no tiene unidad de medida asignada. */
+  unidad_medida: string | null;
   usuario: string | null;
   cantidad: number;
   /** stock_nuevo - stock_anterior, con signo. */
@@ -520,6 +522,14 @@ export interface Movimiento {
   proveedor_id: number | null;
   lote: string | null;
   vencimiento: string | null;
+  /**
+   * Derivado de la convención `documento === 'captura_ia'` — no hay una
+   * columna de origen real todavía. "Importación" no existe como
+   * funcionalidad en este ERP, así que nunca aparece como valor aquí.
+   */
+  origen: "manual" | "captura_ia";
+  /** true solo si existe una CapturaIADetalle enlazada con un archivo adjunto real. */
+  tiene_evidencia: boolean;
   created_at: string | null;
 }
 

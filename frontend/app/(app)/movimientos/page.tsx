@@ -2,7 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, SearchX, ArrowDownLeft, ArrowUpRight, RefreshCw, ClipboardList, ArrowLeftRight, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Search,
+  SearchX,
+  ArrowDownLeft,
+  ArrowUpRight,
+  RefreshCw,
+  ClipboardList,
+  ArrowLeftRight,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Paperclip,
+  ArrowRight,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/empty-state";
 import { NewMovimientoDialog } from "@/components/new-movimiento-dialog";
 import { useCrudList } from "@/hooks/use-crud-list";
@@ -183,6 +198,7 @@ export default function MovementsPage() {
                 {items.map((movimiento) => {
                   const Icon = TYPE_ICON[movimiento.tipo] ?? ClipboardList;
                   const esPositivo = movimiento.delta >= 0;
+                  const unidad = movimiento.unidad_medida ? ` ${movimiento.unidad_medida}` : "";
 
                   return (
                     <li key={movimiento.id} className="relative">
@@ -196,33 +212,61 @@ export default function MovementsPage() {
                       </span>
 
                       <div
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card p-3.5 cursor-pointer hover:bg-accent/50"
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3.5 cursor-pointer hover:bg-accent/50"
                         onClick={() => router.push(`/movimientos/${movimiento.id}`)}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                             <Icon className="size-4" />
                           </div>
-                          <div className="flex flex-col">
+                          <div className="flex flex-col gap-0.5">
                             <span className="font-medium">{movimiento.producto ?? `#${movimiento.producto_id}`}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {movimiento.created_at ? timeLabel(movimiento.created_at) : "—"}
-                              {movimiento.usuario ? ` · ${movimiento.usuario}` : ""}
+                            <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                              <span>{movimiento.created_at ? timeLabel(movimiento.created_at) : "—"}</span>
+                              {movimiento.usuario && <span>· {movimiento.usuario}</span>}
+                              {movimiento.origen === "captura_ia" ? (
+                                <Badge variant="outline" className="gap-1 py-0 text-[10px] text-primary">
+                                  <Sparkles className="size-3" />
+                                  Captura IA
+                                </Badge>
+                              ) : (
+                                <span>· Manual</span>
+                              )}
+                              {movimiento.tiene_evidencia && (
+                                <Tooltip>
+                                  <TooltipTrigger
+                                    render={<Paperclip className="size-3.5 text-muted-foreground" />}
+                                  />
+                                  <TooltipContent>Tiene evidencia adjunta</TooltipContent>
+                                </Tooltip>
+                              )}
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-muted-foreground">
-                            {movimiento.tipo}
-                          </Badge>
-                          <span
-                            className={cn(
-                              "text-lg font-semibold tabular-nums",
-                              esPositivo ? "text-emerald-600" : "text-red-600"
-                            )}
-                          >
-                            {esPositivo ? "+" : ""}
-                            {formatNumber(movimiento.delta)}
+
+                        <div className="flex flex-col items-end gap-0.5">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-muted-foreground capitalize">
+                              {movimiento.tipo}
+                            </Badge>
+                            <span
+                              className={cn(
+                                "text-lg font-semibold tabular-nums",
+                                esPositivo ? "text-emerald-600" : "text-red-600"
+                              )}
+                            >
+                              {esPositivo ? "+" : ""}
+                              {formatNumber(movimiento.delta)}
+                              {unidad}
+                            </span>
+                          </div>
+                          {/* Stock antes → después, siempre visible — nadie debería tener
+                              que calcular mentalmente el inventario a partir del delta solo. */}
+                          <span className="flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
+                            Stock: {formatNumber(movimiento.stock_anterior)}
+                            <ArrowRight className="size-3" />
+                            {formatNumber(movimiento.stock_nuevo)}
+                            {unidad}
                           </span>
                         </div>
                       </div>
