@@ -138,7 +138,7 @@ export function ProveedorViewModal({
                                   <Package className="size-4 text-muted-foreground" />
                                   <div className="flex flex-col">
                                     <Link
-                                      href={`/productos/${asociacion.producto_id}`}
+                                      href={`/productos?ver=${asociacion.producto_id}`}
                                       className="flex items-center gap-2 text-sm font-medium hover:underline"
                                     >
                                       {asociacion.producto_nombre}

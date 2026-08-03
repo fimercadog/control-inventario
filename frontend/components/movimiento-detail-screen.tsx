@@ -159,7 +159,7 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
         <CardContent className="flex flex-col gap-4 pt-6">
           <div className="grid grid-cols-2 gap-4">
             <InfoRow label="Producto (solo lectura)">
-              <Link href={`/productos/${movimiento.producto_id}`} className="inline-flex items-center gap-1.5 font-medium hover:underline">
+              <Link href={`/productos?ver=${movimiento.producto_id}`} className="inline-flex items-center gap-1.5 font-medium hover:underline">
                 {movimiento.producto ?? `#${movimiento.producto_id}`}
                 <ExternalLink className="size-3.5" />
               </Link>

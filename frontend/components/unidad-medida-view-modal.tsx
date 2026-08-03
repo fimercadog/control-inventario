@@ -133,7 +133,7 @@ export function UnidadMedidaViewModal({
                                 <div className="flex items-center gap-3">
                                   <Package className="size-4 text-muted-foreground" />
                                   <div className="flex flex-col">
-                                    <Link href={`/productos/${producto.id}`} className="text-sm font-medium hover:underline">
+                                    <Link href={`/productos?ver=${producto.id}`} className="text-sm font-medium hover:underline">
                                       {producto.nombre}
                                     </Link>
                                     <span className="text-xs text-muted-foreground">

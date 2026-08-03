@@ -241,7 +241,7 @@ export function StockDetailScreen({ productoId }: { productoId: number }) {
               </Button>
             </div>
           ) : (
-            <Link href={`/productos/${stock.id}`} className="w-fit">
+            <Link href={`/productos?ver=${stock.id}`} className="w-fit">
               <Button variant="outline" size="sm" className="gap-2">
                 <ExternalLink className="size-4" />
                 Ver ficha de producto y movimientos

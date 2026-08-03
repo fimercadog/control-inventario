@@ -76,7 +76,7 @@ export function ReviewProductCard({
                   producto_id todavía, así que no hay destino real al que enlazar. */}
               {product.estado === "aplicado" && product.producto_id ? (
                 <Link
-                  href={`/productos/${product.producto_id}`}
+                  href={`/productos?ver=${product.producto_id}`}
                   className="truncate font-medium leading-tight hover:underline"
                   title={product.name}
                 >
