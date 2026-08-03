@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Truck, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2 } from "lucide-react";
+import { Truck, Search, SearchX, MoreHorizontal, Pencil, Ban, CheckCircle2, Loader2, Plus } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +29,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { NewSupplierDialog } from "@/components/new-supplier-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ProveedorFormModal } from "@/components/proveedor-form-modal";
+import { ProveedorViewModal } from "@/components/proveedor-view-modal";
 import { listProveedores, disableProveedor, enableProveedor } from "@/lib/api/proveedores";
 import type { Proveedor } from "@/lib/api/types";
 import { formatNumber } from "@/lib/format";
@@ -44,52 +44,52 @@ const ESTADO_FILTROS: Record<string, string> = {
 /**
  * FEATURE-003 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). GLOBAL UI STANDARD:
  * proveedores inactivos (deshabilitados) quedan ocultos del listado por
- * defecto — visibles solo con el filtro "Todos".
+ * defecto — visibles solo con el filtro "Todos". Global UI Standard
+ * (2026-08-03): Crear/Editar/Ver vía modal, la tabla nunca se abandona;
+ * toda mutación se refresca desde el backend (`cargar()`), nunca se
+ * parcha el arreglo local a mano.
  */
 export default function SuppliersPage() {
-  const router = useRouter();
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
+  const [proveedorAConfirmar, setProveedorAConfirmar] = useState<Proveedor | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<Proveedor | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+
+  async function cargar() {
+    setLoading(true);
+    try {
+      const result = await listProveedores({ busqueda: search || undefined, estado: estadoFiltro });
+      setProveedores(result.items);
+      setTotal(result.meta.total);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No pudimos cargar los proveedores.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    setLoading(true);
-    const timeout = setTimeout(() => {
-      listProveedores({ busqueda: search || undefined, estado: estadoFiltro })
-        .then((result) => {
-          setProveedores(result.items);
-          setTotal(result.meta.total);
-        })
-        .catch((error) =>
-          toast.error(error instanceof Error ? error.message : "No pudimos cargar los proveedores.")
-        )
-        .finally(() => setLoading(false));
-    }, 300);
+    const timeout = setTimeout(cargar, 300);
     return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, estadoFiltro]);
 
-  async function handleToggleEstado(proveedor: Proveedor) {
+  async function confirmarCambioEstado() {
+    if (!proveedorAConfirmar) return;
     try {
-      const nuevoEstado = proveedor.estado === "activo" ? "inactivo" : "activo";
-      if (proveedor.estado === "activo") {
-        await disableProveedor(proveedor.id);
-        toast.success("Proveedor deshabilitado");
+      if (proveedorAConfirmar.estado === "activo") {
+        await disableProveedor(proveedorAConfirmar.id);
+        toast.success("Proveedor deshabilitado correctamente");
       } else {
-        await enableProveedor(proveedor.id);
-        toast.success("Proveedor habilitado");
+        await enableProveedor(proveedorAConfirmar.id);
+        toast.success("Proveedor habilitado correctamente");
       }
-      // GLOBAL UI STANDARD: deshabilitado desaparece del listado "Activos"
-      // por defecto; con el listado "Activos" solo se retira la fila.
-      if (estadoFiltro !== "todos") {
-        setProveedores((prev) => prev.filter((p) => p.id !== proveedor.id));
-        setTotal((t) => t - 1);
-      } else {
-        setProveedores((prev) =>
-          prev.map((p) => (p.id === proveedor.id ? { ...p, estado: nuevoEstado } : p))
-        );
-      }
+      await cargar();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No pudimos actualizar el proveedor.");
     }
@@ -104,12 +104,10 @@ export default function SuppliersPage() {
             {loading ? "Cargando..." : `${formatNumber(total)} proveedores.`}
           </p>
         </div>
-        <NewSupplierDialog
-          onCreated={(nuevo) => {
-            setProveedores((prev) => [nuevo, ...prev]);
-            setTotal((t) => t + 1);
-          }}
-        />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nuevo Proveedor
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -164,20 +162,14 @@ export default function SuppliersPage() {
                   <TableRow
                     key={proveedor.id}
                     className="cursor-pointer"
-                    onClick={() => router.push(`/proveedores/${proveedor.id}`)}
+                    onClick={() => setViewingId(proveedor.id)}
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                           <Truck className="size-4" />
                         </div>
-                        <Link
-                          href={`/proveedores/${proveedor.id}`}
-                          className="font-medium hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {proveedor.nombre}
-                        </Link>
+                        <span className="font-medium">{proveedor.nombre}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{proveedor.nit ?? "—"}</TableCell>
@@ -200,11 +192,11 @@ export default function SuppliersPage() {
                           }
                         />
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => router.push(`/proveedores/${proveedor.id}?editar=1`)}>
+                          <DropdownMenuItem onClick={() => setEditando(proveedor)}>
                             <Pencil />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleEstado(proveedor)}>
+                          <DropdownMenuItem onClick={() => setProveedorAConfirmar(proveedor)}>
                             {proveedor.estado === "activo" ? (
                               <>
                                 <Ban />
@@ -239,6 +231,40 @@ export default function SuppliersPage() {
           )}
         </CardContent>
       </Card>
+
+      {proveedorAConfirmar && (
+        <ConfirmDialog
+          open={proveedorAConfirmar !== null}
+          onOpenChange={(open) => !open && setProveedorAConfirmar(null)}
+          title={
+            proveedorAConfirmar.estado === "activo" ? "¿Deshabilitar este proveedor?" : "¿Habilitar este proveedor?"
+          }
+          description={
+            proveedorAConfirmar.estado === "activo"
+              ? `"${proveedorAConfirmar.nombre}" se marcará como inactivo. No se elimina físicamente ni afecta a los productos ya asociados — puedes habilitarlo de nuevo en cualquier momento.`
+              : `"${proveedorAConfirmar.nombre}" volverá a estar activo y disponible.`
+          }
+          confirmLabel={proveedorAConfirmar.estado === "activo" ? "Deshabilitar" : "Habilitar"}
+          destructive={proveedorAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <ProveedorFormModal open={creating} onOpenChange={setCreating} onSaved={() => cargar()} />
+
+      <ProveedorFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        proveedor={editando}
+        onSaved={() => cargar()}
+      />
+
+      <ProveedorViewModal
+        proveedorId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => cargar()}
+      />
     </div>
   );
 }

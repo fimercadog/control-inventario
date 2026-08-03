@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Contact,
@@ -15,6 +13,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { Input } from "@/components/ui/input";
@@ -43,7 +42,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { NewClienteDialog } from "@/components/new-cliente-dialog";
+import { ClienteFormModal } from "@/components/cliente-form-modal";
+import { ClienteViewModal } from "@/components/cliente-view-modal";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchClientes, disableClienteThunk, enableClienteThunk } from "@/store/slices/clientes-slice";
 import type { Cliente } from "@/lib/api/types";
@@ -61,10 +61,10 @@ const ESTADO_FILTROS: Record<string, string> = {
  * frontend (a diferencia de Categorías/Proveedores/etc., que usan
  * `useCrudList`; ver el comentario de `clientes-slice.ts`). Mismo nivel
  * funcional que Proveedores: búsqueda, filtro de estado, paginación real,
- * Logical Delete con confirmación.
+ * Logical Delete con confirmación. Global UI Standard (2026-08-03):
+ * Crear/Editar/Ver vía modal, la tabla nunca se abandona.
  */
 export default function ClientesPage() {
-  const router = useRouter();
   const dispatch = useAppDispatch();
   const { items: clientes, meta, loading } = useAppSelector((state) => state.clientes);
 
@@ -72,6 +72,9 @@ export default function ClientesPage() {
   const [estadoFiltro, setEstadoFiltro] = useState("activo");
   const [page, setPage] = useState(1);
   const [clienteAConfirmar, setClienteAConfirmar] = useState<Cliente | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [editando, setEditando] = useState<Cliente | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
 
   useEffect(() => {
     setPage(1);
@@ -112,7 +115,10 @@ export default function ClientesPage() {
             {loading ? "Cargando..." : `${formatNumber(meta?.total ?? clientes.length)} clientes.`}
           </p>
         </div>
-        <NewClienteDialog onCreated={() => refetch()} />
+        <Button size="sm" className="gap-2" onClick={() => setCreating(true)}>
+          <Plus className="size-4" />
+          Nuevo Cliente
+        </Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -165,23 +171,13 @@ export default function ClientesPage() {
                 </TableHeader>
                 <TableBody>
                   {clientes.map((cliente) => (
-                    <TableRow
-                      key={cliente.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/clientes/${cliente.id}`)}
-                    >
+                    <TableRow key={cliente.id} className="cursor-pointer" onClick={() => setViewingId(cliente.id)}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                             <Contact className="size-4" />
                           </div>
-                          <Link
-                            href={`/clientes/${cliente.id}`}
-                            className="font-medium hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {cliente.nombre}
-                          </Link>
+                          <span className="font-medium">{cliente.nombre}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">{cliente.nit ?? "—"}</TableCell>
@@ -208,7 +204,7 @@ export default function ClientesPage() {
                             }
                           />
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/clientes/${cliente.id}?editar=1`)}>
+                            <DropdownMenuItem onClick={() => setEditando(cliente)}>
                               <Pencil />
                               Editar
                             </DropdownMenuItem>
@@ -279,18 +275,36 @@ export default function ClientesPage() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={clienteAConfirmar !== null}
-        onOpenChange={(open) => !open && setClienteAConfirmar(null)}
-        title={clienteAConfirmar?.estado === "activo" ? "¿Eliminar este cliente?" : "¿Habilitar este cliente?"}
-        description={
-          clienteAConfirmar?.estado === "activo"
-            ? `"${clienteAConfirmar?.nombre}" se marcará como inactivo. No se elimina físicamente — puedes habilitarlo de nuevo en cualquier momento.`
-            : `"${clienteAConfirmar?.nombre}" volverá a estar activo y disponible.`
-        }
-        confirmLabel={clienteAConfirmar?.estado === "activo" ? "Eliminar" : "Habilitar"}
-        destructive={clienteAConfirmar?.estado === "activo"}
-        onConfirm={confirmarCambioEstado}
+      {clienteAConfirmar && (
+        <ConfirmDialog
+          open={clienteAConfirmar !== null}
+          onOpenChange={(open) => !open && setClienteAConfirmar(null)}
+          title={clienteAConfirmar.estado === "activo" ? "¿Eliminar este cliente?" : "¿Habilitar este cliente?"}
+          description={
+            clienteAConfirmar.estado === "activo"
+              ? `"${clienteAConfirmar.nombre}" se marcará como inactivo. No se elimina físicamente — puedes habilitarlo de nuevo en cualquier momento.`
+              : `"${clienteAConfirmar.nombre}" volverá a estar activo y disponible.`
+          }
+          confirmLabel={clienteAConfirmar.estado === "activo" ? "Eliminar" : "Habilitar"}
+          destructive={clienteAConfirmar.estado === "activo"}
+          onConfirm={confirmarCambioEstado}
+        />
+      )}
+
+      <ClienteFormModal open={creating} onOpenChange={setCreating} onSaved={() => refetch()} />
+
+      <ClienteFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        cliente={editando}
+        onSaved={() => refetch()}
+      />
+
+      <ClienteViewModal
+        clienteId={viewingId}
+        open={viewingId !== null}
+        onOpenChange={(open) => !open && setViewingId(null)}
+        onChanged={() => refetch()}
       />
     </div>
   );
