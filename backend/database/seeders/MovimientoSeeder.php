@@ -23,6 +23,17 @@ use Illuminate\Support\Facades\DB;
  * puntual después de cada creación — nunca se toca `stock_anterior`/
  * `stock_nuevo`, que siguen siendo el snapshot inmutable real del momento
  * en que se calculó.
+ *
+ * Corrección 2026-08-03 (encontrada construyendo el reporte Kardex, ver
+ * `App\Reports\KardexProductoReporte`): las fechas se sortean ANTES de
+ * crear los movimientos, no después. `registrarMovimiento()` calcula
+ * `stock_anterior`/`stock_nuevo` en el orden real de inserción — asignar
+ * `created_at` al azar *después* de insertar (como hacía esta clase
+ * antes) desordenaba esa secuencia real respecto al orden cronológico
+ * visible, rompiendo la continuidad del saldo corrido para cualquier
+ * lector que ordene por `created_at` (Kardex, y cualquier futuro
+ * consumidor). Insertar ya en orden de fecha ascendente hace que
+ * inserción y cronología coincidan, como en producción.
  */
 class MovimientoSeeder extends Seeder
 {
@@ -40,7 +51,13 @@ class MovimientoSeeder extends Seeder
         $porProducto = (int) max(1, floor($cantidadTotal / $productos->count()));
 
         foreach ($productos as $producto) {
+            $fechas = [];
             for ($i = 0; $i < $porProducto; $i++) {
+                $fechas[] = fake()->dateTimeBetween('-6 months', 'now');
+            }
+            usort($fechas, fn ($a, $b) => $a <=> $b);
+
+            foreach ($fechas as $fecha) {
                 $tipo = $this->tipoAleatorio();
                 $cantidad = fake()->randomFloat(2, 1, 50);
                 $usuarioId = $usuarioIds === [] ? null : fake()->randomElement($usuarioIds);
@@ -62,7 +79,6 @@ class MovimientoSeeder extends Seeder
                     continue;
                 }
 
-                $fecha = fake()->dateTimeBetween('-6 months', 'now');
                 DB::table('movimientos')
                     ->where('id', $movimiento->id)
                     ->update(['created_at' => $fecha, 'updated_at' => $fecha]);
