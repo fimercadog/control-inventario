@@ -1,4 +1,4 @@
-# Informe Final — Módulo Reportes (Vertical Slice Completo)
+# Informe Final — Módulo Reportes (Vertical Slice Completo, ampliado a Centro de Reportes)
 
 ## Resumen del trabajo realizado
 
@@ -76,18 +76,104 @@ Tercer módulo de la secuencia vertical-slice Roles→Auditoría→Reportes→Pe
 - **Frontend:** `npx tsc --noEmit` limpio.
 - **Browser tests (reales, Playwright + Microsoft Edge del sistema)**: login real, sidebar con Reportes visible junto a Dashboard, estadísticas reales verificadas visualmente (497 productos activos, $16.787.550 de valor de inventario, 3 con stock bajo, 1 sin stock, 701 entradas/368 salidas/236 ajustes en el rango por defecto, gráfico de barras por día renderizando correctamente, listas de productos/categorías/proveedores sin colisiones de key tras la corrección), selector de rango de fechas actualiza la sección Movimientos correctamente, cero errores de consola tras las dos correcciones descritas arriba.
 
+## Ampliación 2026-08-03 — Centro de Reportes Completo
+
+### Contexto
+
+Tras cerrar los 4 módulos de la secuencia vertical-slice (Roles→Auditoría→Reportes→Perfil), el propietario del proyecto pidió expandir el Reportes existente (dashboard de solo lectura, sin exportación por diseño) en el centro de reportes completo del ERP: catálogo de 13 reportes, exportación PDF/Excel/CSV, historial de ejecuciones, infraestructura de reportes programados. Requisito explícito: **un único módulo de Reportes** — no un segundo módulo paralelo. Confirmado con el propietario vía pregunta directa antes de codificar (expandir el existente vs. construir uno nuevo).
+
+### Funcionalidades implementadas (ampliación)
+
+- **Base de Datos**: 2 migraciones nuevas — `reporte_historial` (log inmutable de ejecuciones, mismo patrón que `AuditLog`) y `reportes_programados` (definiciones de reporte programado, infraestructura sin motor de ejecución, mismo patrón que `captura-ia.gestionar`). Permiso nuevo: `reportes.gestionar` (catálogo 46 → 47).
+- **Domain — arquitectura de 13 reportes independientes**: `App\Contracts\Reports\Reporte` (interfaz: `clave()`, `nombre()`, `descripcion()`, `filtrosDisponibles()`, `generar()`), `App\DTO\Report\ReporteResultadoDTO` (forma de resultado común `columnas`+`filas`+`resumen`+`total`), 13 clases en `App\Reports\` (una por reporte), `AplicaPaginacion` (trait compartido para el flag preview/export) y `TerceroReporteBase` (base compartida por Proveedores/Clientes, mismo shape de columnas). Reutilización deliberada sobre duplicación: `StockBajoReporte extends StockActualReporte`, `ReporteProveedores`/`ReporteClientes extends TerceroReporteBase`, `InventarioResumenReporte`/`ReporteAuditoria` reutilizan `ReporteRepository`/`AuditLogRepository` existentes.
+- **Domain — Repository/Service/Policy**: `ReporteRepository` ampliado (`registrarEjecucion()`, `historial()`, CRUD de programados). `ReporteService` ampliado (`CATALOGO` registry, `resolverReporte()`, `generarReporte()` — resuelve+genera+registra). `ReportePolicy` nueva — primera Policy del proyecto que cubre 2 modelos Eloquent a la vez (`ReporteHistorial`, `ReporteProgramado`), registrada explícitamente vía `Gate::policy()` en `AppServiceProvider::boot()` porque el auto-discovery de Laravel espera una Policy por modelo.
+- **API**: `ReporteController` ampliado de 1 a 10 métodos (`catalogo`, `preview`, `exportarPdf/Excel/Csv`, `historial`, `programadosIndex/Store/Destroy`, además del `index` original) — nunca contiene lógica de un reporte específico, todo delega al Service. Rutas estáticas (`catalogo`/`historial`/`programados`) declaradas antes de la wildcard `{clave}` a propósito.
+- **Exportación**: `ReporteExportService` (orquestador genérico), `ReporteExcelExport` (maatwebsite/excel, `FromCollection`+`WithHeadings`+`WithTitle`), `resources/views/reports/pdf.blade.php` (dompdf, A4 landscape), CSV vía `fputcsv` con BOM UTF-8. Los tres trabajan exclusivamente sobre `columnas`/`filas` del DTO — agregar un reporte 14 nunca los toca.
+- **Frontend**: `/reportes` pasó a 3 pestañas (Resumen sin cambios, Catálogo nueva, Historial nueva). `/reportes/{clave}` — página de preview con formulario de filtros generado dinámicamente desde `filtros_disponibles` (selects de `categoria_id`/`marca_id`/`producto_id` resuelven contra las APIs reales de Categorías/Marcas/Productos), tabla paginada, exportación PDF/Excel/CSV/Imprimir vía descarga de blob real. Sigue el patrón establecido de página-servidor-delgada + componente-cliente (`components/reporte-preview-screen.tsx`) usado por toda otra ficha de detalle del ERP.
+- **Dependencias nuevas**: `barryvdh/laravel-dompdf` (^3.1), `maatwebsite/excel` (^3.1, trae `phpoffice/phpspreadsheet`). Requirieron habilitar la extensión `gd` de PHP (estaba deshabilitada en el entorno local).
+
+### Correcciones realizadas (ampliación)
+
+- **Bug de datos en `MovimientoSeeder`, encontrado en verificación de navegador del nuevo reporte Kardex**: el saldo corrido no reconciliaba entre filas consecutivas para un mismo producto. Investigado hasta la causa raíz mediante inspección directa de filas crudas — cada fila era internamente consistente (`stock_nuevo - stock_anterior == cantidad`), pero filas consecutivas no lo eran (`stock_anterior` de una fila no coincidía con `stock_nuevo` de la anterior en orden cronológico). Causa: el seeder calculaba `stock_anterior`/`stock_nuevo` en el orden real de inserción (correcto, vía `InventoryService::registrarMovimiento()`), pero **después** reasignaba `created_at` a una fecha aleatoria independiente de ese orden — cualquier lector que ordenara por `created_at` (como Kardex) veía una secuencia desordenada. `KardexProductoReporte` en sí mismo estaba bien escrito — solo lee lo que el seeder ya calculó, tal como documenta su propio comentario de diseño. **Confirmado con el propietario del proyecto antes de corregir** (implica reseedear toda la base de datos de desarrollo, acción de blast radius amplio). Corregido: las fechas se generan y se ordenan ascendentemente ANTES de crear los movimientos, no después — así inserción y cronología coinciden, igual que en producción. Verificado tras `migrate:fresh --seed`: saldo reconciliando en 17/17 filas consecutivas de un producto muestreado (antes: 0/N).
+- **Nombre de tabla de `ReporteProgramado` sin declarar explícitamente**: el default de Eloquent (`reporte_programados`, singular "reporte") no coincidía con el nombre real de la tabla creada por la migración (`reportes_programados`, plural) — encontrado por los tests de la nueva suite fallando con "no such table". Corregido agregando `protected $table = 'reportes_programados'` al modelo.
+- **Tipo de retorno incorrecto en `ReporteExportService::excel()`**: `Excel::download()` de maatwebsite/excel devuelve `Symfony\Component\HttpFoundation\BinaryFileResponse`, no `Illuminate\Http\Response` — encontrado por un `TypeError` real al probar el export en `tinker`, no por análisis estático. Corregido el type hint en el Service y en el Controller.
+
+### Cambios en Backend (ampliación)
+
+**Archivos creados:**
+
+- `backend/database/migrations/2026_08_03_023441_create_reporte_historial_table.php`
+- `backend/database/migrations/2026_08_03_023441_create_reportes_programados_table.php`
+- `backend/app/Models/ReporteHistorial.php`, `backend/app/Models/ReporteProgramado.php`
+- `backend/app/Contracts/Reports/Reporte.php`
+- `backend/app/DTO/Report/ReporteResultadoDTO.php`
+- `backend/app/Reports/` — 13 clases + `Concerns/AplicaPaginacion.php` + `Concerns/TerceroReporteBase.php`
+- `backend/app/Policies/ReportePolicy.php`
+- `backend/app/Services/Reports/ReporteExportService.php`
+- `backend/app/Exports/ReporteExcelExport.php`
+- `backend/app/Http/Requests/Reporte/StoreReporteProgramadoRequest.php`
+- `backend/resources/views/reports/pdf.blade.php`
+- `backend/tests/Feature/ReporteCatalogoPreviewTest.php`, `ReporteExportTest.php`, `ReporteHistorialTest.php`, `ReporteProgramadoControllerTest.php`
+
+**Archivos modificados:**
+
+- `backend/app/Repositories/ReporteRepository.php` (historial + programados)
+- `backend/app/Repositories/AuditLogRepository.php` (`paginar()` gana un tercer parámetro opcional `?int $pagina`, backward-compatible, para que `ReporteAuditoria` pueda controlar la página exportada sin mutar el `Request` global)
+- `backend/app/Services/ReporteService.php` (catálogo + dispatch + programados)
+- `backend/app/Http/Controllers/Api/ReporteController.php` (10 métodos)
+- `backend/app/Providers/AppServiceProvider.php` (`Gate::policy()` para `ReportePolicy`)
+- `backend/database/seeders/PermissionSeeder.php` (`reportes.gestionar`)
+- `backend/database/seeders/RoleSeeder.php` (Supervisor gana `reportes.gestionar`)
+- `backend/database/seeders/MovimientoSeeder.php` (fix de orden cronológico, ver arriba)
+- `backend/routes/api.php` (10 rutas bajo `/reportes`)
+- `backend/composer.json`/`composer.lock` (`barryvdh/laravel-dompdf`, `maatwebsite/excel`)
+
+### Cambios en Frontend (ampliación)
+
+**Archivos creados:**
+
+- `frontend/app/(app)/reportes/[clave]/page.tsx`
+- `frontend/components/reporte-preview-screen.tsx`
+- `frontend/components/reportes/reporte-filtros-form.tsx`, `reportes-catalogo-tab.tsx`, `reportes-historial-tab.tsx`
+- `frontend/lib/download.ts`
+
+**Archivos modificados:**
+
+- `frontend/app/(app)/reportes/page.tsx` (3 pestañas)
+- `frontend/lib/api/reportes.ts` (`getCatalogoReportes`, `previewReporte`, `exportarReporte`, `getHistorialReportes`)
+- `frontend/lib/api/types.ts` (`ReporteCatalogoItem`, `ReporteFiltroDisponible`, `ReporteColumna`, `ReporteResultado`, `ReporteHistorialItem`, `PaginatedReporteHistorial`)
+- `frontend/store/slices/reportes-slice.ts` (estado + thunks de catálogo/preview/historial, `resumen` sin cambios)
+
+### Cambios en Base de Datos (ampliación)
+
+- 2 tablas nuevas: `reporte_historial`, `reportes_programados`.
+- 1 permiso nuevo (`reportes.gestionar`) — catálogo total: 46 → 47.
+- **Reseed completo de la base de datos de desarrollo** (`migrate:fresh --seed`) para aplicar el fix de `MovimientoSeeder` — acción confirmada explícitamente con el propietario del proyecto antes de ejecutarla, dado su alcance (regenera todos los datos demo de ambas empresas).
+
+### Resultado de las pruebas (ampliación)
+
+- **Backend:** `php artisan test` → **342/342 passing** (era 311/311 antes de esta ampliación — 31 tests nuevos en 4 suites nuevas).
+- **Frontend:** `npm run type-check` limpio. `npm run lint`: mismos 19 errores pre-existentes de `react-hooks/set-state-in-effect`/`react-hooks/refs` que ya fallaban en 7 archivos no tocados por esta ampliación (`product-detail-screen.tsx`, `role-detail-screen.tsx`, etc.) — el archivo nuevo (`reporte-preview-screen.tsx`) sigue exactamente el mismo patrón ya establecido en el resto del código, no una regresión nueva.
+- **Browser tests (reales, agente de automatización de navegador contra Chrome)**: login real, las 3 pestañas de `/reportes` funcionando (Resumen sin regresión, Catálogo con las 13 tarjetas, Historial reflejando ejecuciones reales de la propia sesión), preview de "Stock Actual" con datos reales (497 filas) y filtro por categoría funcionando (497→28 filas verificadas), Kardex exigiendo `producto_id` correctamente sin crashear, exportación PDF/Excel/CSV verificada a nivel de red (status 200, content-type correcto, tamaño de archivo real coincidente con `Content-Length`). Cero errores de consola en toda la sesión. El bug de reconciliación del saldo de Kardex (ver Correcciones realizadas) se encontró y confirmó corregido en esta misma verificación, con una segunda pasada dedicada tras el reseed.
+
 ## Estado final del módulo
 
-🟢 **Completo** — Reportes es ahora un vertical slice real: sin base de datos propia (por diseño, agrega sobre 5 modelos existentes), dominio con Repository+Service (sin Policy propia, por diseño, documentado explícitamente), API con tests, frontend con Redux y estadísticas reales verificadas contra datos reales, y documentación. Tercero de 4 módulos en la secuencia activa (Roles → Auditoría → Reportes → Perfil) — Perfil es el siguiente y último, no empieza hasta que este informe esté aprobado y el commit esté empujado.
+🟢 **Completo** — Reportes es ahora el centro de reportes completo del ERP: 13 reportes independientes con arquitectura extensible (agregar un reporte 14 no toca ninguno de los 13 existentes ni los renderizadores de exportación), exportación real a 3 formatos, historial de ejecuciones, infraestructura de reportes programados, 44 tests en verde, y documentación actualizada en los 4 documentos afectados (`Reports.md`, `API.md`, `ROLES_MATRIX.md`, `RC1_FUNCTIONAL_MODULE_AUDIT.md`).
 
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** `882b26e` — `feat(reportes): implement Reportes as a complete read-only vertical slice (RC1 Module 3/4)`.
+- **Commits de esta ampliación** (orden cronológico):
+  1. `fa00d77` — `feat(reportes): expand into a 13-report catalog with history and scheduled-report infrastructure`
+  2. `9454743` — `feat(reportes): add catalog/preview/export API endpoints with PDF, Excel, and CSV renderers`
+  3. `ccdce71` — `test(reportes): validate the expanded reports module end-to-end`
+  4. `99fec2b` — `fix(movimientos): generate seeded movements in true chronological order`
+  5. `2c23919` — `feat(reportes): build the report catalog, preview, and export UI`
+- **Commit original (módulo base, 2026-08-02):** `882b26e` — `feat(reportes): implement Reportes as a complete read-only vertical slice (RC1 Module 3/4)`.
 
 ## Confirmación de push
 
-✅ Ejecutado correctamente: `fd07c33..882b26e  main -> main` contra `origin` (GitHub).
+✅ Ver commit de este mismo documento para el hash final y la confirmación de `git push` — reportados en el mensaje de cierre de esta unidad de trabajo.
 
 ## Estado del informe
 

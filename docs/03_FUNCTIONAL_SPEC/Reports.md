@@ -1,84 +1,116 @@
 # Reportes
 
-**Status: Built (2026-08-02, tercer módulo de la secuencia vertical-slice Roles→Auditoría→Reportes→Perfil)**
+**Status: Built (2026-08-02, tercer módulo de la secuencia vertical-slice Roles→Auditoría→Reportes→Perfil; ampliado 2026-08-03 al centro de reportes completo del ERP)**
 
-> Verificado contra `backend/app/Repositories/ReporteRepository.php`, `backend/app/Services/ReporteService.php`, `backend/app/Http/Controllers/Api/ReporteController.php`, `backend/routes/api.php`, `backend/tests/Feature/ReporteControllerTest.php`, `frontend/app/(app)/reportes/`. Reemplaza `docs/03_FUNCTIONAL_SPEC/FUTURE/Reports.md` (Status: Planned, "el más especulativo de los seis borradores" — la mayoría de sus reportes propuestos, Ventas/Compras, dependen de módulos que no existen). El alcance real construido aquí es exactamente el que el propio borrador identificó como "el único candidato remotamente viable": estadísticas reales sobre Productos/Inventario/Movimientos/Clientes/Proveedores — los cinco módulos que sí existen.
+> Verificado contra `backend/app/Contracts/Reports/Reporte.php`, `backend/app/Reports/*.php` (13 clases), `backend/app/DTO/Report/ReporteResultadoDTO.php`, `backend/app/Repositories/ReporteRepository.php`, `backend/app/Services/ReporteService.php`, `backend/app/Services/Reports/ReporteExportService.php`, `backend/app/Http/Controllers/Api/ReporteController.php`, `backend/app/Policies/ReportePolicy.php`, `backend/routes/api.php`, `backend/tests/Feature/Reporte*Test.php` (4 suites, 31 tests), `frontend/app/(app)/reportes/`. La ampliación 2026-08-03 reemplaza el alcance original ("dashboard de estadísticas, sin exportación, explícitamente fuera de alcance") por un catálogo de 13 reportes con preview, filtros dinámicos, exportación PDF/Excel/CSV, historial de ejecuciones e infraestructura de reportes programados — sigue siendo **un único módulo de Reportes**, nunca un segundo.
 
 ## Purpose
 
-Dar visibilidad gerencial real sobre el estado del inventario y la actividad reciente de la empresa — sin inventar datos, sin depender de módulos que no existen (Ventas/Compras). Cada número mostrado es una agregación en vivo sobre las tablas reales (`productos`, `movimientos`, `clientes`, `proveedores`, `producto_proveedor`), no una simulación ni un valor pre-calculado.
+Dar visibilidad gerencial real sobre el estado del inventario, movimientos, terceros (clientes/proveedores), actividad de usuarios y auditoría — sin inventar datos, sin depender de módulos que no existen (Ventas/Compras). Cada reporte lee la base de datos real en el momento de la consulta (con Seeders para datos de demostración, nunca JSON estático ni mocks de frontend).
 
 ## Business Flow
 
-1. Un usuario con `reportes.ver` abre `/reportes`.
-2. El frontend pide `GET /reportes` (con `desde`/`hasta` opcionales) y recibe un único payload compuesto con 4 secciones: `inventario`, `movimientos`, `clientes`, `proveedores`.
-3. **`inventario`, `clientes` y `proveedores` son estado actual** — no dependen del rango de fechas, siempre reflejan la foto de ahora mismo (ej. "3 productos con stock bajo" es verdad hoy, sin importar qué rango se seleccionó).
-4. **`movimientos` sí depende del rango** — entradas/salidas/ajustes, su evolución día a día, y los productos con más movimiento, todos acotados a `desde`/`hasta` (por defecto, los últimos 30 días).
-5. No hay ninguna acción de escritura en este módulo — "Reportes" es una vista computada, no un recurso persistido.
+1. Un usuario con `reportes.ver` abre `/reportes`, con tres pestañas: **Resumen** (dashboard original, sin cambios), **Catálogo** (los 13 reportes) e **Historial** (ejecuciones pasadas).
+2. Desde Catálogo, el usuario abre un reporte (`/reportes/{clave}`). El frontend pide `GET /reportes/catalogo` para construir el formulario de filtros dinámicamente (`filtros_disponibles` de cada reporte — nunca hardcodeado por reporte en el frontend) y `GET /reportes/{clave}/preview` para la vista paginada.
+3. El usuario puede exportar el reporte completo (sin paginar) en PDF, Excel o CSV (`GET /reportes/{clave}/exportar/{formato}`), o imprimir la vista actual.
+4. Cada preview y cada exportación queda registrada en `reporte_historial` (quién, qué reporte, qué formato, cuántas filas, cuándo) — visible en la pestaña Historial.
+5. No hay ninguna acción de escritura sobre los datos de negocio en este módulo — los 13 reportes son de solo lectura. La única escritura real es la definición de un reporte programado (`reportes_programados`), infraestructura "future-ready" sin motor de ejecución todavía (mismo patrón que `captura-ia.gestionar`).
 
 ## Actors
 
-- **Usuario con `reportes.ver`**: puede ver el resumen completo de su propia empresa. Un único permiso — no hay una acción distinta que "gestionar" en un módulo 100% de solo lectura.
+- **Usuario con `reportes.ver`**: puede ver el resumen, el catálogo completo, generar/exportar cualquiera de los 13 reportes, y ver el historial de ejecuciones de su empresa.
+- **Usuario con `reportes.gestionar`**: además, puede crear/eliminar definiciones de reportes programados. No ejecuta nada por sí solo todavía (sin motor de scheduling).
 
 ## Screens
 
-- **`/reportes`** (`frontend/app/(app)/reportes/page.tsx`): selector de rango de fechas (afecta solo la sección Movimientos, con una etiqueta explícita del rango activo para evitar confundir "estado actual" con "período seleccionado"); tarjetas KPI (`StatCard`, componente ya existente, reutilizado del Dashboard) para Inventario (productos activos, valor total, stock bajo, sin stock) y Movimientos (entradas/salidas/ajustes); un gráfico de barras simple en CSS puro (sin librería externa) de entradas vs. salidas por día; listas de "Productos con más movimiento", "Productos por categoría" y "Proveedores principales"; tarjetas KPI de Clientes/Proveedores al final.
+- **`/reportes`** (`frontend/app/(app)/reportes/page.tsx`): tres pestañas.
+  - **Resumen**: sin cambios respecto al módulo original — selector de rango de fechas, tarjetas KPI, gráfico de barras CSS de entradas/salidas por día, listas de productos más movidos/por categoría/proveedores principales.
+  - **Catálogo** (`components/reportes/reportes-catalogo-tab.tsx`): grid de 13 tarjetas (ícono + nombre + descripción), cada una navega a `/reportes/{clave}`.
+  - **Historial** (`components/reportes/reportes-historial-tab.tsx`): tabla paginada de `reporte_historial` — fecha, reporte, formato, usuario, filas.
+- **`/reportes/{clave}`** (`components/reporte-preview-screen.tsx`, montado desde una página servidor delgada `app/(app)/reportes/[clave]/page.tsx`, mismo patrón que toda otra ficha de detalle del ERP): título/descripción del reporte, formulario de filtros generado dinámicamente (`components/reportes/reporte-filtros-form.tsx` — fecha/texto/select; los selects de entidad conocida como `categoria_id`/`marca_id`/`producto_id`/`estado`/`tipo` resuelven contra las APIs reales de Categorías/Marcas/Productos, nunca datos de ejemplo), tabla de resultados paginada, botones PDF/Excel/CSV/Imprimir.
 
 ## Fields
 
-Sin tabla ni modelo propio — "Reportes" agrega sobre 5 tablas ya existentes (`productos`, `movimientos`, `clientes`, `proveedores`, `producto_proveedor`, más `categorias` para el desglose por categoría). Forma completa del payload:
+### Los 13 reportes del catálogo
 
-| Sección | Campos |
-|---|---|
-| `rango` | `desde`, `hasta` (rango efectivamente aplicado — el resuelto por defecto si no se pasó ninguno) |
-| `inventario` | `total_productos`, `valor_total_inventario` (`SUM(stock_actual * costo)`), `productos_stock_bajo`, `productos_sin_stock`, `productos_por_categoria` (top 10, con `categoria_id`) |
-| `movimientos` | `entradas`/`salidas`/`ajustes` (cada uno `{total, cantidad}`), `por_dia` (array de `{fecha, entradas, salidas, ajustes}`), `productos_mas_movidos` (top 10, con `producto_id`) |
-| `clientes` | `total_activos`, `total_inactivos`, `nuevos_ultimos_30_dias` |
-| `proveedores` | `total_activos`, `total_inactivos`, `top_proveedores` (top 10 por productos asociados activos, con `proveedor_id`) |
+| Clave | Nombre | Clase |
+| --- | --- | --- |
+| `inventario-resumen` | Resumen de Inventario | `InventarioResumenReporte` |
+| `stock-actual` | Stock Actual | `StockActualReporte` |
+| `stock-bajo` | Stock Bajo | `StockBajoReporte` (extiende `StockActualReporte`) |
+| `inventario-por-categoria` | Inventario por Categoría | `InventarioPorCategoriaReporte` |
+| `inventario-por-marca` | Inventario por Marca | `InventarioPorMarcaReporte` |
+| `inventario-por-proveedor` | Inventario por Proveedor | `InventarioPorProveedorReporte` |
+| `movimientos-inventario` | Movimientos de Inventario | `MovimientosInventarioReporte` |
+| `kardex-producto` | Kardex por Producto | `KardexProductoReporte` (requiere `producto_id`) |
+| `productos-sin-movimiento` | Productos sin Movimiento | `ProductosSinMovimientoReporte` |
+| `proveedores` | Reporte de Proveedores | `ReporteProveedores` (extiende `TerceroReporteBase`) |
+| `clientes` | Reporte de Clientes | `ReporteClientes` (extiende `TerceroReporteBase`) |
+| `actividad-usuarios` | Actividad de Usuarios | `ActividadUsuariosReporte` |
+| `auditoria` | Reporte de Auditoría | `ReporteAuditoria` (reutiliza `AuditLogRepository`) |
+
+### Arquitectura — cómo agregar un reporte 14 sin tocar los 13 existentes
+
+- **`App\Contracts\Reports\Reporte`**: interfaz que implementa cada clase (`clave()`, `nombre()`, `descripcion()`, `filtrosDisponibles()`, `generar(array $filtros, bool $paginado)`).
+- **`App\DTO\Report\ReporteResultadoDTO`**: forma de resultado común (`columnas`+`filas`+`resumen`+`filtrosAplicados`+`total`) — suficiente para renderizar preview/PDF/Excel/CSV de cualquier reporte sin que el renderizador conozca cuál es.
+- **`ReporteService::CATALOGO`**: registro `clave => clase`. `ReporteController` nunca contiene lógica de un reporte específico — resuelve la clave, delega `generar()`, registra la ejecución en `reporte_historial`.
+- Reutilización deliberada en vez de duplicación: `StockBajoReporte extends StockActualReporte` (un solo `whereColumn` distinto); `ReporteProveedores`/`ReporteClientes extends TerceroReporteBase` (mismo shape de columnas); `InventarioResumenReporte`/`ReporteAuditoria` reutilizan `ReporteRepository`/`AuditLogRepository` existentes en vez de reconstruir sus consultas.
+
+### Tablas nuevas
+
+| Tabla | Propósito |
+| --- | --- |
+| `reporte_historial` | Log inmutable de ejecuciones (`tipo_reporte`, `formato`, `filtros`, `total_filas`, `usuario_id`, `created_at`) — mismo espíritu que `audit_logs`, pero "qué reportes se generaron", nunca "qué acción de negocio ocurrió" (eso lo sigue cubriendo `AuditLog`, sin duplicación). |
+| `reportes_programados` | Definiciones de reporte programado (`nombre`, `tipo_reporte`, `filtros`, `formato`, `frecuencia`, `destinatarios`, `estado`) — infraestructura sembrada, **sin motor de ejecución todavía** (ver Future Improvements). |
 
 ## Validation Rules
 
-`desde`/`hasta` son opcionales; si se omiten, el rango por defecto es "hoy y los 29 días anteriores" (30 días). No hay validación de formulario — no hay ningún formulario, es una vista de solo lectura con filtros de consulta.
+- `kardex-producto` exige `producto_id` — sin él, `422` con mensaje claro (`ValidationException`), tanto en preview como en export.
+- Un `clave` fuera del catálogo (`GET /reportes/no-existe/preview`) responde `422`, nunca `500` ni `404` silencioso.
+- Al crear un reporte programado, `tipo_reporte` debe existir en el catálogo (`422` si no); `formato` limitado a `pdf|excel|csv`; `frecuencia` a `diaria|semanal|mensual`.
 
 ## Permissions
 
-`reportes.ver` — permiso nuevo, sembrado en esta unidad de trabajo. Otorgado a Administrador (automático, vía `Permission::all()`), Supervisor y Auxiliar Contable en los datos demo — los mismos roles que ya tenían `auditoria.ver`, coherente con el enfoque "gerencial" del módulo.
+- `reportes.ver` (ya existía) — gatea resumen, catálogo, preview, export (los tres formatos), historial, y listar reportes programados.
+- `reportes.gestionar` (**nuevo, 2026-08-03**) — gatea únicamente crear/eliminar una definición de reporte programado. Otorgado a Supervisor (mismos roles que ya tenían `reportes.ver`).
 
 ## Loading States
 
-Estado de carga inicial (`loading && !resumen`) muestra un spinner de página completa; recargas subsecuentes (cambio de rango de fechas) mantienen el contenido anterior visible mientras se resuelve el nuevo fetch, sin parpadeo de pantalla en blanco.
+Cada pestaña/vista tiene su propio spinner de carga inicial, independiente — cambiar de pestaña o de reporte nunca bloquea el resto de la página.
 
 ## Empty States
 
-Cada lista (productos con más movimiento, productos por categoría, proveedores principales, entradas/salidas por día) tiene su propio `EmptyState` independiente — una empresa nueva sin movimientos en el rango seleccionado ve "Sin movimientos" en esas dos secciones específicas, mientras Inventario/Clientes/Proveedores (estado actual) siguen mostrando sus números reales normalmente.
+Sin datos para los filtros seleccionados: tabla vacía con `EmptyState` dedicado ("Sin datos"), nunca un error. Reporte con filtro requerido sin completar (Kardex sin producto): `EmptyState` explícito pidiendo completar el filtro, sin intentar generar nada.
 
 ## Error States
 
-Fetch fallido muestra un `EmptyState` de error de página completa ("No pudimos cargar los reportes"). Sin `reportes.ver`: 403 real del backend.
+Fetch de preview/catálogo fallido: `EmptyState` de error. Export fallido: `toast.error`, sin romper la página. Sin `reportes.ver`/`reportes.gestionar`: `403` real del backend en cada endpoint.
 
 ## Business Rules
 
-- **Ningún dato es simulado o pre-calculado** — cada sección se calcula on-demand contra las tablas reales en el momento del request. No hay job programado ni caché de reportes (ver Future Improvements).
-- **Aislamiento por empresa automático** — los 5 modelos fuente ya tienen `TenantScope` (`BelongsToEmpresa`) desde antes de este módulo; `ReporteRepository` nunca filtra `empresa_id` a mano, confía en el scope global. Cubierto por un test dedicado a que los datos de una empresa nunca aparezcan en el reporte de otra.
-- **Solo lectura de punta a punta** — sin `POST`/`PATCH`/`DELETE` en `/reportes` (verificado por test: 405, no 404, porque la ruta existe con otro verbo).
-- **`valor_total_inventario` solo cuenta productos activos** — un producto deshabilitado no contribuye al valor de inventario reportado, coherente con que ya no cuenta para ningún otro propósito operativo del ERP.
+- **Ningún dato es simulado o pre-calculado** — cada reporte consulta la base de datos real en el momento del request; los datos de demostración vienen de Seeders, nunca de JSON estático ni de mocks de frontend.
+- **Aislamiento por empresa automático** — todos los modelos fuente ya tienen `TenantScope`; ningún Report/Repository filtra `empresa_id` a mano.
+- **Preview pagina, export no** — `generar($filtros, paginado: true)` para preview (respeta `pagina`/`por_pagina`); `generar($filtros, paginado: false)` para exportar siempre trae el dataset completo.
+- **Regla de privacidad heredada de Auditoría** — `actividad-usuarios` y `auditoria` nunca exponen el nombre real de una persona, solo `email`+roles (la misma regla no negociable de `docs/03_FUNCTIONAL_SPEC/Auditoria.md`, extendida a propósito porque ambos derivan de `audit_logs`). `movimientos-inventario`, en cambio, sí muestra el nombre real del usuario — es dato operativo de negocio, igual que los módulos Movimientos/Usuarios.
+- **Reportes programados son infraestructura, no una feature activa** — `reportes_programados` no tiene ningún job/cron que los ejecute; es exactamente el mismo patrón que `captura-ia.gestionar` (permiso y tabla sembrados para una configuración futura, sin consumidor real todavía).
 
 ## Acceptance Criteria
 
-- [x] Un usuario con `reportes.ver` ve estadísticas reales de Inventario/Movimientos/Clientes/Proveedores, calculadas contra datos reales de su empresa.
-- [x] El rango de fechas afecta únicamente la sección Movimientos — Inventario/Clientes/Proveedores siempre reflejan el estado actual.
-- [x] Ningún dato de otra empresa aparece jamás en el reporte (test dedicado, con datos reales en dos empresas distintas).
-- [x] No existe ninguna ruta de creación/edición/eliminación en este módulo.
+- [x] Los 13 reportes generan datos reales, verificados contra la base de datos (no mocks).
+- [x] Cada reporte se puede exportar en PDF, Excel y CSV — verificado que el archivo descargado tiene contenido real y no está vacío.
+- [x] Agregar los 13 reportes no requirió modificar el Controller, el Service (fuera del registro `CATALOGO`), ni los renderizadores de exportación entre sí.
+- [x] `reportes.gestionar` gatea reportes programados; `reportes.ver` sigue gateando todo lo demás.
+- [x] Ningún dato de otra empresa aparece jamás en ningún reporte, preview, export o historial (cubierto por tests dedicados en las 4 suites).
+- [x] La regla de privacidad de Auditoría se respeta en `actividad-usuarios` y `auditoria`.
 
 ## Edge Cases
 
-- **Dos productos/categorías/proveedores distintos pueden compartir el mismo nombre** — encontrado en verificación de navegador con datos demo reales (dos productos distintos llamados igual causaban una colisión de `key` de React en la lista "Productos con más movimiento"). Corregido exponiendo el `id` real de cada fila (`producto_id`/`categoria_id`/`proveedor_id`) desde el backend y usándolo como key en el frontend, en vez del nombre — cierra esta clase de bug para las tres listas del módulo, no solo la que se manifestó.
-- **Empresa sin datos suficientes** (recién creada, sin productos/movimientos): cada sección responde con ceros/listas vacías, nunca un error — verificado que `COALESCE(SUM(...), 0)` evita `NULL` en los agregados cuando no hay filas que sumar.
-- **Rango de fechas invertido o inválido** (`hasta` antes de `desde`): no validado explícitamente — `whereBetween` simplemente no encuentra filas, listas/contadores vuelven vacíos/en cero, sin error. Comportamiento aceptable para un filtro de solo lectura.
+- **Kardex sin `producto_id`**: `422` limpio, nunca `500`.
+- **Rutas estáticas vs. wildcard**: `catalogo`/`historial`/`programados` están declaradas ANTES de la ruta wildcard `{clave}/preview` en `routes/api.php` — de lo contrario Laravel intentaría resolver "catalogo" como si fuera la clave de un reporte.
+- **Un solo `ReportePolicy` para dos modelos** (`ReporteHistorial`, `ReporteProgramado`) — registrado explícitamente vía `Gate::policy()` en `AppServiceProvider::boot()`, porque el auto-discovery de Laravel espera una Policy por modelo.
 
 ## Future Improvements
 
-- **Exportación (PDF/Excel/CSV)**: explícitamente fuera de alcance de esta unidad de trabajo, mismo criterio que Auditoría — no pedido por el checklist vertical-slice de este módulo.
-- **Reportes de Ventas/Compras**: bloqueados por la ausencia de esos módulos en el ERP — cuando existan, este módulo es el lugar natural para sumarlos, sin rediseñar la arquitectura (un nuevo método en `ReporteRepository` + una nueva sección en el payload).
-- **Pre-cálculo/caché**: hoy cada request recalcula todo on-demand; si el volumen de datos crece lo suficiente para que esto sea lento, la siguiente iteración natural es un job programado que pre-calcule y cachee el resumen, no un rediseño del contrato de API.
-- **Panel de estadísticas históricas** (tendencias mes a mes, comparativas año contra año): fuera de alcance — este módulo muestra el rango solicitado, no series históricas largas.
+- **Motor de ejecución de reportes programados**: hoy `reportes_programados` es solo la definición — falta el job/cron que efectivamente genere y envíe el reporte en la frecuencia configurada.
+- **Reportes de Ventas/Compras**: siguen bloqueados por la ausencia de esos módulos en el ERP.
+- **Pre-cálculo/caché**: cada request recalcula todo on-demand; si el volumen de datos lo justifica, la siguiente iteración es un job que pre-calcule y cachee, no un rediseño del contrato de API.

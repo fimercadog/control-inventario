@@ -126,12 +126,19 @@ Distinto de "Seguridad" abajo — audita **acciones de negocio** (`audit_logs`),
 - GET `/auditoria/{id}` — requiere `auditoria.ver`; detalle completo de un evento, incluyendo `valores_anteriores`/`valores_nuevos`.
 - **Regla de privacidad no negociable**: el campo `usuario` de cada registro expone únicamente `email` y `roles` (resueltos en vivo, no un snapshot histórico) — **nunca** `name`. Ver `Auditoria.md` para el detalle completo de esta decisión.
 
-### Reportes (Built 2026-08-02 — `ReporteController`, ver `docs/03_FUNCTIONAL_SPEC/Reports.md` y `docs/05_IMPLEMENTATION/ReportesModule.md`)
+### Reportes (Built 2026-08-02, ampliado 2026-08-03 a centro de reportes completo — `ReporteController`, ver `docs/03_FUNCTIONAL_SPEC/Reports.md` y `docs/05_IMPLEMENTATION/ReportesModule.md`)
 
-Estadísticas reales sobre Productos/Inventario/Movimientos/Clientes/Proveedores — los 5 módulos de negocio que existen hoy (Ventas/Compras, del borrador original, siguen bloqueados por no existir esos módulos). Un único endpoint compuesto, sin CRUD — "Reportes" es una vista, no un recurso persistido.
+`GET /reportes` sigue siendo el dashboard original (estadísticas compuestas sobre Productos/Inventario/Movimientos/Clientes/Proveedores). Lo nuevo es un catálogo de 13 reportes independientes con preview, exportación y un historial de ejecuciones. Rutas estáticas (`catalogo`/`historial`/`programados`) van declaradas antes de la wildcard `{clave}` en `routes/api.php` — si no, Laravel intentaría resolverlas como si fueran una clave de reporte.
 
-- GET `/reportes` — requiere `reportes.ver`; `desde`/`hasta` opcionales (por defecto, últimos 30 días). Devuelve `{rango, inventario, movimientos, clientes, proveedores}`. **Solo `movimientos` depende del rango de fechas** — `inventario`/`clientes`/`proveedores` son siempre el estado actual, no una foto del período.
-- Sin `POST`/`PATCH`/`DELETE`, a propósito (405 si se intenta — la ruta existe con otro verbo).
+- GET `/reportes` — requiere `reportes.ver`; `desde`/`hasta` opcionales (por defecto, últimos 30 días). Devuelve `{rango, inventario, movimientos, clientes, proveedores}`. Sin cambios respecto al módulo original.
+- GET `/reportes/catalogo` — requiere `reportes.ver`; lista los 13 reportes con `{clave, nombre, descripcion, filtros_disponibles}` cada uno — el frontend construye el formulario de filtros a partir de esto, sin hardcodear nada por reporte.
+- GET `/reportes/{clave}/preview` — requiere `reportes.ver`; genera el reporte paginado (`pagina`/`por_pagina` en query, cualquier otro filtro propio del reporte). `kardex-producto` exige `producto_id` (422 sin él). `{clave}` fuera del catálogo → 422.
+- GET `/reportes/{clave}/exportar/pdf` / `/exportar/excel` / `/exportar/csv` — requiere `reportes.ver`; genera el dataset completo (sin paginar) y lo streamea como `application/pdf`, `.xlsx` o `text/csv` con `Content-Disposition: attachment`. Los tres renderizan genéricamente desde `columnas`/`filas` — agregar un reporte 14 nunca toca estos tres endpoints.
+- GET `/reportes/historial` — requiere `reportes.ver`; lista paginada de `reporte_historial` (quién generó/exportó qué reporte, en qué formato, cuántas filas, cuándo), filtrable por `tipo_reporte`/`formato`/`desde`/`hasta`.
+- GET `/reportes/programados` — requiere `reportes.ver` (`ReportePolicy::viewAny`).
+- POST `/reportes/programados` — requiere `reportes.gestionar` (`ReportePolicy::create`); `{nombre, tipo_reporte, filtros?, formato, frecuencia, destinatarios?}`. `tipo_reporte` debe existir en el catálogo (422 si no). **Infraestructura sin motor de ejecución todavía** — crea la definición, nada la dispara aún.
+- DELETE `/reportes/programados/{id}` — requiere `reportes.gestionar` (`ReportePolicy::delete`), acotado a la empresa del usuario.
+- Sin `POST`/`PATCH`/`DELETE` en `/reportes` (el resumen), a propósito (405 si se intenta).
 
 ### Seguridad — intentos de inicio de sesión (Módulo 8, sin construir)
 
