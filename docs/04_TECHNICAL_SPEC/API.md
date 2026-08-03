@@ -73,11 +73,12 @@ Ledger append-only — sin `PUT`/`DELETE`/`deshabilitar`/`habilitar` a propósit
 
 - GET `/api/v1/movimientos` (con `producto_id`, `tipo`, `busqueda`, `desde`, `hasta`, `page`; `paginate(100)`), GET `/api/v1/movimientos/{id}`, POST `/api/v1/movimientos` (Entrada/Salida/Ajuste, vía `InventoryService::registrarMovimiento()`), PATCH `/api/v1/movimientos/{id}` (Built 2026-08-02 — `MovimientoController`, ver `docs/05_IMPLEMENTATION/MovimientosModule.md`). `PATCH` solo acepta `documento`/`observacion`/`lote`/`vencimiento` — `UpdateMovimientoRequest` no declara `cantidad`/`tipo`/`producto_id`/`proveedor_id`/`stock_anterior`/`stock_nuevo`, así que un payload que los incluya los ignora siempre.
 
-## Módulo Usuarios (RC1 Fase 4, docs/03_FUNCTIONAL_SPEC/Users.md)
+## Módulo Usuarios (RC1 Fase 4, ampliado 2026-08-03, docs/03_FUNCTIONAL_SPEC/Users.md)
 
-Listar/Ver/Activar/Desactivar únicamente — sin `POST /` (creación es Módulo 6, Invitaciones, sin construir) y sin ningún endpoint de eliminar. `{id}` en vez de route-model-binding implícito: `User` no tiene `TenantScope` automático, así que cada acción resuelve el usuario ya acotado por `empresa_id` a mano (404, no 403, para un id de otra empresa).
+Listar/Ver/Activar/Desactivar/Asignar rol — sin `POST /` propio (crear sigue siendo exclusivo de `InvitationController::aceptar()`, ver "Invitaciones" abajo) y sin ningún endpoint de eliminar. `{id}` en vez de route-model-binding implícito: `User` no tiene `TenantScope` automático, así que cada acción resuelve el usuario ya acotado por `empresa_id` a mano (404, no 403, para un id de otra empresa).
 
 - GET `/api/v1/usuarios` (con `busqueda`, `estado`, `rol`, `page`; `paginate(100)`), GET `/api/v1/usuarios/{id}`, POST `/api/v1/usuarios/{id}/activar`, POST `/api/v1/usuarios/{id}/desactivar` (Built 2026-08-02 — `UserController`, ver `docs/05_IMPLEMENTATION/UsersModule.md`). `desactivar` responde 409 si el objetivo es la propia cuenta del actor, o si es el último usuario activo de la empresa con el permiso `usuarios.editar`; en ambos casos ningún cambio se aplica. Un `desactivar` exitoso revoca todas las `auth_sessions` activas del usuario afectado.
+- POST `/api/v1/usuarios/{id}/rol` — `{role_id}` (Built 2026-08-03). Requiere `usuarios.editar`; `role_id` debe pertenecer a la misma empresa del usuario destino (422 si no). Reemplaza el rol (`syncRoles()`), nunca lo agrega a una lista.
 
 ## Módulo Auth & RBAC (Fase 5)
 
@@ -105,13 +106,14 @@ Ver "Módulo Usuarios" arriba — construido, endpoints reales confirmados contr
 - `permisos.*` rechaza namespace `plataforma.*` (422) y cualquier nombre fuera del catálogo (422).
 - GET `/permisos` — catálogo global de solo lectura (excluye `plataforma.*`), requiere `roles.ver`, para la UI de asignación de permisos a un rol.
 
-### Invitaciones (Módulo 6)
+### Invitaciones (Módulo 6, Built 2026-08-03 — `InvitationController`, ver `docs/03_FUNCTIONAL_SPEC/Users.md` y `docs/05_IMPLEMENTATION/UsersModule.md`)
 
-- POST `/usuarios/invitar` — requiere `usuarios.invitar`. `{email, role_id}` (el rol ya debe existir — depende de Módulo 5).
-- GET `/invitaciones/{token}` — valida el token firmado, devuelve email/empresa para el formulario de aceptación.
-- POST `/invitaciones/{token}/aceptar` — `{name, password}` → crea el usuario, marca la invitación aceptada, dispara verificación de email.
-- GET `/auth/email/verificar/{id}/{hash}` — URL firmada, marca `email_verified_at`.
-- POST `/auth/email/reenviar` — reenvía el correo de verificación.
+Único mecanismo real de alta de usuarios del ERP. `store()` requiere sesión + `usuarios.invitar`; `show()`/`aceptar()` son deliberadamente públicas (sin `auth:api`/`tenant`) — quien las llama todavía no tiene cuenta, la posesión del token crudo es la única prueba de identidad, mismo principio que "olvidé mi contraseña". El token crudo viaja únicamente por correo; solo su hash SHA-256 se persiste (`invitations.token_hash`).
+
+- POST `/usuarios/invitar` — `{email, role_id?}`. `email` no puede pertenecer ya a un usuario existente (422); `role_id`, si se envía, debe pertenecer a la propia empresa del invitador (422 si no). Re-invitar el mismo correo reemplaza cualquier invitación pendiente anterior en vez de acumular tokens válidos duplicados.
+- GET `/invitaciones/{token}` — pública. Devuelve `{email, empresa, rol}` para el formulario de aceptación, o 422 si el token no existe, expiró (7 días), o ya fue aceptado.
+- POST `/invitaciones/{token}/aceptar` — pública. `{name, password, password_confirmation}` → crea el usuario (con `email_verified_at` ya fijado — el correo recibido y usado ya prueba su titularidad, sin un segundo correo de verificación), le asigna el rol de la invitación si tenía uno, y marca la invitación como aceptada. El usuario creado puede iniciar sesión de inmediato.
+- **No construidos, superados por la decisión de auto-verificar al aceptar**: `GET /auth/email/verificar/{id}/{hash}` y `POST /auth/email/reenviar` — el borrador original de este documento los planteaba como un flujo de verificación de email separado; evaluado explícitamente durante esta ampliación y descartado por redundante (ver "Business Rules" en `Users.md`), no una laguna sin resolver.
 
 ### Sesiones activas (Módulo 7)
 

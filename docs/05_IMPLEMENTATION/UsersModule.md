@@ -1,4 +1,4 @@
-# Informe Final — Implementación Completa del Módulo Usuarios (RC1)
+# Informe Final — Implementación Completa del Módulo Usuarios (RC1), ampliado con Módulo 6 (Invitaciones)
 
 ## Resumen del trabajo realizado
 
@@ -98,14 +98,91 @@ Ninguno — todas las columnas necesarias (`is_active`, `last_activity_at`, `las
 
 Con este módulo, la **Fase 4 del roadmap RC1 queda oficialmente completa**. La siguiente fase del roadmap aprobado es Fase 5 (Roles), pendiente de aprobación explícita del propietario del proyecto.
 
+## Ampliación 2026-08-03 — Módulo 6 (Invitaciones) y reasignación de rol
+
+### Contexto
+
+El propietario del proyecto reportó "el módulo Usuarios no está completo, no hay acción visible de Crear Usuario". Verificado contra el código y `Users.md` antes de escribir nada: el módulo original nunca prometió creación directa — su Decisión 1 (RC1 Fase 4) dice explícitamente que crear es responsabilidad del entonces-inexistente Módulo 6 (Invitaciones), y que reasignar rol espera a que Roles (Módulo 5) exista. Ambos ya estaban construidos para esta fecha. Confirmado con el propietario del proyecto vía preguntas directas antes de codificar: (1) construir Invitaciones real (invitar por correo, el invitado elige su propia contraseña) en vez de un formulario directo de "crear con contraseña puesta por el admin" — deviaría del diseño documentado; (2) NO construir reasignación de empresa (`empresa_id` fijo, sin precedente en la arquitectura); (3) SÍ construir reasignación de rol, NO admin-edita-nombre/correo, NO admin-resetea-contraseña-de-otro.
+
+### Funcionalidades implementadas (ampliación)
+
+- **Domain — Invitaciones**: `Invitation` (modelo nuevo, tabla `invitations` ya migrada desde Fase 0 pero nunca usada), `InvitationRepository`/`InvitationService` (token crudo de 64 caracteres vía `Str::random()`, solo su hash SHA-256 persiste — mismo principio que el broker de "olvidé mi contraseña" de Laravel), `InvitationPolicy` (`create()` únicamente — `usuarios.invitar` AND pertenencia de empresa). Re-invitar el mismo correo reemplaza cualquier invitación pendiente anterior.
+- **Domain — Asignar rol**: `UserController::asignarRol()` — nuevo método, reutiliza `UserPolicy::update()` sin cambios (misma ability que ya gateaba activar/desactivar). `syncRoles([$rol])`, nunca `assignRole()` acumulativo — este ERP modela un único rol por usuario en todas partes (`UserResource::role` ya era singular).
+- **API**: `POST /usuarios/invitar` (autenticada, `usuarios.invitar`), `GET /invitaciones/{token}` y `POST /invitaciones/{token}/aceptar` (deliberadamente públicas, sin `auth:api`/`tenant` — quien las llama no tiene sesión todavía), `POST /usuarios/{id}/rol` (autenticada, `usuarios.editar`).
+- **Frontend**: `InvitarUsuarioDialog` (email + rol opcional, nunca contraseña) detrás de un nuevo botón "Nuevo Usuario" en `/usuarios`; `AsignarRolDialog` (selector de rol) detrás de un nuevo botón "Cambiar rol" en la ficha de usuario; página pública nueva `app/aceptar-invitacion/page.tsx`, mismo shell/patrón que la ya existente `restablecer-password` (resuelve el token primero, muestra a qué empresa se une, formulario de nombre+contraseña, redirige a `/login` al terminar).
+
+### Correcciones realizadas (ampliación)
+
+- **Bug real de arquitectura, encontrado y corregido mediante verificación directa (`tinker`) antes de escribir un solo test**: `TenantScope` (aplicado a `Role` vía `BelongsToEmpresa`) es fail-closed por diseño — sin `TenantContext` fijado, cualquier query devuelve cero filas. La ruta pública de aceptar invitación nunca pasa por el middleware `IdentifyTenant` (no hay sesión que identificar), así que `Role::findOrFail($invitacion->role_id)` dentro de `InvitationService::aceptar()` habría fallado el 100% de las veces en producción para cualquier invitación que incluyera un rol — nunca se habría manifestado en un entorno de pruebas donde el desarrollador fija `TenantContext` a mano sin darse cuenta de que reproduce artificialmente lo que `IdentifyTenant` haría. Corregido fijando `TenantContext`/el team id de Spatie explícitamente a partir del `empresa_id` ya persistido en la propia `Invitation` (nunca de un input del visitante, cerrando cualquier superficie de escalamiento) justo antes de resolver el rol — mismo principio que un Job/Artisan command fijándolo a mano, documentado como el escape intencional en el propio docblock de `TenantContext`.
+- **Segundo bug relacionado, mismo método**: `email_verified_at` no está en `$fillable` de `User` (a propósito — nadie debe poder auto-verificar un correo vía mass-assignment). La primera versión de `InvitationService::aceptar()` lo pasaba dentro de `User::create([...])`, donde se descartaba en silencio; el usuario recién creado quedaba con `email_verified_at = null` y `AuthenticationService::login()` lo rechazaba con "Debes verificar tu correo" — encontrado verificando el flujo completo (invitar → aceptar → iniciar sesión) de punta a punta antes de dar el trabajo por terminado, no por un test. Corregido con `$usuario->forceFill(['email_verified_at' => now()])->save()`, mismo patrón que `PasswordResetController` ya usa para escribir `password` (otro campo deliberadamente fuera de `$fillable`).
+- **Bug de UI encontrado en verificación de navegador**: los `<Select>` de rol en ambos diálogos nuevos inicializaban su valor en `undefined` hasta que se elegía un rol — React interpreta eso como pasar de "no controlado" a "controlado" después del primer render, y lanza una advertencia de consola en cada uso. Corregido inicializando en `""` (string vacío, siempre definido) en vez de `undefined`, consistente en los dos componentes.
+- **Colisión de nombre de rol en `UserControllerTest`, encontrada al correr la suite, no antes**: el nuevo `roleAlterno` de prueba se llamó inicialmente "Vendedor", que ya usaba un test preexistente (`rol filter returns only users with that role`) dentro del mismo `setUp()` compartido — `RoleAlreadyExists`. Renombrado a "Bodeguero", sin tocar el test preexistente.
+- **Expectativa de test corregida, no el código**: un test propio inicial asumía que un usuario sin `usuarios.editar` recibiría 403 al reasignar un rol. `UserPolicy::update()` (que gatea activar/desactivar/asignar rol por igual) nunca verificó ese permiso — solo pertenencia de empresa, exactamente como ya documentaba `Users.md` ("depende de Módulo 3, sin construir") y como ya era cierto, sin ningún test que lo confirmara, para activar/desactivar. El test se corrigió para fijar el comportamiento actual real, en vez de tensionar `UserPolicy::update()` más allá del alcance de esta ampliación (cambiarlo habría afectado activar/desactivar también, sin haber sido pedido).
+
+### Cambios en Backend (ampliación)
+
+**Archivos creados:**
+
+- `backend/app/Models/Invitation.php`
+- `backend/app/Policies/InvitationPolicy.php`
+- `backend/app/Repositories/InvitationRepository.php`
+- `backend/app/Services/InvitationService.php`
+- `backend/app/Notifications/Auth/InvitationNotification.php`
+- `backend/app/Http/Controllers/Api/InvitationController.php`
+- `backend/app/Http/Requests/Invitation/StoreInvitationRequest.php`, `AcceptInvitationRequest.php`
+- `backend/app/Http/Requests/User/AssignRoleRequest.php`
+- `backend/tests/Feature/InvitationControllerTest.php` (17 casos)
+
+**Archivos modificados:**
+
+- `backend/app/Http/Controllers/Api/UserController.php` (`asignarRol()`)
+- `backend/routes/api.php` (`POST /usuarios/invitar`, `POST /usuarios/{id}/rol`, grupo público `v1/invitaciones`)
+- `backend/database/seeders/RoleSeeder.php` (Supervisor gana `usuarios.editar`/`usuarios.invitar`)
+- `backend/tests/Feature/UserControllerTest.php` (5 casos nuevos de Asignar Rol)
+
+**Reutilizado sin cambios:** tabla `invitations` (migrada desde Fase 0, nunca usada hasta ahora), catálogo de permisos (`usuarios.invitar`, ya sembrado sin consumidor), `Role`/`RoleController` (Módulo 5), `AuditLogger`, `TenantContext`, patrón de `ResetPasswordNotification` (espejado por `InvitationNotification`).
+
+### Cambios en Frontend (ampliación)
+
+**Archivos creados:**
+
+- `frontend/components/invitar-usuario-dialog.tsx`
+- `frontend/components/asignar-rol-dialog.tsx`
+- `frontend/app/aceptar-invitacion/page.tsx`
+- `frontend/lib/api/invitaciones.ts`
+
+**Archivos modificados:**
+
+- `frontend/app/(app)/usuarios/page.tsx` (botón "Nuevo Usuario")
+- `frontend/components/usuario-detail-screen.tsx` (botón "Cambiar rol")
+- `frontend/lib/api/usuarios.ts` (`asignarRolUsuario`)
+- `frontend/lib/api/types.ts` (`InviteUsuarioPayload`, `InvitacionInfo`, `AcceptInvitationPayload`)
+
+### Cambios en Base de Datos (ampliación)
+
+Ninguno nuevo — la tabla `invitations` ya existía desde una migración de Fase 0 (`create_invitations_table`), sin ningún código que la usara hasta esta ampliación. Sin permisos nuevos — `usuarios.invitar` ya estaba sembrado desde Fase 0, sin consumidor hasta ahora.
+
+### Resultado de las pruebas (ampliación)
+
+- **Backend:** `php artisan test` → **366/366 passing** (era 344/344 antes de esta ampliación — 22 tests nuevos: 17 `InvitationControllerTest` + 5 en `UserControllerTest`).
+- **Frontend:** `npm run type-check` limpio.
+- **Browser tests (reales, agente de automatización de navegador contra Chrome)**: login real, botón "Nuevo Usuario" abre el diálogo de invitación, invitar crea un registro real en `invitations` (verificado por el conteo de usuarios NO cambiando hasta que se acepta), `/aceptar-invitacion` sin token muestra un mensaje claro sin crashear, ficha de usuario existente muestra "Cambiar rol", reasignar rol actualiza el valor mostrado sin recargar la página. La advertencia de consola del `Select` (ver Correcciones realizadas) se encontró y confirmó corregida en una segunda pasada dedicada.
+
+## Estado final del módulo
+
+🟢 **Completo** — Usuarios cierra las dos exclusiones de su Decisión 1 que dependían de módulos que ya existen (crear vía Invitaciones, reasignar rol), documentando explícitamente por qué la tercera (editar nombre/correo, reasignar empresa) sigue fuera de alcance. 36 tests en verde (14 originales + 22 nuevos), documentación actualizada en los 4 documentos afectados (`Users.md`, `API.md`, `ROLES_MATRIX.md`, `RC1_FUNCTIONAL_MODULE_AUDIT.md`).
+
 ## Control de versiones
 
 - **Rama:** `main`.
-- **Commit:** `16b2f96` — `feat(usuarios): implement complete Users module - list, view, activate, deactivate (RC1)`.
+- **Commits de esta ampliación** (orden cronológico):
+  1. `85af03f` — `feat(usuarios): implement Modulo 6 (Invitations) and Assign Role`
+  2. `53005a0` — `feat(usuarios): add Invite User and Assign Role UI`
+- **Commit original (módulo base, RC1 Fase 4):** `16b2f96` — `feat(usuarios): implement complete Users module - list, view, activate, deactivate (RC1)`.
 
 ## Confirmación de push
 
-✅ Ejecutado correctamente: `5a09df9..16b2f96  main -> main` contra `origin` (GitHub).
+✅ Ver commit de este mismo documento para el hash final y la confirmación de `git push` — reportados en el mensaje de cierre de esta unidad de trabajo.
 
 ## Estado del informe
 
