@@ -178,11 +178,12 @@ Ninguno nuevo — la tabla `invitations` ya existía desde una migración de Fas
 - **Commits de esta ampliación** (orden cronológico):
   1. `85af03f` — `feat(usuarios): implement Modulo 6 (Invitations) and Assign Role`
   2. `53005a0` — `feat(usuarios): add Invite User and Assign Role UI`
+  3. `47b2eb9` — `docs(usuarios): document Modulo 6 (Invitations) and Assign Role`
 - **Commit original (módulo base, RC1 Fase 4):** `16b2f96` — `feat(usuarios): implement complete Users module - list, view, activate, deactivate (RC1)`.
 
 ## Confirmación de push
 
-✅ Ver commit de este mismo documento para el hash final y la confirmación de `git push` — reportados en el mensaje de cierre de esta unidad de trabajo.
+✅ Ejecutado correctamente: `521a01e..47b2eb9  main -> main` contra `origin` (GitHub) — incluye también `f8100d4` (fix de validación de stock, unidad de trabajo separada en la misma sesión).
 
 ## Estado del informe
 
