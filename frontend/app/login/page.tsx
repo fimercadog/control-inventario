@@ -78,7 +78,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Fidel OS</h1>
-            <p className="text-sm text-muted-foreground">AI Inventory Agent</p>
+            <p className="text-sm text-muted-foreground">Control de Inventario</p>
           </div>
         </div>
 

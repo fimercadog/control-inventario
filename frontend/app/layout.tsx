@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 // Next.js), manifest de app/manifest.ts, y Open Graph de
 // app/opengraph-image.png (misma convención, genera el meta tag solo).
 export const metadata: Metadata = {
-  title: "AI Inventory Agent",
-  description: "Control de inventario con fotografía y voz, impulsado por IA.",
+  title: "FidelOS — Control de Inventario",
+  description: "Control de inventario para bodegas y empresas: entradas, salidas, stock y reportes en un solo lugar.",
 };
 
 export default function RootLayout({

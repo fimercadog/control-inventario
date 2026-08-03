@@ -5798,3 +5798,5 @@ Durante la fase MVP, el origen de los datos puede ser temporalmente Mock o Real.
 El uso de Mock Data no cambia el estado de implementación del módulo.
 
 La sustitución de Mock por API Real debe realizarse mediante la capa Repository sin modificar la interfaz de usuario.
+
+Los datos de demostración siempre deben representar un negocio real del dominio de la aplicación. Las tecnologías utilizadas (IA, OpenAI, OCR, etc.) no deben aparecer en productos, clientes, proveedores, reportes, movimientos ni datos de ejemplo, salvo en módulos específicamente dedicados a esas funciones.

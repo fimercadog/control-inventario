@@ -174,7 +174,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold">Fidel OS</span>
-            <span className="text-xs text-muted-foreground">AI Inventory Agent</span>
+            <span className="text-xs text-muted-foreground">Control de Inventario</span>
           </div>
         </Link>
       </SidebarHeader>

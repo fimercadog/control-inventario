@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "FidelOS — Control de Inventario",
     short_name: "FidelOS",
-    description: "Control de inventario con fotografía y voz, impulsado por IA.",
+    description: "Control de inventario para bodegas y empresas: entradas, salidas, stock y reportes en un solo lugar.",
     start_url: "/",
     display: "standalone",
     background_color: "#ffffff",

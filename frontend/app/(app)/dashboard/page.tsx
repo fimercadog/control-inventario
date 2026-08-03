@@ -123,7 +123,7 @@ export default function DashboardPage() {
               <div>
                 <p className="font-semibold">Registra inventario en segundos</p>
                 <p className="text-sm text-primary-foreground/80">
-                  Toma una foto, habla, o ambos — la IA hace el resto.
+                  Toma una foto, habla, o ambos — nosotros actualizamos el stock.
                 </p>
               </div>
               <Button
