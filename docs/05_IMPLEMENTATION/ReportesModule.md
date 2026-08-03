@@ -169,11 +169,12 @@ Tras cerrar los 4 módulos de la secuencia vertical-slice (Roles→Auditoría→
   3. `ccdce71` — `test(reportes): validate the expanded reports module end-to-end`
   4. `99fec2b` — `fix(movimientos): generate seeded movements in true chronological order`
   5. `2c23919` — `feat(reportes): build the report catalog, preview, and export UI`
+  6. `ff4748d` — `docs(reportes): document the centro de reportes ampliación`
 - **Commit original (módulo base, 2026-08-02):** `882b26e` — `feat(reportes): implement Reportes as a complete read-only vertical slice (RC1 Module 3/4)`.
 
 ## Confirmación de push
 
-✅ Ver commit de este mismo documento para el hash final y la confirmación de `git push` — reportados en el mensaje de cierre de esta unidad de trabajo.
+✅ Ejecutado correctamente: `98bc751..ff4748d  main -> main` contra `origin` (GitHub).
 
 ## Estado del informe
 
