@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { DetailModal } from "@/components/detail-modal";
+import { DetailModal, InfoRow } from "@/components/detail-modal";
 import { AsignarRolDialog } from "@/components/asignar-rol-dialog";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, getUsuario } from "@/lib/api/usuarios";
@@ -114,12 +114,13 @@ export function UsuarioViewModal({
                   <AsignarRolDialog usuario={usuario} onAssigned={setUsuario} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <InfoRow label="Rol">{usuario.role ?? "Sin rol asignado"}</InfoRow>
-                  <InfoRow label="Última actividad">
-                    {usuario.last_activity_at ? formatRelativeTime(usuario.last_activity_at) : "Nunca"}
-                  </InfoRow>
-                  <InfoRow label="Última IP">{usuario.last_login_ip ?? "—"}</InfoRow>
-                  <InfoRow label="Último dispositivo/navegador">{usuario.last_user_agent ?? "—"}</InfoRow>
+                  <InfoRow label="Rol" value={usuario.role ?? "Sin rol asignado"} />
+                  <InfoRow
+                    label="Última actividad"
+                    value={usuario.last_activity_at ? formatRelativeTime(usuario.last_activity_at) : "Nunca"}
+                  />
+                  <InfoRow label="Última IP" value={usuario.last_login_ip ?? "—"} />
+                  <InfoRow label="Último dispositivo/navegador" value={usuario.last_user_agent ?? "—"} />
                 </div>
               </CardContent>
             </Card>
@@ -128,13 +129,15 @@ export function UsuarioViewModal({
               <CardContent className="flex flex-col gap-4 pt-6">
                 <h2 className="text-sm font-semibold">Trazabilidad</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <InfoRow label="Invitado el">
-                    {usuario.invited_at ? formatRelativeTime(usuario.invited_at) : "—"}
-                  </InfoRow>
-                  <InfoRow label="Invitado por">{usuario.invited_by ?? "—"}</InfoRow>
-                  <InfoRow label="Cuenta creada">
-                    {usuario.created_at ? formatRelativeTime(usuario.created_at) : "—"}
-                  </InfoRow>
+                  <InfoRow
+                    label="Invitado el"
+                    value={usuario.invited_at ? formatRelativeTime(usuario.invited_at) : "—"}
+                  />
+                  <InfoRow label="Invitado por" value={usuario.invited_by ?? "—"} />
+                  <InfoRow
+                    label="Cuenta creada"
+                    value={usuario.created_at ? formatRelativeTime(usuario.created_at) : "—"}
+                  />
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Nombre y correo no son editables desde aquí — son responsabilidad del propio usuario en su Perfil.
@@ -161,14 +164,5 @@ export function UsuarioViewModal({
         />
       )}
     </>
-  );
-}
-
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span>{children}</span>
-    </div>
   );
 }
