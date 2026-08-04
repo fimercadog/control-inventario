@@ -12,6 +12,7 @@ Un módulo o feature **NO puede iniciar implementación** hasta que TODO lo sigu
 - [ ] **UX** — pantallas, estados vacíos/carga/error definidos en la Functional Spec.
 - [ ] **Test Cases** — casos de aceptación esbozados en `06_TESTS/AcceptanceCriteria.md` o el `05_IMPLEMENTATION/<Modulo>.md` correspondiente.
 - [ ] **`05_IMPLEMENTATION/<Modulo>.md` creado** con Goal, Scope, Out of Scope, Dependencies, Database Changes, API Changes, Frontend Changes, Security, Permissions, Events, Tests, Risks, Checklist, Definition of Done — **antes** de escribir código.
+- [ ] **Design System consultado** (añadido 2026-08-03) — si el módulo incluye UI, se completó el checklist de `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` §"Design System Compliance" antes de escribir el primer componente: `docs/11_DESIGN_SYSTEM/README.md`, `QUALITY_CHECKLIST.md` y `COMPONENT_INVENTORY.md` leídos, componentes existentes identificados para reutilizar.
 
 Si falta cualquier ítem: **STOP.** No se escribe código. Se pregunta o se escribe la especificación faltante primero.
 

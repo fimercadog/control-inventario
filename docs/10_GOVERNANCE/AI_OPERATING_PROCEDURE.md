@@ -73,6 +73,23 @@ Release
 
 ---
 
+# Mandatory Reading Order
+
+Added 2026-08-03. This section is about sequence — which folders to read and in what order before touching code. It does not replace `docs/10_GOVERNANCE/DefinitionOfReady.md`, which is the authoritative checklist of what must exist and be approved before implementation starts; read that document for the full gate. This section exists because `DefinitionOfReady.md` predates `docs/11_DESIGN_SYSTEM/` and does not sequence the reading order on its own.
+
+Before implementing any feature, read in this order:
+
+1. `docs/00_VISION/` — why this exists.
+2. `docs/01_PRD/` — what must be built.
+3. `docs/03_FUNCTIONAL_SPEC/` — how the module must behave.
+4. `docs/04_TECHNICAL_SPEC/` — how it is implemented technically.
+5. `docs/11_DESIGN_SYSTEM/` — how the UI must look and behave (see "Design System Compliance" below for the full pre-module checklist).
+6. `docs/10_GOVERNANCE/` — the rules governing how the work itself is done (this document and its siblings).
+
+Only then start implementation.
+
+---
+
 # Documentation Policy
 
 Whenever code changes affect the project documentation:

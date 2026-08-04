@@ -17,6 +17,9 @@ Un módulo o feature **NO está terminado** hasta que TODO lo siguiente se cumpl
 - [ ] Sin bugs críticos abiertos contra el módulo.
 - [ ] Permisos verificados: cada endpoint/pantalla nueva usa `$user->can('recurso.accion')`, nunca `$user->hasRole()`.
 - [ ] Aislamiento multi-tenant verificado si el módulo toca datos de empresa (ver `04_TECHNICAL_SPEC/Security.md`).
+- [ ] Auditoría: toda mutación exitosa escribe una entrada real vía `AuditLogger`, con el diff real de lo que cambió — no una lista de campos fija (ver `docs/11_DESIGN_SYSTEM/QUALITY_CHECKLIST.md`, sección Backend/Datos).
+- [ ] **Design System**: la pantalla nueva sigue `docs/11_DESIGN_SYSTEM/` (Crear/Editar/Ver vía modal salvo excepción documentada, componentes compartidos reutilizados en vez de duplicados, tamaños de modal desde `MODAL_SIZES`) — añadido 2026-08-03, ver `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` §"Design System Compliance".
+- [ ] **`docs/11_DESIGN_SYSTEM/QUALITY_CHECKLIST.md` completada** — añadido 2026-08-03, con evidencia por ítem, no solo casillas marcadas.
 
 ## Estados de aprobación de módulo
 
