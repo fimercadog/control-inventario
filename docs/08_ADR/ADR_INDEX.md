@@ -20,7 +20,7 @@ Fuentes permitidas para todo ADR de este índice: `AGENTS.md`, documentación ex
 | [ADR-012](ADR-012-idempotency.md) | Idempotencia vía `Idempotency-Key` + índice único | Accepted (Verified) | No | Verified | Implementado y probado |
 | [ADR-013](ADR-013-domain-events.md) | Eventos de dominio post-commit (`DB::afterCommit`) | Accepted (Verified) | No | Verified | Implementado y probado; sin listeners (deliberado) |
 | [ADR-014](ADR-014-modal-sizing-unification.md) | Modal sizing centralizado en `components/ui/modal.ts` | Accepted (Verified) | **Sí** — 3 alternativas comparadas, con conteo real de usos existentes | Verified | Implementado; único ADR de este índice sobre frontend/UI, no backend |
-| [ADR-015](ADR-015-identity-field-model.md) | Modelo de identidad ERP — campos Identity/Operational/Controlled | Accepted (Verified) | **Sí** — 3 alternativas comparadas | Verified | Implementado (Clientes, Proveedores, Usuarios), suite 391/391 |
+| [ADR-015](ADR-015-identity-field-model.md) | Modelo de identidad ERP — campos Identity/Operational/Controlled + `nit` único | Accepted (Verified) | **Sí** — 3 alternativas comparadas | Verified | Modelo de campos + unicidad de `nit` implementados, suite 397/397; regla "Identity Correction" definida, no construida |
 
 **Criterio usado para `Historical Confidence`:**
 - **Verified** — la decisión, su contexto y su mecanismo tienen cita directa y específica en al menos una fuente primaria (código y/o documentación), sin vacíos relevantes en el razonamiento. Incluye los casos con evidencia particularmente fuerte y multi-fuente (ADR-002, 008, 009, 011, 012, 013).

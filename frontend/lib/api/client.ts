@@ -116,7 +116,17 @@ export function toApiError(error: unknown): ApiError {
           ? (body.errors as Record<string, string[]>)
           : undefined;
 
-      return new ApiError(body.message, axiosError.response?.status, fieldErrors);
+      // El backend envuelve toda `ValidationException` con el mismo título
+      // genérico ("Error de validación") y pone el mensaje real por campo
+      // en `errors` (ver bootstrap/app.php). Sin esto, cada mensaje
+      // específico definido en un FormRequest (`messages()`) — como
+      // "Ya existe un cliente con este NIT en tu empresa." — nunca se veía
+      // en ningún toast de la app, solo el título genérico. Se usa el
+      // primer mensaje de campo cuando existe; `body.message` sigue siendo
+      // el fallback para errores sin `errors` (401/403/500/etc.).
+      const primerMensajeDeCampo = fieldErrors ? Object.values(fieldErrors)[0]?.[0] : undefined;
+
+      return new ApiError(primerMensajeDeCampo ?? body.message, axiosError.response?.status, fieldErrors);
     }
 
     if (axiosError.code === "ECONNABORTED" || !axiosError.response) {

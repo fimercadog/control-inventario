@@ -265,6 +265,43 @@ class ClienteControllerTest extends TestCase
     }
 
     /**
+     * `nit` es Identity (ADR-015) y ahora único por empresa (riesgo
+     * cerrado explícitamente por el propietario del proyecto, 2026-08-04)
+     * — las 4 capas: constraint de BD (esta migración), validación
+     * backend (`StoreClienteRequest`), mensaje específico para el
+     * frontend, e índice (el propio constraint único). `$this->clienteA`
+     * ya tiene `nit = '900123456'` desde el fixture.
+     */
+    public function test_two_clients_in_the_same_company_cannot_share_a_nit(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/clientes', ['nombre' => 'Otro Cliente', 'nit' => '900123456'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.nit.0', 'Ya existe un cliente con este NIT en tu empresa.');
+    }
+
+    /** El mismo NIT en OTRA empresa no es un conflicto — único por empresa, no global. */
+    public function test_two_clients_in_different_companies_can_share_a_nit(): void
+    {
+        app(TenantContext::class)->setEmpresaId($this->empresaB->id);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaB->id);
+
+        $this->actingAs($this->userB, 'api')
+            ->postJson('/api/v1/clientes', ['nombre' => 'Cliente Empresa B', 'nit' => '900123456'])
+            ->assertCreated();
+    }
+
+    /** Un `nit` nulo nunca cuenta como duplicado consigo mismo (NULL en un índice único). */
+    public function test_two_clients_with_no_nit_are_not_a_conflict(): void
+    {
+        Cliente::create(['nombre' => 'Cliente Sin NIT 1']);
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/clientes', ['nombre' => 'Cliente Sin NIT 2'])
+            ->assertCreated();
+    }
+
+    /**
      * Un campo `nullable` enviado explícitamente como `null` debe vaciarse
      * de verdad — no quedarse igual. Prueba directa de que `ClienteDTO` no
      * colapsa "campo no enviado" con "campo enviado como null" (ver el

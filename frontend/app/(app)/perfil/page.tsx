@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/crud-modal";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -208,14 +209,12 @@ export default function PerfilPage() {
           <CardDescription>{user.permissions.length} permisos efectivos, vía tu(s) rol(es).</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Nombre</Label>
+          <Field label="Nombre" locked>
             <Input value={user.name} disabled />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs text-muted-foreground">Correo</Label>
+          </Field>
+          <Field label="Correo" locked>
             <Input value={user.email} disabled />
-          </div>
+          </Field>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label className="text-xs text-muted-foreground">Idioma</Label>

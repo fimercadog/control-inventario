@@ -290,6 +290,51 @@ class ProveedorControllerTest extends TestCase
             ->assertCreated();
     }
 
+    /**
+     * `nit` es Identity (ADR-015) y ahora único por empresa (riesgo
+     * cerrado explícitamente por el propietario del proyecto, 2026-08-04).
+     * `$this->proveedorA` ya tiene `nit = '900123456'` desde el fixture.
+     */
+    public function test_two_suppliers_in_the_same_company_cannot_share_a_nit(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/proveedores', ['nombre' => 'Otro Proveedor', 'nit' => '900123456'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.nit.0', 'Ya existe un proveedor con este NIT en tu empresa.');
+    }
+
+    /** El mismo NIT en OTRA empresa no es un conflicto — único por empresa, no global. */
+    public function test_two_suppliers_in_different_companies_can_share_a_nit(): void
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $context = app(TenantContext::class);
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+
+        $creadorB = User::factory()->create(['empresa_id' => $this->empresaB->id]);
+        $rolCreadorB = Role::create(['name' => 'Test Proveedores B Crear Nit', 'guard_name' => 'api']);
+        $rolCreadorB->givePermissionTo(['proveedores.ver', 'proveedores.crear']);
+        $creadorB->assignRole($rolCreadorB);
+        $registrar->forgetCachedPermissions();
+
+        $context->setEmpresaId($this->empresaB->id);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+
+        $this->actingAs($creadorB, 'api')
+            ->postJson('/api/v1/proveedores', ['nombre' => 'Proveedor Empresa B', 'nit' => '900123456'])
+            ->assertCreated();
+    }
+
+    /** Un `nit` nulo nunca cuenta como duplicado consigo mismo (NULL en un índice único). */
+    public function test_two_suppliers_with_no_nit_are_not_a_conflict(): void
+    {
+        Proveedor::create(['nombre' => 'Proveedor Sin NIT 1']);
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/proveedores', ['nombre' => 'Proveedor Sin NIT 2'])
+            ->assertCreated();
+    }
+
     public function test_disabling_a_supplier_is_logical_never_physical(): void
     {
         $this->actingAs($this->userA, 'api')

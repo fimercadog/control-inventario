@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Lock, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -71,11 +71,32 @@ export function CrudModal({
   );
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/**
+ * `locked` (ADR-015, modelo de identidad ERP, 2026-08-04): campo de
+ * identidad deshabilitado en modo edición — nunca oculto (el usuario debe
+ * poder ver el valor). Muestra un ícono de candado junto a la etiqueta y
+ * una leyenda corta debajo, para que la razón sea obvia sin depender de
+ * que el usuario intente escribir y no pase nada.
+ */
+export function Field({
+  label,
+  locked = false,
+  children,
+}: {
+  label: string;
+  locked?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label className="flex items-center gap-1 text-xs text-muted-foreground">
+        {label}
+        {locked && <Lock className="size-3" aria-hidden="true" />}
+      </Label>
       {children}
+      {locked && (
+        <p className="text-xs text-muted-foreground">Campo de identidad. No se puede modificar después de crear el registro.</p>
+      )}
     </div>
   );
 }

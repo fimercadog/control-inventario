@@ -20,12 +20,21 @@ class StoreProveedorRequest extends FormRequest
     {
         return [
             'nombre' => ['required', 'string', 'max:255'],
-            'nit' => ['sometimes', 'nullable', 'string', 'max:255'],
+            // Único por empresa, no global — mismo criterio que `email`.
+            // `nit` es Identity (ADR-015): esta regla solo aplica al crear,
+            // nunca al editar (`UpdateProveedorRequest` ni siquiera acepta
+            // el campo) — cerrado el riesgo documentado en la auditoría de
+            // campos editables del mismo día.
+            'nit' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('proveedores', 'nit')->where('empresa_id', app(TenantContext::class)->empresaId()),
+            ],
             'contacto' => ['sometimes', 'nullable', 'string', 'max:255'],
             'telefono' => ['sometimes', 'nullable', 'string', 'max:255'],
             // Único por empresa, no global — mismo criterio que Clientes.
-            // `nit` no lleva la misma regla a propósito, sigue siendo un
-            // campo de referencia (ver Customers.md, mismo shape).
             'email' => [
                 'sometimes',
                 'nullable',
@@ -48,6 +57,7 @@ class StoreProveedorRequest extends FormRequest
     {
         return [
             'email.unique' => 'Ya existe un proveedor con este correo en tu empresa.',
+            'nit.unique' => 'Ya existe un proveedor con este NIT en tu empresa.',
         ];
     }
 }

@@ -53,13 +53,13 @@ Clasificación oficial de cada campo bajo el modelo Identity/Operational/Control
 | Campo | Categoría | Editable vía PATCH genérico | Razón |
 | --- | --- | --- | --- |
 | `id`, `empresa_id`, `created_at`, `updated_at` | Identity | No | Campos de sistema, nunca estuvieron en la whitelist de validación. |
-| `email`, `nit` | Identity | No (desde 2026-08-04) | Identifican al registro — inmutables tras la creación. Antes de ADR-015 eran editables; ahora se ignoran en silencio si se envían en el PATCH (mismo mecanismo que `empresa_id`). `email` deshabilitado visualmente en `ClienteFormModal` en modo edición. Sin flujo de corrección para un typo — ver ADR-015, "Consecuencias negativas". |
+| `email`, `nit` | Identity | No (desde 2026-08-04) | Identifican al registro — inmutables tras la creación. Antes de ADR-015 eran editables; ahora se ignoran en silencio si se envían en el PATCH (mismo mecanismo que `empresa_id`). Deshabilitados visualmente en `ClienteFormModal` en modo edición, con ícono de candado y leyenda explicativa (`Field` compartido, prop `locked`). `nit` es además único por empresa desde el mismo día (constraint de BD + validación al crear, ver Edge Cases) — `email` ya lo era. Corrección de un typo solo vía el flujo futuro "Identity Correction" (ADR-015, sin construir todavía). |
 | `nombre`, `contacto`, `telefono`, `direccion`, `ciudad`, `pais`, `notas` | Operational | Sí | Información de contacto/operativa, se corrige libremente. `nombre` no puede vaciarse (`filled`, ampliación 2026-08-04). |
 | `estado` | Controlled | No (solo vía `/habilitar`/`/deshabilitar`) | Endpoints dedicados con permiso propio (`clientes.gestionar` para deshabilitar, más estricto que `clientes.editar`) y acción de auditoría propia. |
 
 ## Validation Rules
 
-Ver `StoreClienteRequest` (creación) / `UpdateClienteRequest` (edición). Al crear: `nombre` requerido; `email` debe ser un email válido y único por empresa si se envía; `nit` sin restricción de unicidad. Al editar: `nombre` es `sometimes|filled` (no puede enviarse vacío, ampliación 2026-08-04); `email`, `nit`, `estado` **ya no son aceptados** por `UpdateClienteRequest` (ADR-015, 2026-08-04 — ver "Editable Fields" arriba). Los campos operativos restantes son `nullable` — un campo `nullable` enviado explícitamente como `null` se vacía de verdad (ver el comentario de `ClienteDTO` y el test `test_explicitly_clearing_a_nullable_field_persists_as_null`).
+Ver `StoreClienteRequest` (creación) / `UpdateClienteRequest` (edición). Al crear: `nombre` requerido; `email` y `nit`, si se envían, deben ser únicos por empresa (`422` si ya existen, ADR-015). Al editar: `nombre` es `sometimes|filled` (no puede enviarse vacío, ampliación 2026-08-04); `email`, `nit`, `estado` **ya no son aceptados** por `UpdateClienteRequest` (ADR-015, 2026-08-04 — ver "Editable Fields" arriba). Los campos operativos restantes son `nullable` — un campo `nullable` enviado explícitamente como `null` se vacía de verdad (ver el comentario de `ClienteDTO` y el test `test_explicitly_clearing_a_nullable_field_persists_as_null`).
 
 ## Permissions
 
@@ -93,13 +93,13 @@ Toast de error con el mensaje real del backend (`ApiError.message`) en cualquier
 - [x] Deshabilitar/habilitar (borrado lógico).
 - [x] Aislamiento multi-tenant real (una empresa nunca ve/edita clientes de otra).
 - [x] RBAC real: sin el permiso correspondiente, 403 — nunca un fallback silencioso.
-- [x] Tests automatizados (21 casos, `ClienteControllerTest`).
+- [x] Tests automatizados (24 casos, `ClienteControllerTest`).
 
 ## Edge Cases
 
-- Cliente con `nit` duplicado dentro de la misma empresa — **no se valida como error** (mismo comportamiento que Proveedores: `nit` no tiene constraint de unicidad, es un campo de referencia, no una clave). Ahora además inmutable tras la creación (ADR-015), así que un duplicado creado por error tampoco puede corregirse después. Documentado aquí para que no se asuma unicidad implícita ni corregibilidad.
+- Cliente con `nit` duplicado dentro de la misma empresa — **sí se valida como error** desde el 2026-08-04 (`422`, ADR-015, mismo criterio que `email`: único por empresa, no global — constraint real de base de datos, no solo aplicación). Antes de esa fecha no tenía ninguna restricción de unicidad; documentado como riesgo abierto en la auditoría de campos editables del mismo día y cerrado horas después a pedido explícito del propietario del proyecto. `nit` duplicado **entre empresas distintas** — permitido, cubierto por test dedicado. `nit` nulo — nunca cuenta como conflicto consigo mismo (múltiples `NULL` permitidos en el índice único), cubierto por test dedicado.
 - Campo `nullable` enviado explícitamente como `null` en una edición — se vacía de verdad para campos Operational, cubierto por test dedicado. No aplica a `email`/`nit` (Identity, ignorados en el PATCH).
-- Email duplicado **dentro de la misma empresa** — sí se valida como error (`422`, ampliación 2026-08-03), a diferencia de `nit`. Email duplicado **entre empresas distintas** — permitido, cubierto por test dedicado.
+- Email duplicado **dentro de la misma empresa** — se valida como error (`422`, ampliación 2026-08-03), mismo criterio que `nit` desde ADR-015. Email duplicado **entre empresas distintas** — permitido, cubierto por test dedicado.
 
 ## Future Improvements
 
