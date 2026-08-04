@@ -1,10 +1,12 @@
 # Implementación — Catálogos (Categorías, Marcas, Unidades de Medida)
 
 > Fase 1 del roadmap RC1 de 8 fases aprobado 2026-07-29 (ver `docs/03_FUNCTIONAL_SPEC/RC1_GAP_ANALYSIS.md`). Los tres módulos comparten exactamente el mismo shape de CRUD (mismo patrón que `Proveedor`, ya construido y probado) por lo que se documentan juntos.
+>
+> **Nota (2026-08-04, auditoría de integridad documental):** este plan quedó desactualizado — los tres módulos se completaron el 2026-07-30, cada uno con su propio informe final: [`CategoriasModule.md`](CategoriasModule.md), [`MarcasModule.md`](MarcasModule.md), [`UnidadesMedidaModule.md`](UnidadesMedidaModule.md) (confirmado 🟢 COMPLETE en `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`). El `## Estado` y `## Checklist` de abajo se conservan sin editar como registro histórico del plan original (Historical Integrity, `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md`) — para el estado real, usar los tres informes finales.
 
 ## Estado
 
-En desarrollo (Fase 4 del flujo de `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`).
+En desarrollo (Fase 4 del flujo de `docs/10_GOVERNANCE/MandatoryDevelopmentWorkflow.md`). **Histórico — ver nota arriba: los tres módulos están completos desde 2026-07-30.**
 
 ## Goal
 

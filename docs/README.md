@@ -49,14 +49,19 @@ Dependiendo de la tarea que vas a realizar, comienza por aquí:
 |------------|-------------|
 | Comprender el proyecto | `00_VISION/Vision.md` |
 | Conocer cómo está organizada la documentación | `docs/README.md` |
+| Revisar qué debe construirse (producto) | `01_PRD/ProductRequirements.md` |
 | Comprender la arquitectura | `04_TECHNICAL_SPEC/Architecture.md` |
 | Desarrollar una funcionalidad | `10_GOVERNANCE/MandatoryDevelopmentWorkflow.md` |
 | Revisar reglas de ingeniería | `10_GOVERNANCE/EngineeringManual.md` |
 | Implementar un módulo | Functional Specification correspondiente |
 | Revisar especificaciones técnicas | Technical Specification correspondiente |
+| Revisar decisiones arquitectónicas ya tomadas | `08_ADR/ADR_INDEX.md` |
+| Revisar el Design System (UI/UX) | `11_DESIGN_SYSTEM/README.md` |
 | Ejecutar pruebas | `06_TESTS/MasterTestPlan.md` |
 | Preparar una Release | `10_GOVERNANCE/ReleaseWorkflow.md` |
 | Trabajar con IA | `10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` |
+
+Esta tabla es un punto de entrada rápido por tarea. Para el orden secuencial completo de lectura antes de implementar cualquier feature, ver `10_GOVERNANCE/AI_OPERATING_PROCEDURE.md`, sección "Mandatory Reading Order".
 
 ---
 

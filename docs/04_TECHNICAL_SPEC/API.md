@@ -48,7 +48,7 @@ Mismo shape para los tres recursos, mismo patrón que `/proveedores` (route-mode
 
 **Fase 4.6 (Authorization Completion, 2026-08-02, docs/security/ROLES_MATRIX.md)**: `ProductoPolicy` exige además el permiso correspondiente — `GET` (listar/ver, incluye `/movimientos`) exige `productos.ver`; `POST`/`PATCH`/`registrarIngreso`/`habilitar` exigen `productos.editar` (o `.crear` para el alta); `deshabilitar` exige `productos.gestionar` (renombrado desde `productos.eliminar` — nunca hay un DELETE físico).
 
-## Módulo Proveedores (FEATURE-003, docs/03_FUNCTIONAL_SPEC/Suppliers.md) y Producto↔Proveedor (FEATURE-005)
+## Módulo Proveedores (FEATURE-003, `docs/03_FUNCTIONAL_SPEC/FUTURE/Suppliers.md` — spec desactualizada, el módulo ya está construido, ver `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`; pendiente de graduar a `03_FUNCTIONAL_SPEC/` como se hizo con Clientes/Auditoría/Reportes) y Producto↔Proveedor (FEATURE-005)
 
 Borrado siempre lógico — nunca DELETE físico. **Fase 4.5**: `ProveedorPolicy` exige `proveedores.*`; la asociación Producto↔Proveedor tiene su propio namespace `producto-proveedor.*` (distinto de `proveedores.*` — es la relación, no el proveedor en sí), verificado además de (no en lugar de) la pertenencia sobre el Producto padre.
 

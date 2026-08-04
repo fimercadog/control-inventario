@@ -39,7 +39,7 @@ Alto y transversal — afecta la estructura de carpetas de todo el backend y el 
 - `docs/04_TECHNICAL_SPEC/Architecture.md`
 
 ## Estado de implementación
-Implementado y verificado en código para el módulo Captura IA (el único módulo de negocio completo). Los módulos Auth/RBAC (Fase 5) declaran seguir el mismo principio en `docs/04_TECHNICAL_SPEC/Architecture.md`, pero varios de sus submódulos (3–9) todavía no están construidos — ver `docs/00_VISION/Roadmap.md`.
+Implementado y verificado en código para el módulo Captura IA. Los módulos Auth/RBAC (Fase 5) declaran seguir el mismo principio en `docs/04_TECHNICAL_SPEC/Architecture.md` — actualizado 2026-08-04: la mayoría de sus submódulos ya están construidos (0–2, 4, 5, 9 completos; Módulo 3 completo desde 2026-08-02, Módulo 6 completo desde 2026-08-03); solo los Módulos 7–8 (Sessions, Security Logs) siguen pendientes — ver `docs/00_VISION/Roadmap.md`.
 
 ## Información Faltante
 No existe registro de qué alternativas arquitectónicas se evaluaron antes de adoptar este principio, ni quién tomó la decisión, ni en qué fecha exacta. El principio aparece ya decidido en la primera versión legible del master spec, sin historial de discusión previo disponible en este repositorio (no hay commits granulares ni actas de decisión).

@@ -1,6 +1,6 @@
 # Definition of Done
 
-Extraído de `AGENTS.md` (que ahora es un documento corto que apunta aquí) y reconciliado con `docs/00_MASTER_SPECIFICATION_ORIGINAL.md` §70 (única versión vigente desde esta migración).
+Extraído de `AGENTS.md` (que ahora es un documento corto que apunta aquí) y reconciliado con `docs/_ARCHIVE/00_MASTER_SPECIFICATION_ORIGINAL.md` §70 (única versión vigente desde esta migración).
 
 Un módulo o feature **NO está terminado** hasta que TODO lo siguiente se cumple:
 

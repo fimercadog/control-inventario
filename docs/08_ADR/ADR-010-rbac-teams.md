@@ -1,7 +1,7 @@
 # ADR-010: RBAC vía `spatie/laravel-permission` con Teams (`team_foreign_key = empresa_id`)
 
 ## Estado
-Accepted (Verified) para el diseño. **Parcialmente implementado** — ver "Estado de implementación".
+Accepted (Verified). **Implementado** — ver "Estado de implementación" (actualizado 2026-08-04, auditoría de integridad documental).
 
 ## Fecha
 No verificable con fecha exacta (ver ADR-001). Proxy verificable: `backend/database/migrations/2026_07_28_183606_create_permission_tables.php` y `2026_07_28_183607_add_empresa_foreign_key_to_roles_table.php`, fechadas `2026-07-28`.
@@ -33,7 +33,7 @@ Usar `spatie/laravel-permission` con la feature Teams habilitada, usando `empres
 ## Consecuencias
 - Cada empresa gestiona sus propios roles de forma completamente independiente; los permisos disponibles son los mismos para todas las empresas.
 - Dependencia de un paquete de terceros (`spatie/laravel-permission`) para una pieza de seguridad central — mitigado, según la fuente, por aislar su uso detrás de `PermissionCheckerInterface` en vez de importarlo directamente en Domain/Application.
-- El chequeo real de permisos (`$user->can()`) en las Policies de negocio, y el seeder del catálogo, corresponden al Módulo 3 (Authorization), **todavía no construido** — ver "Estado de implementación".
+- El chequeo real de permisos (`$user->can()`) en las Policies de negocio, y el seeder del catálogo, corresponden al Módulo 3 (Authorization) — **construido y completo**, ver "Estado de implementación".
 
 ## Impacto
 Alto — es la infraestructura de autorización de todo el sistema; determina cómo se modelan roles y permisos para todos los módulos futuros.
@@ -46,7 +46,7 @@ Alto — es la infraestructura de autorización de todo el sistema; determina c�
 - `backend/config/permission.php`
 
 ## Estado de implementación
-**Parcial.** El modelo `Role` (con `BelongsToEmpresa`) y el paquete con Teams habilitado ya están instalados y configurados en código (`config/permission.php`, migraciones de permisos y roles). El catálogo de permisos, el seeder, y el chequeo `$user->can()` real dentro de Policies de negocio corresponden al Módulo 3 (Authorization/RBAC), que según `docs/00_VISION/Roadmap.md` **no está construido todavía**.
+**Completo** (actualizado 2026-08-04 — anteriormente decía "Parcial", desactualizado desde 2026-08-02). El modelo `Role` (con `BelongsToEmpresa`) y el paquete con Teams habilitado están instalados y configurados en código (`config/permission.php`, migraciones de permisos y roles). El catálogo de permisos, el seeder, y el chequeo `$user->can()` real dentro de Policies de negocio (Módulo 3, Authorization/RBAC) se completaron en dos fases: `docs/05_IMPLEMENTATION/AuthorizationAlignment.md` (Fase 4.5) y `docs/05_IMPLEMENTATION/AuthorizationCompletion.md` (Fase 4.6, 2026-08-02) — las 9 Policies de recursos de negocio del ERP comparten el mismo modelo de autorización (permiso AND pertenencia de empresa), confirmado en `docs/security/ROLES_MATRIX.md` (`Status: Approved — arquitectura de autorización completa`). Ver `docs/00_VISION/Roadmap.md`, Módulo 3.
 
 ## Información Faltante
 No se documentó si se evaluaron alternativas a `spatie/laravel-permission` (otro paquete, o una implementación propia de roles/permisos). Se documenta el motivo funcional de la elección de Teams como mecanismo (evitar reinventar el particionado por empresa), no una comparación formal entre paquetes de RBAC.
