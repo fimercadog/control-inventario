@@ -74,6 +74,7 @@ Sin avatar (`avatar_url` es `null`): el `Avatar` cae a las iniciales del nombre 
 - **Cambiar la contraseña siempre revoca todas las sesiones** — reutiliza `AuthenticationService::forcePasswordReset()`, el mismo mecanismo que "olvidé mi contraseña" ya usaba; no se duplicó la lógica de revocación.
 - **Subir un avatar nuevo borra el archivo anterior** — nunca quedan archivos huérfanos en el disco acumulándose.
 - **`email` nunca es editable desde aquí** — decisión de alcance explícita, no un descuido (ver Edge Cases).
+- **Toda automodificación de perfil escribe una entrada real en `AuditLog`** (`perfil.editar`/`perfil.avatar_actualizado`/`perfil.avatar_eliminado`/`perfil.password_cambiado`, añadido 2026-08-04 en la auditoría de campos editables de Clientes/Proveedores/Usuarios). Antes de esta fecha ningún endpoint de este módulo auditaba — inconsistencia real frente a `UserController` (que sí auditaba activar/desactivar/asignar rol) y frente a `docs/10_GOVERNANCE/DefinitionOfDone.md` ("toda mutación exitosa escribe una entrada real vía AuditLogger"). El diff capturado es el real (`getChanges()`), igual que Clientes/Proveedores — nunca el valor de `password`, solo la marca `(cambiado)`.
 
 ## Acceptance Criteria
 

@@ -23,26 +23,25 @@ class ProfileController extends Controller
 {
     public function __construct(
         private readonly ProfileService $perfil,
-    ) {
-    }
+    ) {}
 
     public function update(UpdateProfileRequest $request): JsonResponse
     {
-        $user = $this->perfil->actualizar($request->user(), $request->validated());
+        $user = $this->perfil->actualizar($request->user(), $request->validated(), $request);
 
         return ApiResponse::success(new AuthenticatedUserResource($user), 'Perfil actualizado correctamente');
     }
 
     public function subirAvatar(UploadAvatarRequest $request): JsonResponse
     {
-        $user = $this->perfil->actualizarAvatar($request->user(), $request->file('avatar'));
+        $user = $this->perfil->actualizarAvatar($request->user(), $request->file('avatar'), $request);
 
         return ApiResponse::success(new AuthenticatedUserResource($user), 'Avatar actualizado correctamente');
     }
 
     public function eliminarAvatar(Request $request): JsonResponse
     {
-        $user = $this->perfil->eliminarAvatar($request->user());
+        $user = $this->perfil->eliminarAvatar($request->user(), $request);
 
         return ApiResponse::success(new AuthenticatedUserResource($user), 'Avatar eliminado correctamente');
     }
@@ -54,7 +53,7 @@ class ProfileController extends Controller
      */
     public function cambiarPassword(ChangePasswordRequest $request): JsonResponse
     {
-        $this->perfil->cambiarPassword($request->user(), $request->string('password')->toString());
+        $this->perfil->cambiarPassword($request->user(), $request->string('password')->toString(), $request);
 
         return ApiResponse::success(null, 'Contraseña actualizada correctamente. Inicia sesión de nuevo.');
     }

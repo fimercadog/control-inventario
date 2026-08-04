@@ -179,6 +179,48 @@ class ProveedorControllerTest extends TestCase
         $this->assertSame($antes, AuditLog::count());
     }
 
+    /**
+     * `estado` se excluyó deliberadamente de `UpdateProveedorRequest` —
+     * debe cambiar únicamente vía /habilitar y /deshabilitar, que llevan
+     * su propio permiso y acción de auditoría (auditoría de campos
+     * editables, 2026-08-04). Si se envía en el PATCH genérico, se ignora
+     * en silencio, mismo patrón que `empresa_id`.
+     */
+    public function test_estado_is_ignored_on_the_generic_update_endpoint(): void
+    {
+        $this->assertSame('activo', $this->proveedorA->fresh()->estado);
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['estado' => 'inactivo', 'telefono' => '3005550000'])
+            ->assertOk()
+            ->assertJsonPath('data.estado', 'activo');
+
+        $this->assertSame('activo', $this->proveedorA->fresh()->estado);
+        $this->assertSame('3005550000', $this->proveedorA->fresh()->telefono);
+    }
+
+    /** `nombre` es el campo de identidad del registro — un PATCH no puede vaciarlo. */
+    public function test_nombre_cannot_be_blanked_on_update(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['nombre' => ''])
+            ->assertStatus(422);
+
+        $this->assertNotSame('', $this->proveedorA->fresh()->nombre);
+    }
+
+    /** `empresa_id` nunca está en las reglas de validación — protección estructural, no explícita, cubierta aquí como regresión. */
+    public function test_empresa_id_cannot_be_changed_on_update(): void
+    {
+        $original = $this->proveedorA->empresa_id;
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['empresa_id' => $this->empresaB->id])
+            ->assertOk();
+
+        $this->assertSame($original, $this->proveedorA->fresh()->empresa_id);
+    }
+
     public function test_two_suppliers_in_the_same_company_cannot_share_an_email(): void
     {
         Proveedor::create(['nombre' => 'Otro Proveedor', 'email' => 'duplicado@test.com']);

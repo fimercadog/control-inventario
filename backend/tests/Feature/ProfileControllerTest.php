@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\AuthSession;
 use App\Models\Empresa;
 use App\Models\User;
@@ -54,6 +55,42 @@ class ProfileControllerTest extends TestCase
             ->assertJsonPath('data.timezone', 'America/Mexico_City');
 
         $this->assertDatabaseHas('users', ['id' => $this->user->id, 'name' => 'Nombre Actualizado', 'theme' => 'dark']);
+    }
+
+    /**
+     * Antes de 2026-08-04, ninguna automodificación de perfil quedaba en
+     * `AuditLog` — inconsistencia real frente a las mutaciones de
+     * `UserController` (activar/desactivar/asignarRol), que sí auditaban.
+     * Cerrado en la auditoría de campos editables de
+     * Clientes/Proveedores/Usuarios.
+     */
+    public function test_updating_profile_writes_an_audit_log_with_only_the_changed_fields(): void
+    {
+        $this->actingAs($this->user, 'api')
+            ->patchJson('/api/v1/perfil', ['name' => 'Nombre Nuevo'])
+            ->assertOk();
+
+        $log = AuditLog::where('modulo', 'perfil')->where('accion', 'perfil.editar')->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame('Nombre Nuevo', $log->valores_nuevos['name'] ?? null);
+        $this->assertArrayNotHasKey('theme', $log->valores_nuevos);
+    }
+
+    /** Nunca el hash ni el valor real de la contraseña dentro del log — solo la marca de que ocurrió. */
+    public function test_changing_password_writes_an_audit_log_without_the_password_value(): void
+    {
+        $this->actingAs($this->user, 'api')
+            ->postJson('/api/v1/perfil/password', [
+                'password_actual' => 'password-actual-123',
+                'password' => 'password-nuevo-456',
+                'password_confirmation' => 'password-nuevo-456',
+            ])
+            ->assertOk();
+
+        $log = AuditLog::where('modulo', 'perfil')->where('accion', 'perfil.password_cambiado')->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame('(cambiado)', $log->valores_nuevos['password'] ?? null);
+        $this->assertStringNotContainsString('password-nuevo-456', json_encode($log->valores_nuevos));
     }
 
     public function test_updating_profile_only_touches_provided_fields(): void

@@ -46,9 +46,20 @@ Administrar el catálogo de clientes de cada empresa — alta, edición, búsque
 
 El alcance del borrador original (Tipo Documento, Apellido separado, Fecha Nacimiento, clasificación Nuevo/Frecuente/Premium) **no se construyó** — el shape real sigue el mismo patrón que `Proveedor` (empresa como entidad, no persona natural con esos campos específicos), consistente con cómo el resto del ERP ya modela clientes/proveedores como organizaciones.
 
+## Editable Fields (auditoría 2026-08-04)
+
+Clasificación de cada campo, tras la auditoría de campos editables de Clientes/Proveedores/Usuarios (`docs/13_ROLES/` — Architect → Developer → QA → Code Reviewer → Security Reviewer). Distingue identidad (lo que el registro *es*) de información operativa (lo que puede corregirse en el curso normal del negocio).
+
+| Campo | Clasificación | Razón |
+| --- | --- | --- |
+| `nombre` | Editable, no puede vaciarse | Identidad del registro, pero corregible (typos, cambios de razón social). `UpdateClienteRequest` ganó `filled` (antes solo `string`) — un PATCH ya no puede dejarlo en `""`. |
+| `nit`, `contacto`, `telefono`, `email`, `direccion`, `ciudad`, `pais`, `notas` | Editable | Información de contacto/operativa, se corrige libremente. `email` es único por empresa; `nit` no tiene unicidad (ver Edge Cases). |
+| `estado` | Condicionalmente editable — solo vía `/habilitar` y `/deshabilitar` | Antes de esta auditoría, el PATCH genérico también aceptaba `estado` y solo exigía `clientes.editar`, mientras que `/deshabilitar` exige el permiso más estricto `clientes.gestionar` — dos rutas al mismo efecto con dos permisos distintos. Cerrado: `estado` se quitó de `UpdateClienteRequest`; si se envía en el PATCH genérico, se ignora en silencio (nunca 422, mismo patrón que `empresa_id`). |
+| `empresa_id`, `id`, `created_at`, `updated_at` | Read-only | Nunca estuvieron en las reglas de validación de update — protección estructural (no en la whitelist), no un guard explícito. Cubierto por test de regresión dedicado desde esta auditoría. |
+
 ## Validation Rules
 
-Ver `StoreClienteRequest`/`UpdateClienteRequest`: `nombre` requerido solo al crear (`sometimes` al editar); `email` debe ser un email válido si se envía; `estado` solo acepta `activo`/`inactivo`. Todos los demás campos son `nullable` — un campo `nullable` enviado explícitamente como `null` se vacía de verdad (ver el comentario de `ClienteDTO` y el test `test_explicitly_clearing_a_nullable_field_persists_as_null`).
+Ver `StoreClienteRequest`/`UpdateClienteRequest`: `nombre` requerido al crear, y `sometimes|filled` al editar (no puede enviarse vacío, ampliación 2026-08-04); `email` debe ser un email válido si se envía; `estado` **ya no es aceptado** por `UpdateClienteRequest` (ampliación 2026-08-04 — ver "Editable Fields" arriba). Todos los demás campos son `nullable` — un campo `nullable` enviado explícitamente como `null` se vacía de verdad (ver el comentario de `ClienteDTO` y el test `test_explicitly_clearing_a_nullable_field_persists_as_null`).
 
 ## Permissions
 

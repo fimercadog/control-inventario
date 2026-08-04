@@ -16,6 +16,16 @@ use App\Models\User;
  * Sin `create()`/`delete()` a propósito: no existen esas acciones en este
  * módulo (ver Decisión 1 en Users.md — creación es Módulo 6, eliminación
  * no existe nunca para Usuarios).
+ *
+ * `update()` (gatea activar/desactivar/asignarRol por igual, ver
+ * `UserController`) exigía únicamente pertenencia de empresa hasta
+ * 2026-08-04 — brecha documentada explícitamente en Users.md como
+ * dependiente del Módulo 3 (Authorization/RBAC), sin construir en ese
+ * momento. Módulo 3 se completó 2026-08-02 (`AuthorizationCompletion.md`);
+ * esta Policy quedó como la única excepción real al modelo "permiso AND
+ * pertenencia de empresa, nunca pertenencia sola" que ya rige las otras 9
+ * Policies del ERP — cerrado en la auditoría de campos editables de
+ * Clientes/Proveedores/Usuarios, 2026-08-04.
  */
 class UserPolicy
 {
@@ -26,7 +36,7 @@ class UserPolicy
 
     public function update(User $actor, User $usuario): bool
     {
-        return $this->ownedBy($actor, $usuario);
+        return $this->ownedBy($actor, $usuario) && $actor->can('usuarios.editar');
     }
 
     private function ownedBy(User $actor, User $usuario): bool

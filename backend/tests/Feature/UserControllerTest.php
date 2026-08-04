@@ -198,20 +198,65 @@ class UserControllerTest extends TestCase
         $this->assertTrue($this->adminA->fresh()->is_active);
     }
 
-    public function test_the_last_user_with_gestion_permission_cannot_be_deactivated(): void
+    /**
+     * Antes de 2026-08-04 este test verificaba que un tercero SIN permiso
+     * podía disparar la guarda de "último administrador" (409). Desde que
+     * `UserPolicy::update()` exige `usuarios.editar` en el actor
+     * (auditoría de campos editables), ese escenario ya no es alcanzable:
+     * cualquier actor que llegue a `desactivar()` ya tiene el permiso, así
+     * que siempre queda como "otro con gestión" tras desactivar a alguien
+     * más — la guarda nunca se dispara por un tercero. Lo que sí sigue
+     * siendo cierto, y es lo que este test verifica ahora, es que un
+     * segundo administrador SIEMPRE puede desactivar al primero sin que la
+     * guarda interfiera (la empresa nunca se queda sin nadie con gestión,
+     * porque el propio actor la conserva). El caso real que la guarda
+     * todavía protege — la propia cuenta del último administrador — ya lo
+     * cubre `test_a_user_cannot_deactivate_their_own_account` vía
+     * `CannotDeactivateSelfException`, una guarda distinta y anterior en
+     * el mismo método. Ver el docblock de `desactivar()` en
+     * `UserController` para el razonamiento completo.
+     */
+    public function test_a_second_admin_can_deactivate_the_first_without_the_last_admin_guard_interfering(): void
     {
-        // adminA es el único usuario con usuarios.editar en Empresa A. Sin
-        // enforcement granular por permiso todavía (fuera de alcance, ver
-        // Users.md), cualquier usuario autenticado de la misma empresa
-        // puede intentar la acción — la guarda de negocio debe bloquearla
-        // igual, sin importar quién la dispare.
-        $otroSinGestion = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $segundoAdmin = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $segundoAdmin->assignRole($this->roleConGestion);
 
-        $this->actingAs($otroSinGestion, 'api')
+        $this->actingAs($segundoAdmin, 'api')
             ->postJson("/api/v1/usuarios/{$this->adminA->id}/desactivar")
-            ->assertStatus(409);
+            ->assertOk();
 
-        $this->assertTrue($this->adminA->fresh()->is_active);
+        $this->assertFalse($this->adminA->fresh()->is_active);
+        $this->assertTrue($segundoAdmin->fresh()->is_active);
+    }
+
+    /**
+     * Cierre de la brecha documentada en `test_assigning_a_role_...` de
+     * abajo y en `UserPolicy::update()` — activar/desactivar/asignarRol
+     * ahora exigen `usuarios.editar`, no solo pertenencia de empresa
+     * (auditoría de campos editables, 2026-08-04).
+     */
+    public function test_a_user_without_usuarios_editar_cannot_deactivate_a_colleague(): void
+    {
+        $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $this->actingAs($sinPermiso, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/desactivar")
+            ->assertStatus(403);
+
+        $this->assertTrue($colega->fresh()->is_active);
+    }
+
+    public function test_a_user_without_usuarios_editar_cannot_activate_a_colleague(): void
+    {
+        $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id, 'is_active' => false]);
+
+        $this->actingAs($sinPermiso, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/activar")
+            ->assertStatus(403);
+
+        $this->assertFalse($colega->fresh()->is_active);
     }
 
     public function test_deactivating_is_allowed_when_another_manager_remains(): void
@@ -279,22 +324,23 @@ class UserControllerTest extends TestCase
 
     /**
      * `UserPolicy::update()` (que gatea activar/desactivar/asignarRol por
-     * igual) solo verifica pertenencia de empresa, nunca un permiso
-     * Spatie real — estado documentado explícitamente en Users.md
-     * ("enforcement granular por nombre de permiso todavía no
-     * implementado, depende de Módulo 3, sin construir"), verdadero para
-     * las tres acciones por igual, no una laguna nueva de `asignarRol()`.
-     * Este test fija ese comportamiento actual, no lo aprueba como
-     * destino final.
+     * igual) solo verificaba pertenencia de empresa hasta 2026-08-04 —
+     * brecha documentada en Users.md como dependiente del Módulo 3
+     * (Authorization/RBAC). Módulo 3 se completó 2026-08-02; esta laguna
+     * se cerró en la auditoría de campos editables. Reemplaza al test
+     * anterior que fijaba el comportamiento permisivo como "actual, no
+     * destino final" — este es ahora el destino final.
      */
-    public function test_assigning_a_role_only_requires_company_membership_today_not_usuarios_editar(): void
+    public function test_assigning_a_role_requires_usuarios_editar_permission(): void
     {
         $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
         $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
 
         $this->actingAs($sinPermiso, 'api')
             ->postJson("/api/v1/usuarios/{$colega->id}/rol", ['role_id' => $this->roleConGestion->id])
-            ->assertOk();
+            ->assertStatus(403);
+
+        $this->assertFalse($colega->fresh()->hasRole('Administrador'));
     }
 
     public function test_company_b_cannot_assign_a_role_to_company_as_user(): void

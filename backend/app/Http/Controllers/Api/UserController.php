@@ -111,6 +111,20 @@ class UserController extends Controller
      * activo de la empresa con `usuarios.editar`. Además revoca todas las
      * `auth_sessions` activas del usuario afectado — mismo mecanismo ya
      * usado por reset de contraseña.
+     *
+     * Nota (2026-08-04, auditoría de campos editables): desde que
+     * `UserPolicy::update()` exige `usuarios.editar` en el actor, la
+     * guarda `esElUltimoConGestion()` ya no es alcanzable vía un tercero —
+     * quien llama esta acción necesariamente conserva el permiso después
+     * de desactivar a otro, así que nunca puede dejar a la empresa sin
+     * nadie con gestión por esta ruta. Sigue siendo la defensa correcta
+     * para la única ruta que sí podría dejarla sin nadie — la propia
+     * cuenta —, pero esa ya la bloquea `CannotDeactivateSelfException`
+     * antes de llegar aquí. Se conserva como defensa en profundidad, no
+     * como código muerto a eliminar: si el modelo de autorización cambia
+     * otra vez, esta guarda vuelve a ser la última línea de defensa real.
+     * El riesgo real que queda abierto está en `asignarRol()`, que no
+     * tiene guarda equivalente — ver informe de la auditoría.
      */
     public function desactivar(Request $request, int $id): JsonResponse
     {

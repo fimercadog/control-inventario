@@ -4,7 +4,7 @@
 
 > Corresponde al Módulo 4 (User Management) del roadmap Auth & RBAC (`docs/00_VISION/Roadmap.md`). Esta versión reemplaza la anterior ("Planned — not yet implemented"), que dejaba deliberadamente sin resolver las preguntas de negocio marcadas abajo — resueltas explícitamente por el propietario del proyecto antes de escribir código, cerrando el gate del Golden Rule (`AGENTS.md`).
 >
-> **Nota de dependencia, heredada sin cambios**: Módulo 3 (Authorization/RBAC — `PermissionCheckerInterface`, middleware de permisos, `PermissionContext`, rutas protegidas por permiso) sigue `[ ]` sin construir. Este módulo se implementa, como todos los anteriores del roadmap RC1, con el mismo nivel de enforcement ya usado en Categorías/Marcas/Stock/Movimientos: aislamiento por empresa real (`UserPolicy`, defensa en profundidad), catálogo de permisos sembrado (`usuarios.ver`/`usuarios.editar`/`usuarios.invitar`) pero **sin middleware de permiso granular todavía** — `UserPolicy::update()` (que gatea activar/desactivar/asignar rol por igual) solo verifica pertenencia de empresa, no un permiso Spatie real. No es una regresión de esta ampliación, es el mismo estado incremental de todo el roadmap desde Fase 4 original.
+> **Nota de dependencia — resuelta 2026-08-04.** Módulo 3 (Authorization/RBAC) se completó 2026-08-02 (`docs/05_IMPLEMENTATION/AuthorizationCompletion.md`), pero `UserPolicy::update()` quedó como la única excepción del ERP al modelo "permiso AND pertenencia de empresa" — brecha documentada explícitamente aquí abajo (Permissions), heredada sin corregir durante la ampliación de Invitaciones del 2026-08-03. Cerrada en la auditoría de campos editables de Clientes/Proveedores/Usuarios (`docs/13_ROLES/`, 2026-08-04): `UserPolicy::update()` ahora exige `ownedBy() && $actor->can('usuarios.editar')`, igual que las otras 9 Policies del ERP. Activar/Desactivar/Asignar rol (los tres pasan por `update()`) ahora devuelven 403 sin ese permiso, no solo por pertenecer a otra empresa.
 
 ## Purpose
 
@@ -51,6 +51,8 @@ Permitir que un usuario con permiso de gestión (`usuarios.ver`/`usuarios.editar
 | rol asignado | `model_has_roles` (Spatie, vía `getRoleNames()`) | Sí (2026-08-03) — vía "Cambiar rol", reemplaza el rol anterior |
 | invited_at, invited_by | `users` | No (trazabilidad de cómo se creó la cuenta — fijados al aceptar la invitación) |
 
+**Clasificación (auditoría de campos editables, 2026-08-04):** `name`/`email`/`empresa_id` son de identidad y **read-only** desde cualquier ruta después de crearse la cuenta (`email` en particular es la credencial de login — nunca cambia, ni siquiera desde `Perfil`, ver `Profile.md`). `is_active` y el rol asignado son condicionalmente editables — requieren `usuarios.editar` y, en el caso de `is_active`, además no dejar a la empresa sin nadie con ese permiso (Decisión 3; ver el riesgo documentado arriba sobre `asignarRol()`, que no replica esa segunda guarda). Los campos de `Perfil` (`theme`/`language`/`timezone`/`avatar_path`/`password`) son editables solo por el propio usuario — ver `Profile.md`.
+
 ## Validation Rules
 
 - **Invitar** (`StoreInvitationRequest`): `email` requerido, formato válido, único contra `users` (no se puede invitar un correo ya registrado); `role_id` opcional, debe existir dentro de la propia empresa del invitador.
@@ -60,7 +62,9 @@ Permitir que un usuario con permiso de gestión (`usuarios.ver`/`usuarios.editar
 
 ## Permissions
 
-Catálogo sembrado (`PermissionSeeder`): `usuarios.ver`, `usuarios.editar`, `usuarios.invitar`. Enforcement real vía `UserPolicy` (pertenencia de empresa — un usuario de la Empresa B nunca puede ver/activar/desactivar/reasignar rol de un usuario de la Empresa A) e `InvitationPolicy` (`usuarios.invitar`, para `store()` únicamente — `show()`/`aceptar()` son públicas, la posesión del token es la prueba de identidad); enforcement granular por nombre de permiso todavía no implementado para `UserPolicy::update()` (depende de Módulo 3, ver nota de dependencia arriba) — mismo estado que el resto del roadmap RC1, no una laguna nueva de `asignarRol()`.
+Catálogo sembrado (`PermissionSeeder`): `usuarios.ver`, `usuarios.editar`, `usuarios.invitar`. Enforcement real vía `UserPolicy` (pertenencia de empresa **Y** `usuarios.editar`, cerrado 2026-08-04 — ver nota de dependencia arriba; antes solo pertenencia) e `InvitationPolicy` (`usuarios.invitar`, para `store()` únicamente — `show()`/`aceptar()` son públicas, la posesión del token es la prueba de identidad).
+
+**Riesgo documentado, no corregido en esta auditoría** (invención de regla de negocio nueva, no una corrección de una ya decidida — fuera del mandato del rol Developer, `docs/13_ROLES/DEVELOPER.md`): a diferencia de `desactivar()` (que además exige no ser la última cuenta con `usuarios.editar` de la empresa, Decisión 3), `asignarRol()` no tiene guarda equivalente — un usuario con `usuarios.editar` podría reasignarse su propio rol a uno sin ese permiso, o quitárselo al último usuario que lo tiene, dejando a la empresa sin nadie que pueda gestionar cuentas por esta vía. Requiere decisión explícita del propietario del producto antes de implementarse.
 
 ## Loading States
 
