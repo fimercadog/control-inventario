@@ -120,6 +120,38 @@ Do not invent reasoning.
 
 ---
 
+# Audit Discipline
+
+Added 2026-08-03, generalizing the pattern established across the `docs/11_DESIGN_SYSTEM/` audits and `ADR-014`.
+
+When asked to audit code, documentation, or a bug report:
+
+- Verify against the real code (`grep`, direct reads, running tests) before writing any conclusion. Cite exact counts and file:line references — never "approximately" or "most modules."
+- Do not assume a claim is true because it was reported as a bug or as fact. Verify it first; if it is false, say so with evidence before proposing any fix.
+- When a real inconsistency or defect is found, fix it immediately only if the fix is small, contained, and does not change behavior visible to the user (e.g., removing a duplicated local component in favor of an already-shared one). State clearly in the report: "found and fixed."
+- When a real inconsistency or defect is found and the fix has a wide blast radius (affects visual appearance across many screens, changes an established behavior, requires touching many files) — do not fix it. Document it explicitly (what, where, how many sites, with evidence) and wait for explicit approval before touching code. Never silently leave it undocumented either.
+- Distinguish, in every audit report: what is Verified (confirmed against real code, consistent), what is Partial (confirmed against real code, but with a real documented inconsistency or bug not yet fixed), and what is Planned (not built yet). Never mark something Verified to make a report look more complete than it is.
+
+---
+
+# Release Cadence
+
+Added 2026-08-03. Once a module or cross-cutting concern (like the Design System) reaches a stable baseline, do not keep mixing unrelated scopes into the same unit of work — group work into named Release Candidates, one focus area per RC, so risk stays contained and the change history stays legible.
+
+Established sequence at the time of this update (see `docs/11_DESIGN_SYSTEM/CHANGELOG.md` and `docs/11_DESIGN_SYSTEM/README.md` for the live status of each Design System item referenced below):
+
+- **RC1-RC3**: business modules (Roles, Auditoría, Reportes, Perfil, etc.) and the Design System consolidation (Component Reuse, Modal Sizes, Tables/Forms/Typography/Colors/Iconography/Responsive audits, Typography bug fix, Quality Checklist).
+- **RC4 — Color System**: reconcile the 3 status-badge color patterns documented in `docs/11_DESIGN_SYSTEM/COLORS.md` into one. Scope: the whole application, not a single badge or button.
+- **RC5 — Tables**: reconcile pagination, server-vs-client search, and debounce inconsistencies documented in `docs/11_DESIGN_SYSTEM/TABLES.md`. Scope: every list/table screen, not a single module.
+- **RC6 — Forms**: reconcile the two dialog families (CrudModal vs. independent dialogs) and the Proveedor/Cliente grid divergence documented in `docs/11_DESIGN_SYSTEM/FORMS.md`. Scope: every form, not a single module.
+- **RC7 — Performance**: backend, frontend, Redux, and query performance — not yet scoped in detail.
+- **RC8 — Accessibility**: not yet scoped in detail.
+- **RC9 — Production Ready**: not yet scoped in detail.
+
+This list is a sequencing decision, not a specification — each RC still needs its own Functional/Technical Spec and, where it changes existing behavior, its own ADR before implementation starts, per the Specification-Driven Development order above.
+
+---
+
 # Code Generation Policy
 
 Before generating code verify that:
@@ -133,6 +165,27 @@ If any required specification is missing:
 Stop implementation.
 
 Request the missing specification.
+
+---
+
+# Design System Compliance
+
+Added 2026-08-03, after `docs/11_DESIGN_SYSTEM/` was consolidated into the single official source for UI/UX (see its own `README.md` for how it is organized and its Verified/Partial/Planned status legend).
+
+Before implementing any new module or screen:
+
+1. Read `docs/11_DESIGN_SYSTEM/README.md` for the current state of every section.
+2. Read `docs/11_DESIGN_SYSTEM/QUALITY_CHECKLIST.md`.
+3. Read `docs/11_DESIGN_SYSTEM/COMPONENT_INVENTORY.md`.
+4. Reuse existing components — Component Reuse is Mandatory (`docs/11_DESIGN_SYSTEM/DESIGN_SYSTEM.md` §1.1): reuse first, extend second, create new only when no reusable solution exists.
+5. Only create a new component if the Golden Rule (`DESIGN_SYSTEM.md`) is satisfied and justified in the module's implementation report.
+6. State explicitly, in the module's implementation report, which existing components were reused and which (if any) new component was created and why.
+
+Do not start coding before completing this review.
+
+A module is not considered done without passing `QUALITY_CHECKLIST.md` — see `docs/10_GOVERNANCE/DefinitionOfDone.md` for how this checklist relates to the general Definition of Done.
+
+No local Design System definitions (modal sizes, colors, spacing, etc.) are allowed without an ADR justifying the exception — same rule already stated in `docs/11_DESIGN_SYSTEM/README.md` and demonstrated in `docs/08_ADR/ADR-014-modal-sizing-unification.md`.
 
 ---
 
