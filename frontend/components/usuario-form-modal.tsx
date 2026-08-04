@@ -40,6 +40,7 @@ export function UsuarioFormModal({
   onSaved: (usuario: Usuario) => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const eraAbierto = useRef(false);
   const [theme, setTheme] = useState("system");
   const [language, setLanguage] = useState("es");
   const [timezone, setTimezone] = useState("");
@@ -47,13 +48,26 @@ export function UsuarioFormModal({
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  /**
+   * Bug real encontrado en la verificación funcional del módulo (2026-08-04):
+   * al depender de `[open, usuario]`, subir un avatar (que llama `onSaved`
+   * con el usuario fresco del backend, y ese objeto nuevo llega aquí como
+   * prop) reinicializaba en silencio Idioma/Zona horaria/Tema a sus valores
+   * del servidor, descartando cualquier cambio ya escrito en el formulario
+   * pero todavía sin guardar. El guard `eraAbierto` hace que la
+   * inicialización solo ocurra en la transición cerrado→abierto, nunca por
+   * un cambio de referencia de `usuario` mientras el modal ya está abierto
+   * — `avatarUrl` se sigue actualizando en vivo desde `subirAvatar`/
+   * `eliminarAvatar` directamente, no depende de este efecto para eso.
+   */
   useEffect(() => {
-    if (open && usuario) {
+    if (open && !eraAbierto.current && usuario) {
       setTheme(usuario.theme ?? "system");
       setLanguage(usuario.language ?? "es");
       setTimezone(usuario.timezone ?? "");
       setAvatarUrl(usuario.avatar_url);
     }
+    eraAbierto.current = open;
   }, [open, usuario]);
 
   if (!usuario) return null;

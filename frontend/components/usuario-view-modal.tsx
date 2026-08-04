@@ -120,7 +120,19 @@ export function UsuarioViewModal({
               <CardContent className="flex flex-col gap-4 pt-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-sm font-semibold">Actividad</h2>
-                  <AsignarRolDialog usuario={usuario} onAssigned={setUsuario} />
+                  <AsignarRolDialog
+                    usuario={usuario}
+                    onAssigned={(actualizado) => {
+                      // Bug real encontrado en la verificación funcional del
+                      // módulo (2026-08-04): faltaba `onChanged()` aquí — el
+                      // modal se actualizaba correctamente, pero la fila de
+                      // la tabla detrás quedaba con el rol viejo hasta un
+                      // reload manual, a diferencia de Activar/Desactivar
+                      // (`confirmarCambioEstado`, abajo), que sí lo llama.
+                      setUsuario(actualizado);
+                      onChanged();
+                    }}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <InfoRow label="Rol" value={usuario.role ?? "Sin rol asignado"} />
