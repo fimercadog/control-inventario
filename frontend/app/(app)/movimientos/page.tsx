@@ -130,7 +130,13 @@ export default function MovementsPage() {
   }, [movimientos]);
 
   return (
-    <div className="flex flex-col gap-6">
+    // Ancho acotado (2026-08-03): las tarjetas de movimiento no cargan
+    // suficiente información para justificar el ancho completo del
+    // contenido — `max-w-4xl` (896px, dentro del rango pedido 800-1000px)
+    // + `mx-auto` centra la columna en monitores anchos sin afectar el
+    // comportamiento responsive (en mobile/tablet el viewport ya es más
+    // angosto que el máximo, así que simplemente ocupa el ancho disponible).
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Movimientos</h1>
