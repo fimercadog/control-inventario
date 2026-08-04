@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Plus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field } from "@/components/crud-modal";
 import {
   Dialog,
   DialogContent,
@@ -260,14 +260,5 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }
