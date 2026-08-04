@@ -11,7 +11,7 @@ Que cada usuario pueda ver y editar su propia ficha — datos personales, avatar
 ## Business Flow
 
 1. `GET /auth/me` (ya existente, Módulo 1) es la fuente de verdad de la ficha propia — devuelve `avatar_path`/`avatar_url`/`theme`/`language`/`timezone`/`empresa`/`role`/`roles`/`permissions`, todos ya cargados al arrancar la app vía `bootstrapAuth`. Este módulo **no agrega un `GET /perfil` redundante**.
-2. `PATCH /perfil` actualiza `name`/`theme`/`language`/`timezone` — solo los campos enviados, el resto queda intacto.
+2. `PATCH /perfil` actualiza `theme`/`language`/`timezone` — solo los campos enviados, el resto queda intacto. `name` dejó de aceptarse aquí desde el 2026-08-04 (`ADR-015`, modelo de identidad ERP) — era editable hasta esa fecha.
 3. `POST /perfil/avatar` sube un archivo nuevo, reemplazando el anterior (el archivo viejo se borra del disco, no queda huérfano). `DELETE /perfil/avatar` lo quita sin subir uno nuevo.
 4. `POST /perfil/password` cambia la contraseña propia — exige la contraseña actual (para que una sesión desatendida no pueda cambiarla sin conocerla) y, al tener éxito, revoca todas las sesiones del usuario (mismo mecanismo que "olvidé mi contraseña", `AuthenticationService::forcePasswordReset()`) — el frontend redirige a `/login` inmediatamente después.
 5. El tema (`theme`) se aplica en vivo vía `next-themes` **y** se persiste al backend en la misma acción — antes de este módulo, Configuración cambiaba el tema solo en `localStorage`, nunca en `users.theme`; esa pieza fue removida de Configuración para no tener dos fuentes de verdad del mismo estado (ver Edge Cases).
@@ -22,7 +22,7 @@ Que cada usuario pueda ver y editar su propia ficha — datos personales, avatar
 
 ## Screens
 
-- **`/perfil`** (`frontend/app/(app)/perfil/page.tsx`): tarjeta de avatar (subir/quitar) + nombre/email/empresa/badges de rol; tarjeta "Datos personales" (nombre editable, correo de solo lectura — cambiar el correo de inicio de sesión queda fuera de alcance, ver Edge Cases —, idioma, zona horaria); tarjeta "Apariencia" (selector de tema, único lugar de la app donde se cambia); tarjeta "Seguridad" (cambiar contraseña, con aviso explícito de que cierra todas las sesiones).
+- **`/perfil`** (`frontend/app/(app)/perfil/page.tsx`): tarjeta de avatar (subir/quitar) + nombre/email/empresa/badges de rol; tarjeta "Datos personales" (nombre e email ambos de solo lectura desde 2026-08-04 — `nombre` era editable hasta esa fecha, ver Edge Cases —, idioma y zona horaria editables); tarjeta "Apariencia" (selector de tema, único lugar de la app donde se cambia); tarjeta "Seguridad" (cambiar contraseña, con aviso explícito de que cierra todas las sesiones).
 - El dropdown del bloque de usuario en el sidebar gana la entrada "Mi Perfil" (antes ausente — apuntaba solo a Configuración, ver Correcciones en el informe de implementación).
 - **Configuración** (`/configuracion`, ya existente, Módulo previo) pierde su selector de tema duplicado — ahora enlaza a `/perfil` para eso, con una tarjeta "Cuenta" que muestra el avatar real (antes solo iniciales) y lleva a la ficha completa.
 
@@ -32,8 +32,8 @@ Sin migración nueva — las 4 columnas ya existían en `users` desde Fase 0/1, 
 
 | Campo | Notas |
 |---|---|
-| `name` | editable desde este módulo |
-| `email` | de solo lectura aquí — cambiar el email de login implica un flujo de re-verificación propio, fuera de alcance (ver Edge Cases) |
+| `name` | Identity (`ADR-015`) — de solo lectura desde 2026-08-04; era editable desde este módulo antes de esa fecha |
+| `email` | Identity — de solo lectura aquí, siempre lo fue; cambiar el email de login implica además un flujo de re-verificación propio, fuera de alcance (ver Edge Cases) |
 | `avatar_path` | ruta relativa en el disco `public` (`avatares/{empresa_id}/...`) — nunca se expone directo, ver `avatar_url` |
 | `avatar_url` | **campo nuevo, computado** en `AuthenticatedUserResource` a partir de `avatar_path` — URL lista para un `<img>`, sin que el frontend necesite conocer la convención de rutas del backend |
 | `theme` | `light`/`dark`/`system` |
@@ -78,7 +78,7 @@ Sin avatar (`avatar_url` es `null`): el `Avatar` cae a las iniciales del nombre 
 
 ## Acceptance Criteria
 
-- [x] Un usuario puede editar su nombre, idioma y zona horaria, y los cambios persisten.
+- [x] Un usuario puede editar su idioma y zona horaria, y los cambios persisten. Su nombre ya **no** es editable desde 2026-08-04 (`ADR-015`) — es un campo de identidad, igual que el correo.
 - [x] Un usuario puede subir, reemplazar y quitar su propio avatar; el archivo anterior nunca queda huérfano.
 - [x] El tema se aplica en vivo y persiste al backend — un solo lugar en la app lo controla.
 - [x] Un usuario puede cambiar su propia contraseña dando la contraseña actual correcta; con la incorrecta, la operación se rechaza con un mensaje específico y accionable.
@@ -89,6 +89,7 @@ Sin avatar (`avatar_url` es `null`): el `Avatar` cae a las iniciales del nombre 
 
 - **Dos productos/empresas/etc. compartiendo nombre** no aplica aquí (Perfil no lista una colección de otros registros) — a diferencia de Reportes, no hay riesgo de colisión de `key` de este tipo.
 - **Cambiar el email de login**: fuera de alcance a propósito. Permitirlo implicaría un flujo de re-verificación (confirmar el nuevo correo antes de que tome efecto) que ningún otro módulo de este proyecto tiene todavía — se prefirió no construir una pieza de infraestructura nueva y aislada solo para este campo. Documentado aquí como decisión, no como olvido.
+- **Cambiar el nombre propio**: fuera de alcance desde 2026-08-04 (`ADR-015`) — era editable antes de esa fecha. Sin flujo de corrección para un typo real en el propio nombre (ni siquiera con permiso elevado); riesgo documentado explícitamente en el ADR, no descubierto después.
 - **`language` sin traducción real todavía**: ver nota de alcance en Fields — el campo se persiste honestamente, la interfaz no cambia de idioma todavía.
 - **Un usuario con múltiples roles**: `roles` (plural) los muestra todos como badges; `role` (singular, ya existente, usado en el sidebar) sigue mostrando solo el primero — sin cambios ahí, para no romper ningún consumidor existente de ese campo.
 

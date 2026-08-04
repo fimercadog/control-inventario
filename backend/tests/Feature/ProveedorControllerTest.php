@@ -151,19 +151,44 @@ class ProveedorControllerTest extends TestCase
 
     /**
      * El snapshot de auditoría debe reflejar el campo real que cambió
-     * (email en este caso), no un `->only(['nombre','nit','estado'])` fijo
-     * que lo omitiría en silencio — encontrado auditando el módulo.
+     * (contacto en este caso), no un `->only(['nombre','nit','estado'])`
+     * fijo que lo omitiría en silencio — encontrado auditando el módulo.
+     * Usa `contacto`, no `email`, porque `email` es un campo de identidad
+     * inmutable desde ADR-015 (ver `test_email_and_nit_cannot_be_changed_on_update`).
      */
-    public function test_updating_the_email_field_specifically_is_captured_in_the_audit_log(): void
+    public function test_updating_the_contacto_field_specifically_is_captured_in_the_audit_log(): void
     {
         $this->actingAs($this->userA, 'api')
-            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['email' => 'nuevo@empresa-a.test'])
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['contacto' => 'Nuevo Contacto'])
             ->assertOk();
 
         $log = AuditLog::where('modulo', 'proveedores')->where('accion', 'proveedores.editar')->latest('id')->first();
         $this->assertNotNull($log);
-        $this->assertSame('nuevo@empresa-a.test', $log->valores_nuevos['email'] ?? null);
+        $this->assertSame('Nuevo Contacto', $log->valores_nuevos['contacto'] ?? null);
         $this->assertArrayNotHasKey('updated_at', $log->valores_nuevos);
+    }
+
+    /**
+     * `email`/`nit` son campos de identidad (ADR-015, modelo de identidad
+     * ERP) — inmutables después de la creación, igual que `empresa_id`.
+     * Se ignoran en silencio si se envían en el PATCH genérico.
+     */
+    public function test_email_and_nit_cannot_be_changed_on_update(): void
+    {
+        $emailOriginal = $this->proveedorA->email;
+        $nitOriginal = $this->proveedorA->nit;
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", [
+                'email' => 'otro-email@empresa-a.test',
+                'nit' => '999999999',
+                'telefono' => '3005551111',
+            ])
+            ->assertOk();
+
+        $this->assertSame($emailOriginal, $this->proveedorA->fresh()->email);
+        $this->assertSame($nitOriginal, $this->proveedorA->fresh()->nit);
+        $this->assertSame('3005551111', $this->proveedorA->fresh()->telefono);
     }
 
     /** Sin cambios reales (mismo valor reenviado), no debe escribirse un log de auditoría vacío. */
@@ -221,16 +246,17 @@ class ProveedorControllerTest extends TestCase
         $this->assertSame($original, $this->proveedorA->fresh()->empresa_id);
     }
 
+    /**
+     * Únicamente a la creación — `email` ya no es editable vía PATCH
+     * (ADR-015), así que un conflicto de unicidad al editar es
+     * estructuralmente imposible desde 2026-08-04, no solo rechazado.
+     */
     public function test_two_suppliers_in_the_same_company_cannot_share_an_email(): void
     {
         Proveedor::create(['nombre' => 'Otro Proveedor', 'email' => 'duplicado@test.com']);
 
         $this->actingAs($this->userA, 'api')
             ->postJson('/api/v1/proveedores', ['nombre' => 'Tercer Proveedor', 'email' => 'duplicado@test.com'])
-            ->assertStatus(422);
-
-        $this->actingAs($this->userA, 'api')
-            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", ['email' => 'duplicado@test.com'])
             ->assertStatus(422);
     }
 
@@ -262,19 +288,6 @@ class ProveedorControllerTest extends TestCase
         $this->actingAs($creadorB, 'api')
             ->postJson('/api/v1/proveedores', ['nombre' => 'Proveedor Empresa B', 'email' => 'compartido@test.com'])
             ->assertCreated();
-    }
-
-    /** Reenviar el mismo email sin cambiarlo nunca debe contar como conflicto consigo mismo. */
-    public function test_updating_a_supplier_without_changing_its_own_email_does_not_conflict_with_itself(): void
-    {
-        $this->proveedorA->update(['email' => 'propio@test.com']);
-
-        $this->actingAs($this->userA, 'api')
-            ->patchJson("/api/v1/proveedores/{$this->proveedorA->id}", [
-                'email' => 'propio@test.com',
-                'telefono' => '3005551234',
-            ])
-            ->assertOk();
     }
 
     public function test_disabling_a_supplier_is_logical_never_physical(): void

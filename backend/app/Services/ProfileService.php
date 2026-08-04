@@ -36,7 +36,7 @@ class ProfileService
     ) {}
 
     /**
-     * @param  array{name?: string, theme?: string, language?: string, timezone?: string}  $datos
+     * @param  array{theme?: string, language?: string, timezone?: string}  $datos
      */
     public function actualizar(User $user, array $datos, Request $request): User
     {

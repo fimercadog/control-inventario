@@ -98,7 +98,7 @@ export function ClienteFormModal({
           <Input value={form.nombre} onChange={(e) => setField("nombre", e.target.value)} autoFocus />
         </Field>
         <Field label="NIT">
-          <Input value={form.nit ?? ""} onChange={(e) => setField("nit", e.target.value)} />
+          <Input value={form.nit ?? ""} onChange={(e) => setField("nit", e.target.value)} disabled={isEdit} />
         </Field>
         <Field label="Contacto">
           <Input value={form.contacto ?? ""} onChange={(e) => setField("contacto", e.target.value)} />
@@ -107,7 +107,12 @@ export function ClienteFormModal({
           <Input value={form.telefono ?? ""} onChange={(e) => setField("telefono", e.target.value)} />
         </Field>
         <Field label="Email">
-          <Input type="email" value={form.email ?? ""} onChange={(e) => setField("email", e.target.value)} />
+          <Input
+            type="email"
+            value={form.email ?? ""}
+            onChange={(e) => setField("email", e.target.value)}
+            disabled={isEdit}
+          />
         </Field>
         <Field label="Ciudad">
           <Input value={form.ciudad ?? ""} onChange={(e) => setField("ciudad", e.target.value)} />

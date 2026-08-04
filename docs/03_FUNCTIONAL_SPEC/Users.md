@@ -44,14 +44,14 @@ Permitir que un usuario con permiso de gestión (`usuarios.ver`/`usuarios.editar
 
 | Campo | Fuente | Editable desde este módulo |
 | --- | --- | --- |
-| name, email | `users` | No (pertenece a Perfil; se fijan una sola vez al aceptar la invitación) |
-| empresa_id | `users` | No (fijo desde la creación, ver Decisión 5) |
-| is_active | `users` | Sí, únicamente vía Activar/Desactivar |
+| name, email, is_platform_admin | `users` | No — campos Identity (`ADR-015`), fijados una sola vez al aceptar la invitación, inmutables después. `name` era editable vía `Perfil` hasta 2026-08-04; ADR-015 lo cerró. |
+| empresa_id | `users` | No — Identity, fijo desde la creación (ver Decisión 5) |
+| is_active | `users` | Sí, únicamente vía Activar/Desactivar — Controlled |
 | last_activity_at, last_login_ip, last_user_agent | `users` | No (se actualizan desde el Módulo 1 — login/refresh) |
-| rol asignado | `model_has_roles` (Spatie, vía `getRoleNames()`) | Sí (2026-08-03) — vía "Cambiar rol", reemplaza el rol anterior |
+| rol asignado | `model_has_roles` (Spatie, vía `getRoleNames()`) | Sí (2026-08-03) — vía "Cambiar rol", reemplaza el rol anterior — Controlled |
 | invited_at, invited_by | `users` | No (trazabilidad de cómo se creó la cuenta — fijados al aceptar la invitación) |
 
-**Clasificación (auditoría de campos editables, 2026-08-04):** `name`/`email`/`empresa_id` son de identidad y **read-only** desde cualquier ruta después de crearse la cuenta (`email` en particular es la credencial de login — nunca cambia, ni siquiera desde `Perfil`, ver `Profile.md`). `is_active` y el rol asignado son condicionalmente editables — requieren `usuarios.editar` y, en el caso de `is_active`, además no dejar a la empresa sin nadie con ese permiso (Decisión 3; ver el riesgo documentado arriba sobre `asignarRol()`, que no replica esa segunda guarda). Los campos de `Perfil` (`theme`/`language`/`timezone`/`avatar_path`/`password`) son editables solo por el propio usuario — ver `Profile.md`.
+**Clasificación (modelo de identidad ERP, `docs/08_ADR/ADR-015-identity-field-model.md`, 2026-08-04):** `name`/`email`/`empresa_id`/`is_platform_admin` son **Identity** — inmutables después de crearse la cuenta, sin excepción, en ninguna ruta (`email` es además la credencial de login, ver `Profile.md`). `is_active` y el rol asignado son **Controlled** — editables únicamente vía su endpoint dedicado, cada uno con su propio permiso (`is_active` además exige no dejar a la empresa sin nadie con `usuarios.editar`, Decisión 3; ver el riesgo documentado arriba sobre `asignarRol()`, que no replica esa segunda guarda). `theme`/`language`/`timezone`/`avatar_path` son **Operational** — editables solo por el propio usuario vía `Perfil`; `password` es Controlled (Cambiar Contraseña, requiere la contraseña actual) — ver `Profile.md`.
 
 ## Validation Rules
 

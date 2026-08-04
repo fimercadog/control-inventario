@@ -37,7 +37,6 @@ export default function PerfilPage() {
   const { setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState(user?.name ?? "");
   const [language, setLanguage] = useState(user?.language ?? "es");
   const [timezone, setTimezone] = useState(user?.timezone ?? "America/Bogota");
   const [savingPersonal, setSavingPersonal] = useState(false);
@@ -58,7 +57,7 @@ export default function PerfilPage() {
   async function guardarDatosPersonales() {
     setSavingPersonal(true);
     try {
-      await dispatch(updateProfileThunk({ name, language: language as "es" | "en", timezone })).unwrap();
+      await dispatch(updateProfileThunk({ language: language as "es" | "en", timezone })).unwrap();
       toast.success("Perfil actualizado correctamente");
     } catch (error) {
       toast.error(typeof error === "string" ? error : "No pudimos guardar los cambios.");
@@ -211,7 +210,7 @@ export default function PerfilPage() {
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Nombre</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <Input value={user.name} disabled />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs text-muted-foreground">Correo</Label>

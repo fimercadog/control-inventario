@@ -43,18 +43,35 @@ class ProfileControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'api')
             ->patchJson('/api/v1/perfil', [
-                'name' => 'Nombre Actualizado',
                 'theme' => 'dark',
                 'language' => 'en',
                 'timezone' => 'America/Mexico_City',
             ])
             ->assertOk()
-            ->assertJsonPath('data.name', 'Nombre Actualizado')
             ->assertJsonPath('data.theme', 'dark')
             ->assertJsonPath('data.language', 'en')
             ->assertJsonPath('data.timezone', 'America/Mexico_City');
 
-        $this->assertDatabaseHas('users', ['id' => $this->user->id, 'name' => 'Nombre Actualizado', 'theme' => 'dark']);
+        $this->assertDatabaseHas('users', ['id' => $this->user->id, 'theme' => 'dark']);
+    }
+
+    /**
+     * `name` es un campo de identidad (ADR-015, modelo de identidad ERP) —
+     * inmutable después de crear la cuenta, igual que `email`. Antes de
+     * 2026-08-04 sí era editable desde aquí; se ignora en silencio desde
+     * esta fecha, mismo patrón que `empresa_id` en Clientes/Proveedores.
+     */
+    public function test_name_cannot_be_changed_via_profile(): void
+    {
+        $nombreOriginal = $this->user->name;
+
+        $this->actingAs($this->user, 'api')
+            ->patchJson('/api/v1/perfil', ['name' => 'Nombre Que No Debería Guardarse', 'theme' => 'dark'])
+            ->assertOk()
+            ->assertJsonPath('data.name', $nombreOriginal);
+
+        $this->assertSame($nombreOriginal, $this->user->fresh()->name);
+        $this->assertSame('dark', $this->user->fresh()->theme);
     }
 
     /**
@@ -67,12 +84,12 @@ class ProfileControllerTest extends TestCase
     public function test_updating_profile_writes_an_audit_log_with_only_the_changed_fields(): void
     {
         $this->actingAs($this->user, 'api')
-            ->patchJson('/api/v1/perfil', ['name' => 'Nombre Nuevo'])
+            ->patchJson('/api/v1/perfil', ['timezone' => 'America/Mexico_City'])
             ->assertOk();
 
         $log = AuditLog::where('modulo', 'perfil')->where('accion', 'perfil.editar')->latest('id')->first();
         $this->assertNotNull($log);
-        $this->assertSame('Nombre Nuevo', $log->valores_nuevos['name'] ?? null);
+        $this->assertSame('America/Mexico_City', $log->valores_nuevos['timezone'] ?? null);
         $this->assertArrayNotHasKey('theme', $log->valores_nuevos);
     }
 

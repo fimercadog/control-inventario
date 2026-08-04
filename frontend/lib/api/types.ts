@@ -36,8 +36,9 @@ export interface AuthenticatedUser {
   permissions: string[];
 }
 
+// `name` deliberadamente ausente — campo de identidad, inmutable después
+// de crear la cuenta (ADR-015, auditoría de campos editables 2026-08-04).
 export interface UpdateProfilePayload {
-  name?: string;
   theme?: "light" | "dark" | "system";
   language?: "es" | "en";
   timezone?: string;

@@ -2,6 +2,8 @@
 
 **STATUS: 🟡 Partial** — auditados los 7 `<X>FormModal` de los módulos CRUD, los 5 diálogos independientes con formulario, y la página de login (2026-08-03) contra `frontend/`. La familia `CrudModal` es genuinamente consistente. La familia de diálogos independientes es una segunda familia, consistente consigo misma pero distinta de la primera — documentado como decisión pendiente, no como error.
 
+**Regla hacia adelante — campos de identidad (`docs/08_ADR/ADR-015-identity-field-model.md`, 2026-08-04):** todo formulario de edición nuevo debe clasificar sus campos como Identity/Operational/Controlled antes de decidir qué inputs son editables. Un input Identity en modo edición se renderiza siempre (el usuario debe poder ver el valor), pero con `disabled` — nunca oculto. Aplicado en `ClienteFormModal`/`ProveedorFormModal` (NIT, Email) y en `/perfil` (Nombre).
+
 ## Verified
 
 - **Los 7 `<X>FormModal`** (Categoría, Marca, Unidad de Medida, Proveedor, Cliente, Producto, Rol) usan `CrudModal` + el `Field` compartido (`frontend/components/crud-modal.tsx`) — adopción 100%, confirmado en `COMPONENT_INVENTORY.md`.

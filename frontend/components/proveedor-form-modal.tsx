@@ -93,7 +93,11 @@ export function ProveedorFormModal({
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="NIT / Tax ID">
-          <Input value={form.nit ?? ""} onChange={(e) => setForm((f) => ({ ...f, nit: e.target.value }))} />
+          <Input
+            value={form.nit ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, nit: e.target.value }))}
+            disabled={isEdit}
+          />
         </Field>
         <Field label="Contacto">
           <Input value={form.contacto ?? ""} onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))} />
@@ -108,6 +112,7 @@ export function ProveedorFormModal({
             type="email"
             value={form.email ?? ""}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            disabled={isEdit}
           />
         </Field>
       </div>
