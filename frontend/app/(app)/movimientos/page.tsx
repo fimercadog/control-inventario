@@ -16,6 +16,8 @@ import {
   Sparkles,
   Paperclip,
   ArrowRight,
+  User,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/components/empty-state";
 import { NewMovimientoDialog } from "@/components/new-movimiento-dialog";
+import { MovementTypeBadge } from "@/components/movement-type-badge";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { listMovimientos } from "@/lib/api/movimientos";
 import { formatNumber } from "@/lib/format";
@@ -211,47 +214,31 @@ export default function MovementsPage() {
                         <Icon className="size-4" />
                       </span>
 
+                      {/**
+                       * Jerarquía visual (pedido explícito 2026-08-03,
+                       * "understand the movement in less than 2 seconds"):
+                       * 1. Producto  2. Tipo  3. Cantidad  4. Stock antes→después
+                       * 5. Usuario  6. Fecha  7. Origen. Dos columnas arriba
+                       * (identidad izquierda, magnitud derecha) + una fila de
+                       * metadata abajo, separada por un borde — no cambia
+                       * ningún dato, solo cómo se agrupan y con qué peso.
+                       */}
                       <div
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3.5 cursor-pointer hover:bg-accent/50"
+                        className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 cursor-pointer hover:border-border hover:bg-accent/50 transition-colors"
                         onClick={() => router.push(`/movimientos/${movimiento.id}`)}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                            <Icon className="size-4" />
-                          </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-medium">{movimiento.producto ?? `#${movimiento.producto_id}`}</span>
-                            <span className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-                              <span>{movimiento.created_at ? timeLabel(movimiento.created_at) : "—"}</span>
-                              {movimiento.usuario && <span>· {movimiento.usuario}</span>}
-                              {movimiento.origen === "captura_ia" ? (
-                                <Badge variant="outline" className="gap-1 py-0 text-[10px] text-primary">
-                                  <Sparkles className="size-3" />
-                                  Captura IA
-                                </Badge>
-                              ) : (
-                                <span>· Manual</span>
-                              )}
-                              {movimiento.tiene_evidencia && (
-                                <Tooltip>
-                                  <TooltipTrigger
-                                    render={<Paperclip className="size-3.5 text-muted-foreground" />}
-                                  />
-                                  <TooltipContent>Tiene evidencia adjunta</TooltipContent>
-                                </Tooltip>
-                              )}
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="flex min-w-0 flex-col gap-1.5">
+                            <span className="truncate text-base font-semibold leading-tight">
+                              {movimiento.producto ?? `#${movimiento.producto_id}`}
                             </span>
+                            <MovementTypeBadge tipo={movimiento.tipo} className="w-fit" />
                           </div>
-                        </div>
 
-                        <div className="flex flex-col items-end gap-0.5">
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-muted-foreground capitalize">
-                              {movimiento.tipo}
-                            </Badge>
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
                             <span
                               className={cn(
-                                "text-lg font-semibold tabular-nums",
+                                "text-2xl font-bold leading-none tabular-nums",
                                 esPositivo ? "text-emerald-600" : "text-red-600"
                               )}
                             >
@@ -259,15 +246,48 @@ export default function MovementsPage() {
                               {formatNumber(movimiento.delta)}
                               {unidad}
                             </span>
+                            {/* Stock antes → después, siempre visible con
+                                énfasis fuerte — nadie debería tener que
+                                calcular mentalmente el inventario a partir
+                                del delta solo. */}
+                            <div className="flex items-center gap-1.5 rounded-md bg-muted/70 px-2 py-1">
+                              <span className="text-sm font-semibold tabular-nums">
+                                {formatNumber(movimiento.stock_anterior)}
+                              </span>
+                              <ArrowRight className="size-3.5 text-muted-foreground" />
+                              <span className="text-sm font-bold tabular-nums">
+                                {formatNumber(movimiento.stock_nuevo)}
+                                {unidad}
+                              </span>
+                            </div>
                           </div>
-                          {/* Stock antes → después, siempre visible — nadie debería tener
-                              que calcular mentalmente el inventario a partir del delta solo. */}
-                          <span className="flex items-center gap-1 text-xs tabular-nums text-muted-foreground">
-                            Stock: {formatNumber(movimiento.stock_anterior)}
-                            <ArrowRight className="size-3" />
-                            {formatNumber(movimiento.stock_nuevo)}
-                            {unidad}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/50 pt-2.5 text-xs text-muted-foreground">
+                          {movimiento.usuario && (
+                            <span className="flex items-center gap-1">
+                              <User className="size-3.5" />
+                              {movimiento.usuario}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-3.5" />
+                            {movimiento.created_at ? timeLabel(movimiento.created_at) : "—"}
                           </span>
+                          {movimiento.origen === "captura_ia" ? (
+                            <Badge variant="outline" className="gap-1 py-0 text-[10px] text-primary">
+                              <Sparkles className="size-3" />
+                              Captura IA
+                            </Badge>
+                          ) : (
+                            <span>Manual</span>
+                          )}
+                          {movimiento.tiene_evidencia && (
+                            <Tooltip>
+                              <TooltipTrigger render={<Paperclip className="size-3.5" />} />
+                              <TooltipContent>Tiene evidencia adjunta</TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
                       </div>
                     </li>

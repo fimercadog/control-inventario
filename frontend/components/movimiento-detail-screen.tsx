@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowDownLeft, ArrowUpRight, ExternalLink, Loader2, Paperclip, Pencil, RefreshCw, Save, ScrollText, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowDownLeft, ArrowRight as ArrowRightIcon, ArrowUpRight, ExternalLink, Loader2, Paperclip, Pencil, RefreshCw, Save, ScrollText, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -165,18 +165,24 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
               </Link>
             </InfoRow>
             <InfoRow label="Cantidad (solo lectura)">
-              <span className={`font-medium tabular-nums ${esPositivo ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              <span className={`text-xl font-bold leading-none tabular-nums ${esPositivo ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                 {esPositivo ? "+" : ""}
                 {formatNumber(movimiento.delta)}
                 {unidad}
               </span>
             </InfoRow>
             <InfoRow label="Stock anterior → nuevo (solo lectura)">
-              <span className="tabular-nums">
-                {formatNumber(movimiento.stock_anterior)}
-                {unidad} → {formatNumber(movimiento.stock_nuevo)}
-                {unidad}
-              </span>
+              <div className="flex w-fit items-center gap-1.5 rounded-md bg-muted/70 px-2 py-1">
+                <span className="text-sm font-semibold tabular-nums">
+                  {formatNumber(movimiento.stock_anterior)}
+                  {unidad}
+                </span>
+                <ArrowRightIcon className="size-3.5 text-muted-foreground" />
+                <span className="text-sm font-bold tabular-nums">
+                  {formatNumber(movimiento.stock_nuevo)}
+                  {unidad}
+                </span>
+              </div>
             </InfoRow>
             {movimiento.proveedor && <InfoRow label="Proveedor (solo lectura)">{movimiento.proveedor}</InfoRow>}
             <InfoRow label="Origen (solo lectura)">
