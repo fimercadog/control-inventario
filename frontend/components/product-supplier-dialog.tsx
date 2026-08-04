@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MODAL_SIZES } from "@/components/ui/modal";
 import { asociarProveedor, actualizarAsociacionProveedor } from "@/lib/api/productos";
 import { listProveedores } from "@/lib/api/proveedores";
 import type { ProductoProveedorAsociacion, Proveedor } from "@/lib/api/types";
@@ -114,7 +115,7 @@ export function ProductSupplierDialog({
           )
         }
       />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={MODAL_SIZES.sm}>
         <DialogHeader>
           <DialogTitle>{editando ? "Editar asociación" : "Asociar proveedor"}</DialogTitle>
         </DialogHeader>

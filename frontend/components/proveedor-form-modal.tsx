@@ -79,7 +79,7 @@ export function ProveedorFormModal({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Editar Proveedor" : "Nuevo Proveedor"}
-      size="lg"
+      size="md"
       onSubmit={save}
       submitLabel={isEdit ? "Guardar cambios" : "Crear proveedor"}
       saving={saving}

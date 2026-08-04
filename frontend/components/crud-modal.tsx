@@ -11,28 +11,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MODAL_SCROLL_CLASS, MODAL_SIZES, type ModalSize } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-
-const SIZES = {
-  sm: "sm:max-w-sm",
-  md: "sm:max-w-md",
-  lg: "sm:max-w-lg",
-  xl: "sm:max-w-2xl",
-} as const;
 
 /**
  * Global UI Standard (2026-08-03): Create/Edit siempre en modal, nunca
  * en página completa — la tabla permanece visible detrás. Shell
  * compartido entre los 8 módulos CRUD: cada uno sigue dueño de sus
  * propios campos (children), esto solo estandariza apertura/cierre,
- * título, footer Cancelar/Guardar y el estado de guardado.
+ * título, footer Cancelar/Guardar y el estado de guardado. Tamaño y
+ * comportamiento de scroll vienen de `components/ui/modal.ts` — este
+ * componente no define los suyos propios (Design System, ver
+ * docs/11_DESIGN_SYSTEM/DESIGN_SYSTEM.md).
  */
 export function CrudModal({
   open,
   onOpenChange,
   title,
   description,
-  size = "md",
+  size = "sm",
   onSubmit,
   submitLabel,
   savingLabel = "Guardando...",
@@ -44,7 +41,7 @@ export function CrudModal({
   onOpenChange: (open: boolean) => void;
   title: string;
   description?: string;
-  size?: keyof typeof SIZES;
+  size?: ModalSize;
   onSubmit: () => void | Promise<void>;
   submitLabel: string;
   savingLabel?: string;
@@ -54,7 +51,7 @@ export function CrudModal({
 }) {
   return (
     <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent className={cn(SIZES[size], "max-h-[85vh] overflow-y-auto")}>
+      <DialogContent className={cn(MODAL_SIZES[size], MODAL_SCROLL_CLASS)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

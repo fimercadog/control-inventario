@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MODAL_SIZES } from "@/components/ui/modal";
 import {
   Select,
   SelectContent,
@@ -132,7 +133,7 @@ export function NewMovimientoDialog({ onCreated }: { onCreated?: (movimiento: Mo
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={MODAL_SIZES.sm}>
         <DialogHeader>
           <DialogTitle>Nuevo Movimiento</DialogTitle>
         </DialogHeader>

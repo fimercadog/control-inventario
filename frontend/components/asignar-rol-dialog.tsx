@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MODAL_SIZES } from "@/components/ui/modal";
 import {
   Select,
   SelectContent,
@@ -81,7 +82,7 @@ export function AsignarRolDialog({
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className={MODAL_SIZES.xs}>
         <DialogHeader>
           <DialogTitle>Asignar rol a {usuario.name}</DialogTitle>
         </DialogHeader>

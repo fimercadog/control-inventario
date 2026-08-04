@@ -88,7 +88,7 @@ export function ClienteFormModal({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Editar Cliente" : "Nuevo Cliente"}
-      size="lg"
+      size="md"
       onSubmit={save}
       submitLabel={isEdit ? "Guardar cambios" : "Crear cliente"}
       saving={saving}

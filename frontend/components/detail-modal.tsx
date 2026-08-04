@@ -3,13 +3,8 @@
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MODAL_SCROLL_CLASS, MODAL_SIZES, type ModalSize } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
-
-const SIZES = {
-  md: "sm:max-w-lg",
-  lg: "sm:max-w-2xl",
-  xl: "sm:max-w-4xl",
-} as const;
 
 /**
  * Global UI Standard (2026-08-03): View siempre en modal de solo
@@ -17,7 +12,10 @@ const SIZES = {
  * mismo patrón "Detalle + relacionados de solo lectura" que ya tenían
  * las fichas de página completa (Categorías/Marcas/Unidades/
  * Proveedores/Productos/Roles) — si no se pasa `tabs`, `children` se
- * renderiza directo (módulos sin pestañas, ej. Clientes).
+ * renderiza directo (módulos sin pestañas, ej. Clientes). Tamaño y
+ * comportamiento de scroll vienen de `components/ui/modal.ts` — este
+ * componente no define los suyos propios (Design System, ver
+ * docs/11_DESIGN_SYSTEM/DESIGN_SYSTEM.md).
  */
 export function DetailModal({
   open,
@@ -38,13 +36,13 @@ export function DetailModal({
   badge?: React.ReactNode;
   headerActions?: React.ReactNode;
   loading?: boolean;
-  size?: keyof typeof SIZES;
+  size?: ModalSize;
   tabs?: { value: string; label: string; content: React.ReactNode }[];
   children?: React.ReactNode;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(SIZES[size], "max-h-[85vh] overflow-y-auto")}>
+      <DialogContent className={cn(MODAL_SIZES[size], MODAL_SCROLL_CLASS)}>
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />

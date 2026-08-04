@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MODAL_SIZES } from "@/components/ui/modal";
 import { registrarIngreso } from "@/lib/api/productos";
 import { listProveedores } from "@/lib/api/proveedores";
 import type {
@@ -127,7 +128,7 @@ export function RegistrarIngresoDialog({
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={MODAL_SIZES.sm}>
         <DialogHeader>
           <DialogTitle>Registrar ingreso</DialogTitle>
         </DialogHeader>

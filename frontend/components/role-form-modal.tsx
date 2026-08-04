@@ -70,7 +70,7 @@ export function RoleFormModal({
       open={open}
       onOpenChange={onOpenChange}
       title={isEdit ? "Editar Rol" : "Nuevo Rol"}
-      size="lg"
+      size="md"
       onSubmit={save}
       submitLabel={isEdit ? "Guardar cambios" : "Crear rol"}
       saving={saving}

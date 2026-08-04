@@ -14,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { MODAL_SIZES } from "@/components/ui/modal";
 import {
   Select,
   SelectContent,
@@ -81,7 +82,7 @@ export function InvitarUsuarioDialog({ onInvited }: { onInvited?: () => void }) 
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={MODAL_SIZES.sm}>
         <DialogHeader>
           <DialogTitle>Invitar usuario</DialogTitle>
         </DialogHeader>

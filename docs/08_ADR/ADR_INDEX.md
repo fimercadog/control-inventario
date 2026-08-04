@@ -19,6 +19,7 @@ Fuentes permitidas para todo ADR de este índice: `AGENTS.md`, documentación ex
 | [ADR-011](ADR-011-ai-capture-pipeline.md) | Captura IA como capa de entrada, no fuente paralela | Accepted (Verified) | No | Verified | Implementado y probado (35 tests reportados) |
 | [ADR-012](ADR-012-idempotency.md) | Idempotencia vía `Idempotency-Key` + índice único | Accepted (Verified) | No | Verified | Implementado y probado |
 | [ADR-013](ADR-013-domain-events.md) | Eventos de dominio post-commit (`DB::afterCommit`) | Accepted (Verified) | No | Verified | Implementado y probado; sin listeners (deliberado) |
+| [ADR-014](ADR-014-modal-sizing-unification.md) | Modal sizing centralizado en `components/ui/modal.ts` | Accepted (Verified) | **Sí** — 3 alternativas comparadas, con conteo real de usos existentes | Verified | Implementado; único ADR de este índice sobre frontend/UI, no backend |
 
 **Criterio usado para `Historical Confidence`:**
 - **Verified** — la decisión, su contexto y su mecanismo tienen cita directa y específica en al menos una fuente primaria (código y/o documentación), sin vacíos relevantes en el razonamiento. Incluye los casos con evidencia particularmente fuerte y multi-fuente (ADR-002, 008, 009, 011, 012, 013).
@@ -27,7 +28,7 @@ Fuentes permitidas para todo ADR de este índice: `AGENTS.md`, documentación ex
 
 ## Resumen por estado
 
-- **Accepted (Verified) sin reservas:** ADR-001, 002, 003, 004, 007, 008, 009, 011, 012, 013 (10 de 13).
+- **Accepted (Verified) sin reservas:** ADR-001, 002, 003, 004, 007, 008, 009, 011, 012, 013, 014 (11 de 14).
 - **Accepted (Verified) con una sub-decisión en Pending Validation:** ADR-005 (elección de OpenAI específicamente), ADR-006 (elección de JWT sobre Sanctum específicamente). En ambos casos, **el hecho de qué se implementó SÍ está verificado** (código + documentación existente); lo que no está verificado es el razonamiento comparativo que llevó a esa elección sobre alternativas concretas.
 - **Parcialmente implementado (diseño verificado, código incompleto):** ADR-010 — el diseño de RBAC con Teams está documentado y la infraestructura (paquete, migraciones, modelo `Role`) está instalada, pero el chequeo de permisos real en Policies de negocio depende del Módulo 3, no construido todavía.
 - **Ningún ADR fue descartado por falta total de verificación.** Las 13 decisiones originalmente extraídas resultaron tener al menos el hecho central (qué se decidió e implementó) verificable en código y/o documentación existente. Ninguna requirió inventarse desde cero como "Pending Validation" completo.
