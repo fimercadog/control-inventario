@@ -22,9 +22,7 @@ import {
   uploadAvatarThunk,
 } from "@/store/slices/auth-slice";
 import { setAccessToken } from "@/lib/api/auth-token";
-
-const THEME_ITEMS: Record<string, string> = { light: "Claro", dark: "Oscuro", system: "Sistema" };
-const LANGUAGE_ITEMS: Record<string, string> = { es: "Español", en: "English" };
+import { LANGUAGE_ITEMS, THEME_ITEMS } from "@/lib/user-preferences";
 
 /**
  * Perfil (2026-08-02, docs/03_FUNCTIONAL_SPEC/Profile.md). Único dueño de

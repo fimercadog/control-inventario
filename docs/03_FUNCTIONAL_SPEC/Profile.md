@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Que cada usuario pueda ver y editar su propia ficha — datos personales, avatar, apariencia, idioma, zona horaria — y cambiar su propia contraseña, sin depender de un administrador. Es el único módulo de los cuatro cuyo alcance es exclusivamente "yo mismo": ninguna ruta acepta el id de otro usuario.
+Que cada usuario pueda ver y editar su propia ficha — avatar, apariencia, idioma, zona horaria — y cambiar su propia contraseña, sin depender de un administrador. Sigue siendo el único módulo de los cuatro cuyo alcance es exclusivamente "yo mismo": ninguna ruta de `ProfileController` acepta el id de otro usuario, sin cambios en esta unidad de trabajo. **Nota (2026-08-04, `ADR-015`)**: avatar/idioma/zona horaria/tema dejaron de ser autoservicio *exclusivo* — un administrador con `usuarios.editar` ahora también puede editarlos para otro usuario, vía `UserController` (un controller distinto, con su propia autorización), no vía este módulo. Ver "Actors" y `Users.md`.
 
 ## Business Flow
 
@@ -18,7 +18,8 @@ Que cada usuario pueda ver y editar su propia ficha — datos personales, avatar
 
 ## Actors
 
-- **Cualquier usuario autenticado**: puede editar exclusivamente su propia ficha. No hay una variante "administrador edita el perfil de otro" — eso es responsabilidad de `UserController` (Módulo 4), que ya existe y gestiona activar/desactivar, no datos personales.
+- **Cualquier usuario autenticado**: puede editar su propia ficha (avatar/idioma/zona horaria/tema/contraseña) vía este módulo, siempre — nadie más puede tocar su contraseña, ni siquiera un administrador.
+- **Administrador con `usuarios.editar`** (2026-08-04, `ADR-015`): puede editar el avatar/idioma/zona horaria/tema de OTRO usuario de su empresa — no vía este módulo, sino vía `UserController` (Módulo 4, `UsuarioFormModal`). Reversión deliberada del invariante anterior ("no hay una variante 'administrador edita el perfil de otro'"), documentada aquí para que no se asuma vigente sin revisar `Users.md`.
 
 ## Screens
 
@@ -83,7 +84,41 @@ Sin avatar (`avatar_url` es `null`): el `Avatar` cae a las iniciales del nombre 
 - [x] El tema se aplica en vivo y persiste al backend — un solo lugar en la app lo controla.
 - [x] Un usuario puede cambiar su propia contraseña dando la contraseña actual correcta; con la incorrecta, la operación se rechaza con un mensaje específico y accionable.
 - [x] Cambiar la contraseña cierra todas las sesiones activas — confirmado con un usuario real: la contraseña vieja deja de servir, la nueva funciona, verificado en navegador real de punta a punta.
-- [x] Ningún usuario puede editar el perfil de otro — estructuralmente imposible, no solo rechazado.
+- [x] Un usuario no puede editar el perfil de otro usuario.
+
+  Los administradores con el permiso `usuarios.editar` sí pueden administrar otros usuarios desde el módulo **Usuarios**, respetando el modelo de identidad definido en `ADR-015`.
+
+  Los administradores únicamente pueden modificar los campos operativos autorizados:
+
+  - Avatar
+  - Idioma
+  - Zona horaria
+  - Tema
+
+  Los campos de identidad permanecen protegidos y son de solo lectura:
+
+  - Nombre
+  - Correo
+  - Empresa
+  - Administrador de plataforma
+
+  Los campos controlados mantienen su flujo específico y nunca forman parte del formulario de edición:
+
+  - Contraseña → Cambiar Contraseña
+  - Rol → Asignar Rol
+  - Estado → Activar / Desactivar
+
+  El propio usuario sí puede administrar su propia cuenta desde el módulo **Perfil**, respetando las mismas restricciones del modelo de identidad (`ADR-015`):
+
+  - Puede modificar sus preferencias personales (avatar, idioma, zona horaria y tema).
+  - Puede cambiar su propia contraseña mediante el flujo **Cambiar Contraseña**.
+  - No puede modificar sus propios campos de identidad (nombre, correo, empresa y administrador de plataforma).
+  - No puede modificar usuarios distintos de sí mismo.
+
+  En consecuencia:
+
+  - Un usuario administra únicamente su propia cuenta.
+  - Un administrador con el permiso `usuarios.editar` administra las cuentas de otros usuarios, respetando las restricciones del modelo de identidad.
 
 ## Edge Cases
 

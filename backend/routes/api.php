@@ -165,22 +165,27 @@ Route::prefix('v1/movimientos')->name('movimientos.')->middleware(['auth:api', '
     Route::patch('{movimiento}', [MovimientoController::class, 'update'])->name('update');
 });
 
-// RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03.
-// Listar/Ver/Activar/Desactivar/Asignar rol — sin POST / propio (crear
-// sigue siendo exclusivo de InvitationController::aceptar()) y sin
-// ningún endpoint de eliminar (Usuarios nunca se elimina, física ni
-// lógicamente). `{id}` en vez de route-model-binding implícito a
-// propósito: User no tiene TenantScope automático, así que cada acción
-// resuelve el usuario ya acotado por empresa a mano. `invitar` declarada
-// antes de `{id}` a propósito, aunque `whereNumber('id')` ya evita
-// cualquier colisión real.
+// RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 y
+// 2026-08-04 (ADR-015, PATCH + avatar). Listar/Ver/Editar/Activar/
+// Desactivar/Asignar rol — sin POST / propio (crear sigue siendo
+// exclusivo de InvitationController::aceptar()) y sin ningún endpoint de
+// eliminar (Usuarios nunca se elimina, física ni lógicamente). `PATCH
+// {id}` solo toca campos Operational (theme/language/timezone) — `name`/
+// `email` son Identity, nunca aceptados aquí. `{id}` en vez de
+// route-model-binding implícito a propósito: User no tiene TenantScope
+// automático, así que cada acción resuelve el usuario ya acotado por
+// empresa a mano. `invitar` declarada antes de `{id}` a propósito, aunque
+// `whereNumber('id')` ya evita cualquier colisión real.
 Route::prefix('v1/usuarios')->name('usuarios.')->middleware(['auth:api', 'tenant'])->group(function () {
     Route::get('/', [UserController::class, 'index'])->name('index');
     Route::post('invitar', [InvitationController::class, 'store'])->name('invitar');
     Route::get('{id}', [UserController::class, 'show'])->name('show')->whereNumber('id');
+    Route::patch('{id}', [UserController::class, 'actualizar'])->name('actualizar')->whereNumber('id');
     Route::post('{id}/activar', [UserController::class, 'activar'])->name('activar')->whereNumber('id');
     Route::post('{id}/desactivar', [UserController::class, 'desactivar'])->name('desactivar')->whereNumber('id');
     Route::post('{id}/rol', [UserController::class, 'asignarRol'])->name('asignar-rol')->whereNumber('id');
+    Route::post('{id}/avatar', [UserController::class, 'subirAvatar'])->name('avatar.subir')->whereNumber('id');
+    Route::delete('{id}/avatar', [UserController::class, 'eliminarAvatar'])->name('avatar.eliminar')->whereNumber('id');
 });
 
 // Módulo 6 — Invitaciones (2026-08-03, docs/03_FUNCTIONAL_SPEC/Users.md).

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AuditLog;
 use App\Models\AuthSession;
 use App\Models\Empresa;
 use App\Models\Role;
@@ -9,6 +10,8 @@ use App\Models\User;
 use App\Services\Auth\TenantContext;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -40,6 +43,8 @@ class UserControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Storage::fake('public');
 
         $this->seed(PermissionSeeder::class);
 
@@ -352,6 +357,128 @@ class UserControllerTest extends TestCase
         $this->actingAs($this->userB, 'api')
             ->postJson("/api/v1/usuarios/{$this->adminA->id}/rol", ['role_id' => $this->roleEmpresaB->id])
             ->assertNotFound();
+    }
+
+    /**
+     * ADR-015 (modelo de identidad ERP, 2026-08-04): un administrador con
+     * `usuarios.editar` puede editar los campos Operational de OTRO
+     * usuario de su empresa — reversión deliberada de la regla anterior
+     * "ningún usuario edita el perfil de otro, estructuralmente
+     * imposible" (`docs/03_FUNCTIONAL_SPEC/Profile.md`).
+     */
+    public function test_a_user_with_usuarios_editar_can_update_a_colleagues_operational_fields(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id, 'theme' => 'system']);
+
+        $this->actingAs($this->adminA, 'api')
+            ->patchJson("/api/v1/usuarios/{$colega->id}", [
+                'theme' => 'dark',
+                'language' => 'en',
+                'timezone' => 'America/Mexico_City',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.theme', 'dark')
+            ->assertJsonPath('data.language', 'en')
+            ->assertJsonPath('data.timezone', 'America/Mexico_City');
+
+        $this->assertSame('dark', $colega->fresh()->theme);
+
+        $log = AuditLog::where('modulo', 'usuarios')->where('accion', 'usuarios.editar')->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertSame('dark', $log->valores_nuevos['theme'] ?? null);
+    }
+
+    /** `name`/`email` son Identity — nunca aceptados por este endpoint, ni siquiera por un administrador. */
+    public function test_name_and_email_cannot_be_changed_via_the_update_endpoint(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Nombre Original']);
+        $emailOriginal = $colega->email;
+
+        $this->actingAs($this->adminA, 'api')
+            ->patchJson("/api/v1/usuarios/{$colega->id}", [
+                'name' => 'Nombre Hackeado',
+                'email' => 'hackeado@test.com',
+                'theme' => 'dark',
+            ])
+            ->assertOk();
+
+        $this->assertSame('Nombre Original', $colega->fresh()->name);
+        $this->assertSame($emailOriginal, $colega->fresh()->email);
+        $this->assertSame('dark', $colega->fresh()->theme);
+    }
+
+    public function test_a_user_without_usuarios_editar_cannot_update_a_colleague(): void
+    {
+        $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id, 'theme' => 'system']);
+
+        $this->actingAs($sinPermiso, 'api')
+            ->patchJson("/api/v1/usuarios/{$colega->id}", ['theme' => 'dark'])
+            ->assertStatus(403);
+
+        $this->assertSame('system', $colega->fresh()->theme);
+    }
+
+    public function test_company_b_cannot_update_company_as_user(): void
+    {
+        $this->actingAs($this->userB, 'api')
+            ->patchJson("/api/v1/usuarios/{$this->adminA->id}", ['theme' => 'dark'])
+            ->assertNotFound();
+    }
+
+    public function test_show_exposes_empresa_and_is_platform_admin_as_identity_fields(): void
+    {
+        $this->actingAs($this->adminA, 'api')
+            ->getJson("/api/v1/usuarios/{$this->adminA->id}")
+            ->assertOk()
+            ->assertJsonPath('data.empresa.nombre', 'Empresa A')
+            ->assertJsonPath('data.is_platform_admin', false);
+    }
+
+    public function test_an_admin_can_upload_a_colleagues_avatar(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $archivo = UploadedFile::fake()->create('avatar.jpg', 100, 'image/jpeg');
+
+        $response = $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/avatar", ['avatar' => $archivo]);
+
+        $response->assertOk();
+        $colega->refresh();
+        $this->assertNotNull($colega->avatar_path);
+        Storage::disk('public')->assertExists($colega->avatar_path);
+        $this->assertStringContainsString('/storage/', $response->json('data.avatar_url'));
+    }
+
+    public function test_uploading_a_new_avatar_for_a_colleague_deletes_the_old_one(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/avatar", ['avatar' => UploadedFile::fake()->create('primero.jpg', 100, 'image/jpeg')]);
+        $primeraRuta = $colega->refresh()->avatar_path;
+
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/avatar", ['avatar' => UploadedFile::fake()->create('segundo.jpg', 100, 'image/jpeg')]);
+
+        Storage::disk('public')->assertMissing($primeraRuta);
+        Storage::disk('public')->assertExists($colega->refresh()->avatar_path);
+    }
+
+    public function test_an_admin_can_remove_a_colleagues_avatar(): void
+    {
+        $colega = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $this->actingAs($this->adminA, 'api')
+            ->postJson("/api/v1/usuarios/{$colega->id}/avatar", ['avatar' => UploadedFile::fake()->create('avatar.jpg', 100, 'image/jpeg')]);
+        $ruta = $colega->refresh()->avatar_path;
+
+        $this->actingAs($this->adminA, 'api')
+            ->deleteJson("/api/v1/usuarios/{$colega->id}/avatar")
+            ->assertOk()
+            ->assertJsonPath('data.avatar_url', null);
+
+        Storage::disk('public')->assertMissing($ruta);
+        $this->assertNull($colega->fresh()->avatar_path);
     }
 
     public function test_there_is_no_create_or_delete_endpoint_for_users(): void

@@ -9,6 +9,9 @@ import {
   MoreHorizontal,
   Ban,
   CheckCircle2,
+  Eye,
+  Pencil,
+  Shield,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -42,6 +45,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { InvitarUsuarioDialog } from "@/components/invitar-usuario-dialog";
 import { UsuarioViewModal } from "@/components/usuario-view-modal";
+import { UsuarioFormModal } from "@/components/usuario-form-modal";
+import { AsignarRolDialog } from "@/components/asignar-rol-dialog";
 import { useCrudList } from "@/hooks/use-crud-list";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, listUsuarios } from "@/lib/api/usuarios";
@@ -56,11 +61,16 @@ const ESTADO_FILTROS: Record<string, string> = {
 
 /**
  * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 con
- * Módulo 6 (Invitaciones). Listar/Ver/Activar/Desactivar/Invitar/Asignar
+ * Módulo 6 (Invitaciones) y 2026-08-04 con `Editar` (ADR-015, modelo de
+ * identidad ERP). Listar/Ver/Editar/Activar/Desactivar/Invitar/Asignar
  * rol — sin ninguna acción "Eliminar", Usuarios nunca se elimina, solo se
  * desactiva. "Nuevo Usuario" abre `InvitarUsuarioDialog`, no un formulario
  * de creación directo — la cuenta la termina de crear el propio invitado
- * al aceptar (`/aceptar-invitacion`), nunca un admin eligiendo su contraseña.
+ * al aceptar (`/aceptar-invitacion`), nunca un admin eligiendo su
+ * contraseña. El menú de acciones de cada fila ahora expone las cuatro
+ * acciones directamente (Ver/Editar/Cambiar rol/Activar-Desactivar),
+ * igual que el resto de los módulos CRUD — antes solo tenía Desactivar,
+ * y "Cambiar rol" solo era alcanzable abriendo primero el modal Ver.
  */
 export default function UsuariosPage() {
   const usuarioActual = useAppSelector((state) => state.auth.user);
@@ -69,6 +79,8 @@ export default function UsuariosPage() {
   const [page, setPage] = useState(1);
   const [itemAConfirmar, setItemAConfirmar] = useState<Usuario | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
+  const [editando, setEditando] = useState<Usuario | null>(null);
+  const [usuarioParaRol, setUsuarioParaRol] = useState<Usuario | null>(null);
 
   const {
     items: usuarios,
@@ -208,6 +220,18 @@ export default function UsuariosPage() {
                             }
                           />
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewingId(usuario.id)}>
+                              <Eye />
+                              Ver
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setEditando(usuario)}>
+                              <Pencil />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setUsuarioParaRol(usuario)}>
+                              <Shield />
+                              Cambiar rol
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={usuario.is_active && esUsuarioActual}
                               onClick={() => setItemAConfirmar(usuario)}
@@ -300,6 +324,25 @@ export default function UsuariosPage() {
         onOpenChange={(open) => !open && setViewingId(null)}
         onChanged={() => refetch()}
       />
+
+      <UsuarioFormModal
+        open={editando !== null}
+        onOpenChange={(open) => !open && setEditando(null)}
+        usuario={editando}
+        onSaved={() => refetch()}
+      />
+
+      {usuarioParaRol && (
+        <AsignarRolDialog
+          usuario={usuarioParaRol}
+          open={usuarioParaRol !== null}
+          onOpenChange={(open) => !open && setUsuarioParaRol(null)}
+          onAssigned={() => {
+            setUsuarioParaRol(null);
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

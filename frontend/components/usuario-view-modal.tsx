@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Ban, CheckCircle2, UserCog } from "lucide-react";
+import { Ban, CheckCircle2, Pencil, UserCog } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { DetailModal, InfoRow } from "@/components/detail-modal";
 import { AsignarRolDialog } from "@/components/asignar-rol-dialog";
+import { UsuarioFormModal } from "@/components/usuario-form-modal";
 import { useAppSelector } from "@/store/hooks";
 import { activarUsuario, desactivarUsuario, getUsuario } from "@/lib/api/usuarios";
 import type { Usuario } from "@/lib/api/types";
@@ -16,11 +17,12 @@ import { formatRelativeTime } from "@/lib/format";
 
 /**
  * Global UI Standard (2026-08-03). Reemplaza la página completa
- * `/usuarios/{id}` — sin pestañas (mismo caso que Cliente), sin Crear
- * ni Editar genérico: este módulo nunca tuvo ninguno de los dos (crear
- * es Invitar, editar es únicamente reasignar rol vía
- * `AsignarRolDialog`, ambos diálogos ya existentes, sin cambios, solo
- * reubicados aquí dentro).
+ * `/usuarios/{id}` — sin pestañas (mismo caso que Cliente). "Editar"
+ * agregado 2026-08-04 (ADR-015, modelo de identidad ERP) — antes este
+ * módulo no tenía ninguno, ahora sigue el mismo patrón Ver→Editar que
+ * Clientes/Proveedores, abriendo `UsuarioFormModal` (solo campos
+ * Operational). Reasignar rol sigue siendo un flujo separado
+ * (`AsignarRolDialog`), sin cambios.
  */
 export function UsuarioViewModal({
   usuarioId,
@@ -37,6 +39,7 @@ export function UsuarioViewModal({
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmando, setConfirmando] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (!open || usuarioId == null) return;
@@ -92,16 +95,22 @@ export function UsuarioViewModal({
         }
         headerActions={
           usuario && (
-            <Button
-              size="sm"
-              variant={usuario.is_active ? "destructive" : "default"}
-              className="gap-2"
-              disabled={esUsuarioActual && usuario.is_active}
-              onClick={() => setConfirmando(true)}
-            >
-              {usuario.is_active ? <Ban className="size-4" /> : <CheckCircle2 className="size-4" />}
-              {usuario.is_active ? "Desactivar" : "Activar"}
-            </Button>
+            <>
+              <Button size="sm" variant="outline" className="gap-2" onClick={() => setEditOpen(true)}>
+                <Pencil className="size-4" />
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                variant={usuario.is_active ? "destructive" : "default"}
+                className="gap-2"
+                disabled={esUsuarioActual && usuario.is_active}
+                onClick={() => setConfirmando(true)}
+              >
+                {usuario.is_active ? <Ban className="size-4" /> : <CheckCircle2 className="size-4" />}
+                {usuario.is_active ? "Desactivar" : "Activar"}
+              </Button>
+            </>
           )
         }
       >
@@ -140,7 +149,8 @@ export function UsuarioViewModal({
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Nombre y correo no son editables desde aquí — son responsabilidad del propio usuario en su Perfil.
+                  Nombre, correo, empresa y Platform Admin son campos de identidad — nunca editables, ni desde aquí
+                  ni desde Perfil. Avatar, idioma, zona horaria y tema sí son editables — botón "Editar" arriba.
                 </p>
               </CardContent>
             </Card>
@@ -163,6 +173,16 @@ export function UsuarioViewModal({
           onConfirm={confirmarCambioEstado}
         />
       )}
+
+      <UsuarioFormModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        usuario={usuario}
+        onSaved={(actualizado) => {
+          setUsuario(actualizado);
+          onChanged();
+        }}
+      />
     </>
   );
 }

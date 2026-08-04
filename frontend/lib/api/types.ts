@@ -570,11 +570,25 @@ export interface UpdateMovimientoPayload {
  * ya construido) — activar/desactivar/asignar rol son las tres únicas
  * mutaciones de este módulo, crear sigue siendo exclusivo de Invitaciones.
  */
+/**
+ * `empresa`/`is_platform_admin`/`avatar_url`/`theme`/`language`/`timezone`
+ * agregados 2026-08-04 (ADR-015). Los primeros dos son Identity (siempre
+ * de solo lectura); los últimos cuatro son Operational — antes exclusivos
+ * de autoservicio vía Perfil, ahora también editables aquí por un
+ * administrador con `usuarios.editar` (ver `UsuarioFormModal`).
+ */
 export interface Usuario {
   id: number;
   name: string;
   email: string;
+  empresa: { id: number; nombre: string } | null;
+  is_platform_admin: boolean;
   is_active: boolean;
+  avatar_path: string | null;
+  avatar_url: string | null;
+  theme: "light" | "dark" | "system" | null;
+  language: "es" | "en" | null;
+  timezone: string | null;
   role: string | null;
   last_activity_at: string | null;
   last_login_ip: string | null;
@@ -582,6 +596,13 @@ export interface Usuario {
   invited_at: string | null;
   invited_by: string | null;
   created_at: string | null;
+}
+
+/** Campos Operational editables por un administrador (ADR-015) — `name`/`email` son Identity, nunca aquí. */
+export interface UpdateUsuarioPayload {
+  theme?: "light" | "dark" | "system";
+  language?: "es" | "en";
+  timezone?: string;
 }
 
 /**

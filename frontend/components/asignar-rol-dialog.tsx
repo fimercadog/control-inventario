@@ -30,15 +30,29 @@ import type { Role, Usuario } from "@/lib/api/types";
  * Módulo 5 — Roles, ya completo — conectado aquí el 2026-08-03 (Users.md
  * documentaba esto como pendiente hasta que Roles existiera). Reemplaza
  * el rol del usuario, nunca lo agrega a una lista — un usuario, un rol.
+ *
+ * `open`/`onOpenChange` opcionales (2026-08-04, ADR-015): sin ellos, el
+ * componente sigue siendo autocontenido con su propio trigger (uso
+ * original, embebido en `UsuarioViewModal`, sin cambios). Con ellos, el
+ * padre controla la apertura y el trigger interno no se renderiza — uso
+ * nuevo desde el menú de acciones de `usuarios/page.tsx`, mismo patrón
+ * que `ConfirmDialog` ya usa ahí para Activar/Desactivar.
  */
 export function AsignarRolDialog({
   usuario,
   onAssigned,
+  open: openControlado,
+  onOpenChange: onOpenChangeControlado,
 }: {
   usuario: Usuario;
   onAssigned: (usuario: Usuario) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const esControlado = openControlado !== undefined;
+  const [openInterno, setOpenInterno] = useState(false);
+  const open = esControlado ? openControlado : openInterno;
+  const setOpen = esControlado ? onOpenChangeControlado! : setOpenInterno;
   const [saving, setSaving] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
   // "" (nunca undefined) a propósito — ver el mismo comentario en
@@ -74,14 +88,16 @@ export function AsignarRolDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button variant="outline" size="sm" className="gap-2">
-            <Shield className="size-3.5" />
-            Cambiar rol
-          </Button>
-        }
-      />
+      {!esControlado && (
+        <DialogTrigger
+          render={
+            <Button variant="outline" size="sm" className="gap-2">
+              <Shield className="size-3.5" />
+              Cambiar rol
+            </Button>
+          }
+        />
+      )}
       <DialogContent className={MODAL_SIZES.xs}>
         <DialogHeader>
           <DialogTitle>Asignar rol a {usuario.name}</DialogTitle>
