@@ -704,6 +704,8 @@ Never claim tests that were not executed.
 
 # Browser Verification
 
+Passing automated tests does not imply that a feature works correctly. Tests validate code; browser verification validates functionality. Both are mandatory — neither substitutes for the other.
+
 Whenever UI changes are implemented:
 
 Verify in a real browser.
@@ -1507,6 +1509,37 @@ Products
 ☑ Tests
 
 Only checked items may be reported as completed.
+
+For modules with several distinct features, the checklist may be expanded into a table — feature, expected result, verification method, status, and evidence:
+
+| Feature | Expected Result | Verification | Status | Evidence |
+| --- | --- | --- | --- | --- |
+| List Users | Displays all users | Browser | ✅ PASS | Verified |
+| Search | Filters correctly | Browser | ✅ PASS | Verified |
+| Edit | Saves operational fields | Browser + Database | ✅ PASS | Persisted |
+| Assign Role | Updates permissions | Browser + Backend | ✅ PASS | Verified |
+
+Close the checklist with a coverage summary:
+
+Verified: 15/15 — Coverage: 100%
+
+Cross-module status (which modules are Complete/Partial/Not Implemented across the whole ERP, not a single module's checklist) already has a dedicated, code-verified document — `docs/03_FUNCTIONAL_SPEC/RC1_FUNCTIONAL_MODULE_AUDIT.md`. Update that document when a module's status changes; do not maintain a second cross-module table inside this procedure.
+
+---
+
+## Failed Features
+
+If a checklist item fails verification, it must be reported, never hidden or silently retried away.
+
+For every failed feature, describe:
+
+- Feature.
+- Failure observed.
+- Root cause (if known).
+- Temporary solution, if one was applied.
+- Recommended fix.
+
+A module with any failed feature cannot be reported as complete.
 
 ---
 

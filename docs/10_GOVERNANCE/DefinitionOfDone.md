@@ -20,6 +20,7 @@ Un módulo o feature **NO está terminado** hasta que TODO lo siguiente se cumpl
 - [ ] Auditoría: toda mutación exitosa escribe una entrada real vía `AuditLogger`, con el diff real de lo que cambió — no una lista de campos fija (ver `docs/11_DESIGN_SYSTEM/QUALITY_CHECKLIST.md`, sección Backend/Datos).
 - [ ] **Design System**: la pantalla nueva sigue `docs/11_DESIGN_SYSTEM/` (Crear/Editar/Ver vía modal salvo excepción documentada, componentes compartidos reutilizados en vez de duplicados, tamaños de modal desde `MODAL_SIZES`) — añadido 2026-08-03, ver `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` §"Design System Compliance".
 - [ ] **`docs/11_DESIGN_SYSTEM/QUALITY_CHECKLIST.md` completada** — añadido 2026-08-03, con evidencia por ítem, no solo casillas marcadas.
+- [ ] **Cobertura funcional reportada** — añadido 2026-08-04, ver `docs/10_GOVERNANCE/AI_OPERATING_PROCEDURE.md` §"Functional Verification Evidence". Cada funcionalidad del módulo (no solo el conjunto CRUD genérico) verificada individualmente en navegador, con su resultado esperado, método y evidencia — un test automatizado en verde no es sustituto, ambos son obligatorios. Cualquier funcionalidad fallida se reporta explícitamente, nunca se oculta.
 
 ## Estados de aprobación de módulo
 
