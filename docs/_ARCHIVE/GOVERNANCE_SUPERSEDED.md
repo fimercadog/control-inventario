@@ -23,3 +23,13 @@ Documentation Governance
 ↓
 
 Release Governance
+
+
+FRONTEND_STANDARDS.md
+
+
+Frontend standards are defined in:
+
+docs/11_DESIGN_SYSTEM/DESIGN_SYSTEM.md
+
+Compliance with this document is mandatory.

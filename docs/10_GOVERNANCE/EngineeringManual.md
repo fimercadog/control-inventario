@@ -57,6 +57,7 @@ Engineering Manual (este documento)
 - **Coding Standards** — `docs/04_TECHNICAL_SPEC/CodingStandards.md`. Vive en Technical Spec, no en Governance, porque describe *cómo se escribe* código, no *cuándo/con qué proceso*.
 - **Security Rules** — `AGENTS.md` (reglas no negociables) + `docs/04_TECHNICAL_SPEC/Security.md` (detalle técnico) + `docs/02_REQUIREMENTS/SecurityRequirements.md` (requisitos).
 - **Master Test Plan** — `docs/06_TESTS/MasterTestPlan.md`. Vive en Tests, no en Governance, porque describe *estado real de cobertura*, no proceso.
+- **Design System (Frontend Governance)** — `docs/11_DESIGN_SYSTEM/`, fuente oficial única para UI/UX (consolidada 2026-08-03, ver `docs/11_DESIGN_SYSTEM/README.md`). El cumplimiento del Design System es obligatorio. Vive fuera de Governance porque describe *cómo se ve y se comporta* la interfaz, no *cuándo/con qué proceso* — misma razón que separa Coding Standards de este manual.
 
 ---
 

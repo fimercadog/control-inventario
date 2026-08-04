@@ -177,6 +177,7 @@ No modificar código sin haber completado estos pasos.
 | [`08_ADR/`](08_ADR/) | Decisiones arquitectónicas | Ingeniería |
 | [`09_TEMPLATES/`](09_TEMPLATES/) | Plantillas reutilizables | Todos |
 | [`10_GOVERNANCE/`](10_GOVERNANCE/) | Reglas de ingeniería y desarrollo | Todos |
+| [`11_DESIGN_SYSTEM/`](11_DESIGN_SYSTEM/) | Fuente oficial única del Design System (UI/UX) | Frontend, Ingeniería |
 | [`_ARCHIVE/`](_ARCHIVE/) | Historial documental | Consulta histórica |
 
 ---
