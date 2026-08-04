@@ -103,7 +103,7 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
 
   if (notFound || !movimiento) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <Button variant="ghost" size="sm" className="w-fit gap-2" onClick={() => router.push("/movimientos")}>
           <ArrowLeft className="size-4" />
           Volver a Movimientos
@@ -122,7 +122,10 @@ export function MovimientoDetailScreen({ movimientoId }: { movimientoId: number 
   const unidad = movimiento.unidad_medida ? ` ${movimiento.unidad_medida}` : "";
 
   return (
-    <div className="flex flex-col gap-6">
+    // Mismo `max-w-3xl` + `mx-auto` que `/movimientos` (2026-08-03) — la
+    // ficha de detalle sigue el mismo ancho de contenido que el listado
+    // por consistencia visual.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
         <Button variant="ghost" size="sm" className="w-fit gap-2" onClick={() => router.push("/movimientos")}>
           <ArrowLeft className="size-4" />

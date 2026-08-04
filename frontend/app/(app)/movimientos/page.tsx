@@ -130,13 +130,18 @@ export default function MovementsPage() {
   }, [movimientos]);
 
   return (
-    // Ancho acotado (2026-08-03): las tarjetas de movimiento no cargan
-    // suficiente información para justificar el ancho completo del
-    // contenido — `max-w-4xl` (896px, dentro del rango pedido 800-1000px)
-    // + `mx-auto` centra la columna en monitores anchos sin afectar el
-    // comportamiento responsive (en mobile/tablet el viewport ya es más
-    // angosto que el máximo, así que simplemente ocupa el ancho disponible).
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    // Ancho acotado (2026-08-03, afinado el mismo día): las tarjetas de
+    // movimiento no cargan suficiente información para justificar el
+    // ancho completo del contenido. Reducido de `max-w-4xl` (896px) a
+    // `max-w-3xl` (768px, -14.3%, dentro de "15-20% aprox." pedido) — un
+    // único paso hacia abajo en la escala estándar de Tailwind, sin
+    // valores de píxel arbitrarios. `mx-auto` centra la columna en
+    // monitores anchos sin afectar el comportamiento responsive (en
+    // mobile/tablet el viewport ya es más angosto que el máximo, así que
+    // simplemente ocupa el ancho disponible). La ficha de detalle
+    // (`movimiento-detail-screen.tsx`) usa el mismo `max-w-3xl` para
+    // consistencia visual entre listado y detalle.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Movimientos</h1>
