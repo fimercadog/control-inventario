@@ -22,16 +22,17 @@ Historial de cambios de este directorio: [`CHANGELOG.md`](CHANGELOG.md).
 | [`COMPONENTS.md`](COMPONENTS.md) | Catálogo de componentes compartidos y qué reutilizar por categoría | ✅ Verified |
 | [`COMPONENT_INVENTORY.md`](COMPONENT_INVENTORY.md) | Inventario completo con estado, ubicación y consumidores reales de cada componente compartido | ✅ Verified |
 | [`MODALS.md`](MODALS.md) | Escala de tamaños de modal (`MODAL_SIZES`) y comportamiento de scroll compartido | ✅ Verified — ver [`ADR-014`](../08_ADR/ADR-014-modal-sizing-unification.md) para el porqué |
-| [`TABLES.md`](TABLES.md) | Patrón de tablas de listado | 🟡 Partial — paginación, búsqueda servidor/cliente y color de badges no son uniformes |
-| [`FORMS.md`](FORMS.md) | Patrón de formularios y campos | 🟡 Partial — dos familias de diálogo no reconciliadas |
-| [`TYPOGRAPHY.md`](TYPOGRAPHY.md) | Escala tipográfica | 🟡 Partial — bug real: `--font-heading`/`--font-sans` nunca resuelven a Geist Sans |
-| [`COLORS.md`](COLORS.md) | Paleta y tokens semánticos de color | 🟡 Partial — color de estado activo/inactivo dividido en 3 patrones |
+| [`TABLES.md`](TABLES.md) | Patrón de tablas de listado | 🟡 Partial — paginación, búsqueda servidor/cliente y color de badges no son uniformes (RC5) |
+| [`FORMS.md`](FORMS.md) | Patrón de formularios y campos | 🟡 Partial — dos familias de diálogo no reconciliadas (RC6) |
+| [`TYPOGRAPHY.md`](TYPOGRAPHY.md) | Escala tipográfica | ✅ Verified — bug real encontrado (`--font-sans` no resolvía a Geist Sans), aprobado y corregido 2026-08-03 |
+| [`COLORS.md`](COLORS.md) | Paleta y tokens semánticos de color | 🟡 Partial — color de estado activo/inactivo dividido en 3 patrones (RC4) |
 | [`ICONOGRAPHY.md`](ICONOGRAPHY.md) | Convención de íconos | ✅ Verified |
 | [`RESPONSIVE.md`](RESPONSIVE.md) | Breakpoints y comportamiento responsive | ✅ Verified |
+| [`QUALITY_CHECKLIST.md`](QUALITY_CHECKLIST.md) | Checklist obligatorio para aprobar cualquier módulo/pantalla nueva | ✅ Verified |
 
 `examples/` contiene capturas de pantalla reales de la aplicación (`crud-modal.png`, `table.png`, `movement-card.png`, `buttons.png`, `forms.png`) referenciadas desde los documentos de arriba.
 
-Ningún documento queda en ⚪ Planned a partir de la v1.1 (2026-08-03) — los 4 documentos en 🟡 Partial están auditados y documentados, con sus inconsistencias/bugs reales explícitos en vez de ocultados; no se corrigieron porque cada uno requiere una decisión de alcance amplio (reconciliar un vocabulario de color, cambiar el `font-family` de toda la aplicación, unificar dos familias de diálogo) que necesita aprobación explícita antes de tocar código, la misma disciplina que exige `ADR-014`.
+Ningún documento queda en ⚪ Planned a partir de la v1.1 (2026-08-03). El bug de Typography se aprobó y corrigió el mismo día (v1.2). Los 3 documentos restantes en 🟡 Partial están auditados y documentados, con sus inconsistencias reales explícitas en vez de ocultadas — decisión explícita del propietario del proyecto (2026-08-03) de tratarlas como mejoras planificadas en sprints separados (RC4 Colores, RC5 Tablas, RC6 Formularios) en vez de mezclarlas con el cierre del Design System, para mantener el riesgo bajo y el historial de cambios limpio. Cada una necesita su propio ADR antes de tocar código, la misma disciplina que exige `ADR-014`.
 
 ## Cómo se agrega una regla nueva aquí
 

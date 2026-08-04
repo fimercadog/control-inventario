@@ -2,6 +2,14 @@
 
 Registro de cada cambio al Design System, no del código de la aplicación (para eso, ver `/CHANGELOG.md` en la raíz del repositorio). Formato libre, orden cronológico inverso.
 
+## v1.2 (2026-08-03)
+
+Decisión explícita del propietario del proyecto: aprobar y corregir de inmediato el bug de tipografía encontrado en v1.1 (prioridad alta, es un error, no una preferencia visual), pero **no** tocar los otros 3 hallazgos 🟡 Partial (Colores, Tablas, Formularios) — quedan como mejoras planificadas en sprints separados (RC4/RC5/RC6) para mantener el riesgo bajo.
+
+- **`TYPOGRAPHY.md`** → ✅ Verified. `--font-sans: var(--font-sans)` (auto-referencia circular) corregido a `--font-sans: var(--font-geist-sans);` en `frontend/app/globals.css` — una sola línea, `--font-heading` se corrigió automáticamente al cascadear desde `--font-sans`. Verificado en navegador con `getComputedStyle`: `<body>`, un `<h1>` de página, y un `DialogTitle` resuelven a `Geist, "Geist Fallback"` después del fix — ninguno cae a una pila de fuentes de sistema genérica. Sin cambio de tamaños, pesos, ni jerarquía tipográfica — solo qué fuente real se renderiza.
+- **`QUALITY_CHECKLIST.md`** (nuevo) → ✅ Verified. Checklist obligatoria para aprobar cualquier módulo/pantalla nueva — UI/Design System, Accesibilidad, Backend/Datos (RBAC, Auditoría, Tests, borrado lógico), y verificación final. Cada ítem referencia un mecanismo real ya construido, no una aspiración.
+- **`COLORS.md`, `TABLES.md`, `FORMS.md`** → sin cambios, permanecen 🟡 Partial, explícitamente diferidos a RC4/RC5/RC6.
+
 ## v1.1 (2026-08-03)
 
 Completada la auditoría de las 6 secciones que faltaban, hasta que todas alcanzaran un estado real (✅ Verified o 🟡 Partial documentado — ninguna quedó en ⚪ Planned/sin auditar).
