@@ -573,4 +573,99 @@ class UserControllerTest extends TestCase
     {
         $this->getJson('/api/v1/usuarios')->assertUnauthorized();
     }
+
+    /**
+     * Work Order "Usuarios: Exportación CSV y PDF". Gateado por `usuarios.ver`
+     * (viewAny), igual que `index()` — no por `reportes.ver` (ver el docblock
+     * de `UserController::exportarCsv()`).
+     */
+    public function test_a_user_can_export_csv_with_real_data_and_no_sensitive_fields(): void
+    {
+        User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Carlos Ramírez', 'email' => 'carlos@empresa-a.test']);
+
+        $response = $this->actingAs($this->adminA, 'api')->get('/api/v1/usuarios/export/csv');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+
+        $contenido = $response->streamedContent();
+        $this->assertStringContainsString('Carlos Ramírez', $contenido);
+        $this->assertStringContainsString('carlos@empresa-a.test', $contenido);
+        $this->assertStringContainsString('#,Usuario,Email,Rol,Estado', $contenido);
+        $this->assertStringNotContainsString($this->adminA->password, $contenido);
+        $this->assertStringNotContainsString('remember_token', $contenido);
+    }
+
+    public function test_a_user_can_export_pdf(): void
+    {
+        $response = $this->actingAs($this->adminA, 'api')->get('/api/v1/usuarios/export/pdf');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_csv_export_respects_the_current_search_filter(): void
+    {
+        User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Encontrable Uno']);
+        User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Otro Distinto']);
+
+        $contenido = $this->actingAs($this->adminA, 'api')
+            ->get('/api/v1/usuarios/export/csv?busqueda=Encontrable')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Encontrable Uno', $contenido);
+        $this->assertStringNotContainsString('Otro Distinto', $contenido);
+    }
+
+    public function test_csv_export_respects_the_current_estado_filter(): void
+    {
+        $inactivo = User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Usuario Inactivo Export', 'is_active' => false]);
+
+        $activosContenido = $this->actingAs($this->adminA, 'api')->get('/api/v1/usuarios/export/csv')->streamedContent();
+        $this->assertStringNotContainsString('Usuario Inactivo Export', $activosContenido);
+
+        $todosContenido = $this->actingAs($this->adminA, 'api')->get('/api/v1/usuarios/export/csv?estado=todos')->streamedContent();
+        $this->assertStringContainsString('Usuario Inactivo Export', $todosContenido);
+    }
+
+    public function test_csv_export_respects_the_current_rol_filter(): void
+    {
+        $vendedor = Role::create(['name' => 'Vendedor Export', 'guard_name' => 'api', 'empresa_id' => $this->empresaA->id]);
+        $conRol = User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Usuario Con Rol Export']);
+        $conRol->assignRole($vendedor);
+        User::factory()->create(['empresa_id' => $this->empresaA->id, 'name' => 'Usuario Sin Ese Rol']);
+
+        $contenido = $this->actingAs($this->adminA, 'api')
+            ->get('/api/v1/usuarios/export/csv?rol=Vendedor+Export')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Usuario Con Rol Export', $contenido);
+        $this->assertStringNotContainsString('Usuario Sin Ese Rol', $contenido);
+    }
+
+    public function test_export_never_includes_another_companys_users(): void
+    {
+        $contenido = $this->actingAs($this->userB, 'api')
+            ->get('/api/v1/usuarios/export/csv')
+            ->streamedContent();
+
+        $this->assertStringNotContainsString($this->adminA->name, $contenido);
+        $this->assertStringContainsString($this->userB->name, $contenido);
+    }
+
+    public function test_a_user_without_usuarios_ver_cannot_export(): void
+    {
+        $sinPermiso = User::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $this->actingAs($sinPermiso, 'api')->get('/api/v1/usuarios/export/csv')->assertStatus(403);
+        $this->actingAs($sinPermiso, 'api')->get('/api/v1/usuarios/export/pdf')->assertStatus(403);
+    }
+
+    public function test_export_endpoints_reject_unauthenticated_requests(): void
+    {
+        $this->getJson('/api/v1/usuarios/export/csv')->assertUnauthorized();
+        $this->getJson('/api/v1/usuarios/export/pdf')->assertUnauthorized();
+    }
 }
