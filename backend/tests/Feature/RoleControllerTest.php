@@ -439,6 +439,99 @@ class RoleControllerTest extends TestCase
     }
 
     /**
+     * Work Order "Roles: Exportación CSV y PDF". Gateado por `roles.ver`
+     * (viewAny), no `reportes.ver` — mismo criterio ya aplicado en
+     * Usuarios (ver el docblock de `RoleController::exportarCsv()`).
+     */
+    public function test_a_user_can_export_csv_with_real_data(): void
+    {
+        $this->crearRole('Rol Exportable', ['roles.ver']);
+
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/roles/export/csv');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+
+        $contenido = $response->streamedContent();
+        $this->assertStringContainsString('Rol Exportable', $contenido);
+        $this->assertStringContainsString('#,Nombre,Estado,Permisos,Usuarios', $contenido);
+    }
+
+    public function test_a_user_can_export_pdf(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/roles/export/pdf');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_csv_export_respects_the_current_search_filter(): void
+    {
+        $this->crearRole('Encontrable Export Uno');
+        $this->crearRole('Otro Distinto Export');
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/roles/export/csv?busqueda=Encontrable')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Encontrable Export Uno', $contenido);
+        $this->assertStringNotContainsString('Otro Distinto Export', $contenido);
+    }
+
+    public function test_csv_export_respects_the_current_estado_filter(): void
+    {
+        $inactivo = $this->crearRole('Rol Inactivo Export');
+        $inactivo->update(['estado' => 'inactivo']);
+
+        $activosContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/roles/export/csv')->streamedContent();
+        $this->assertStringNotContainsString('Rol Inactivo Export', $activosContenido);
+
+        $todosContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/roles/export/csv?estado=todos')->streamedContent();
+        $this->assertStringContainsString('Rol Inactivo Export', $todosContenido);
+    }
+
+    public function test_csv_export_includes_the_full_filtered_set_not_just_one_page(): void
+    {
+        for ($i = 1; $i <= 25; $i++) {
+            $this->crearRole("Rol Masivo Export {$i}");
+        }
+
+        // El listado real pagina de a 20 por defecto; la exportación debe
+        // traer las 25 filas filtradas completas, no solo las primeras 20.
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/roles/export/csv?busqueda=Rol Masivo Export')
+            ->streamedContent();
+
+        $filas = array_filter(explode("\n", trim($contenido)));
+        $this->assertCount(26, $filas); // encabezado + 25 roles
+    }
+
+    public function test_export_never_includes_another_companys_roles(): void
+    {
+        $rolB = Role::create(['name' => 'Rol Exclusivo Empresa B', 'guard_name' => 'api', 'empresa_id' => $this->empresaB->id]);
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/roles/export/csv')
+            ->streamedContent();
+
+        $this->assertStringNotContainsString('Rol Exclusivo Empresa B', $contenido);
+    }
+
+    public function test_a_user_without_roles_ver_cannot_export(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/roles/export/csv')->assertStatus(403);
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/roles/export/pdf')->assertStatus(403);
+    }
+
+    public function test_export_endpoints_reject_unauthenticated_requests(): void
+    {
+        $this->getJson('/api/v1/roles/export/csv')->assertUnauthorized();
+        $this->getJson('/api/v1/roles/export/pdf')->assertUnauthorized();
+    }
+
+    /**
      * @param array<int, string> $permisos
      */
     private function crearRole(string $name, array $permisos = []): Role
