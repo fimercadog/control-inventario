@@ -60,7 +60,9 @@ export function Header() {
         </Sheet>
       </div>
 
-      <div className="flex-1" />
+      <div className="flex-1 truncate text-sm text-muted-foreground">
+        {user?.name ? <span>Hola, {user.name.split(" ")[0]}</span> : null}
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
@@ -11,8 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { DataTable } from "@/components/data-table/data-table";
 import { buildUsuarioColumns } from "@/app/usuarios/columns";
+import { InviteUserForm } from "@/components/forms/invite-user-form";
+import { EditUserForm } from "@/components/forms/edit-user-form";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { fetchUsuarios, activarUsuario, desactivarUsuario } from "@/lib/api/users";
@@ -50,6 +61,7 @@ export default function UsuariosPage() {
   const canView = usePermission("usuarios.ver");
   const canEdit = usePermission("usuarios.editar");
   const canListRoles = usePermission("roles.ver");
+  const canInvite = usePermission("usuarios.invitar");
 
   const { inputValue: searchInput, setInputValue: setSearchInput, searchTerm } =
     useDebouncedSearch();
@@ -75,6 +87,7 @@ export default function UsuariosPage() {
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
 
   useEffect(() => {
     if (!canView) return;
@@ -133,7 +146,17 @@ export default function UsuariosPage() {
     }
   }
 
-  const columns = buildUsuarioColumns({ canEdit, togglingId, onToggleActivo: handleToggleActivo });
+  function handleEditSuccess() {
+    setEditingUsuario(null);
+    setRefetchNonce((n) => n + 1);
+  }
+
+  const columns = buildUsuarioColumns({
+    canEdit,
+    togglingId,
+    onToggleActivo: handleToggleActivo,
+    onEditUsuario: setEditingUsuario,
+  });
 
   if (!canView) {
     return (
@@ -145,9 +168,36 @@ export default function UsuariosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Usuarios</h1>
-        <p className="text-sm text-muted-foreground">Gestiona los usuarios de tu empresa.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Usuarios</h1>
+          <p className="text-sm text-muted-foreground">Gestiona los usuarios de tu empresa.</p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {canInvite ? (
+            <Dialog>
+              <DialogTrigger
+                render={
+                  <Button className="bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400" />
+                }
+              >
+                <Plus className="size-4" />
+                Nuevo Usuario
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Usuario</DialogTitle>
+                  <DialogDescription>
+                    FidelOS no crea usuarios directamente: se envía una invitación por correo y la
+                    persona completa su registro al aceptarla.
+                  </DialogDescription>
+                </DialogHeader>
+                <InviteUserForm roles={roles} />
+              </DialogContent>
+            </Dialog>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -212,6 +262,21 @@ export default function UsuariosPage() {
           setPage(1);
         }}
       />
+
+      <Dialog open={editingUsuario !== null} onOpenChange={(open) => !open && setEditingUsuario(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Actualizar usuario</DialogTitle>
+            <DialogDescription>
+              Solo los campos operativos son editables aquí; nombre y correo no se pueden cambiar
+              desde este formulario.
+            </DialogDescription>
+          </DialogHeader>
+          {editingUsuario ? (
+            <EditUserForm usuario={editingUsuario} onSuccess={handleEditSuccess} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

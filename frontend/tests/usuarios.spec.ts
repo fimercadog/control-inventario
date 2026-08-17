@@ -99,6 +99,56 @@ test.describe("Usuarios list", () => {
     await page.getByRole("button", { name: "Abrir menú" }).click();
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
   });
+
+  test("Actualizar opens a per-user edit modal with operational fields only", async ({ page }) => {
+    await page.getByLabel("Buscar usuarios").fill("bturcotte@example.net");
+    const targetRow = page.getByRole("row").filter({ hasText: "bturcotte@example.net" });
+    await targetRow.getByRole("button", { name: "Actualizar" }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("heading", { name: "Actualizar usuario" })).toBeVisible();
+    // Identity fields are shown as read-only context, never as editable inputs.
+    await expect(dialog.getByText("bturcotte@example.net")).toBeVisible();
+    await expect(page.getByLabel("Correo electrónico")).toHaveCount(0);
+    await expect(page.getByLabel("Nombre")).toHaveCount(0);
+    // Only the real operational fields are editable.
+    await expect(page.getByLabel("Tema")).toBeVisible();
+    await expect(page.getByLabel("Idioma")).toBeVisible();
+    const timezoneInput = page.getByLabel("Zona horaria");
+    await expect(timezoneInput).toBeVisible();
+
+    const originalTimezone = await timezoneInput.inputValue();
+    const newTimezone =
+      originalTimezone === "America/Bogota" ? "America/Mexico_City" : "America/Bogota";
+
+    await timezoneInput.fill(newTimezone);
+    await page.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect(page.getByRole("heading", { name: "Actualizar usuario" })).not.toBeVisible({
+      timeout: 10000,
+    });
+
+    // Persistence: reopen the same user and confirm the change actually landed on the backend.
+    await targetRow.getByRole("button", { name: "Actualizar" }).click();
+    await expect(page.getByLabel("Zona horaria")).toHaveValue(newTimezone, { timeout: 10000 });
+
+    // Restore the original value so the shared demo dataset is left unchanged.
+    await page.getByLabel("Zona horaria").fill(originalTimezone);
+    await page.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect(page.getByRole("heading", { name: "Actualizar usuario" })).not.toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  test("Nuevo Usuario opens a modal with the real invitation flow, not a fake creation form", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Nuevo Usuario" }).click();
+    await expect(page.getByRole("heading", { name: "Nuevo Usuario" })).toBeVisible();
+    await expect(page.getByText(/FidelOS no crea usuarios directamente/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Enviar invitación" }).click();
+    await expect(page.getByText("El correo es obligatorio.")).toBeVisible();
+  });
 });
 
 test.describe("Dashboard", () => {

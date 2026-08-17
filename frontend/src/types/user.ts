@@ -29,3 +29,20 @@ export interface UsuariosQueryParams {
   per_page?: 10 | 25 | 50 | 100;
   page?: number;
 }
+
+/** Matches StoreInvitationRequest (backend). There is no direct user-creation endpoint. */
+export interface InvitarUsuarioPayload {
+  email: string;
+  role_id?: number;
+}
+
+/**
+ * Matches UpdateUsuarioRequest (backend, ADR-015). `name`/`email` are Identity
+ * fields and deliberately excluded — only these three Operational fields are
+ * editable for another user via this endpoint.
+ */
+export interface ActualizarUsuarioPayload {
+  theme?: "light" | "dark" | "system";
+  language?: "es" | "en";
+  timezone?: string;
+}
