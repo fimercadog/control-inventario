@@ -336,4 +336,114 @@ class CategoriaControllerTest extends TestCase
         $this->assertNotSame('Hackeado', $this->categoriaA->fresh()->nombre);
         $this->assertSame('activo', $this->categoriaA->fresh()->estado);
     }
+
+    /**
+     * Work Order "Categorías: Exportación CSV y PDF". Gateado por
+     * `categorias.ver` (viewAny) — el mismo permiso que gatea el listado,
+     * no `reportes.ver` (ver el docblock de
+     * `CategoriaController::exportarCsv()`).
+     */
+    public function test_a_user_can_export_csv_with_real_data(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/categorias/export/csv');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+
+        $contenido = $response->streamedContent();
+        $this->assertStringContainsString('Alimentos', $contenido);
+        $this->assertStringContainsString('Comida para mascotas', $contenido);
+        $this->assertStringContainsString('#,Nombre,Descripción,Estado,Productos', $contenido);
+    }
+
+    public function test_a_user_can_export_pdf(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/categorias/export/pdf');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_csv_export_respects_the_current_search_filter(): void
+    {
+        Categoria::create(['nombre' => 'Otra Distinta Export', 'empresa_id' => $this->empresaA->id]);
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/categorias/export/csv?busqueda=Alimentos')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Alimentos', $contenido);
+        $this->assertStringNotContainsString('Otra Distinta Export', $contenido);
+    }
+
+    public function test_csv_export_respects_the_current_estado_filter(): void
+    {
+        $inactiva = Categoria::create(['nombre' => 'Categoria Inactiva Export', 'empresa_id' => $this->empresaA->id]);
+        $inactiva->update(['estado' => 'inactivo']);
+
+        $activasContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/categorias/export/csv')->streamedContent();
+        $this->assertStringNotContainsString('Categoria Inactiva Export', $activasContenido);
+
+        $todasContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/categorias/export/csv?estado=todos')->streamedContent();
+        $this->assertStringContainsString('Categoria Inactiva Export', $todasContenido);
+    }
+
+    public function test_csv_export_includes_the_full_filtered_set_not_just_one_page(): void
+    {
+        for ($i = 1; $i <= 105; $i++) {
+            Categoria::create(['nombre' => "Categoria Masiva Export {$i}", 'empresa_id' => $this->empresaA->id]);
+        }
+
+        // El listado real pagina de a 100 por defecto; la exportación debe
+        // traer las 105 filas filtradas completas, no solo las primeras 100.
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/categorias/export/csv?busqueda=Categoria Masiva Export')
+            ->streamedContent();
+
+        $filas = array_filter(explode("\n", trim($contenido)));
+        $this->assertCount(106, $filas); // encabezado + 105 categorías
+    }
+
+    public function test_export_never_includes_another_companys_categories(): void
+    {
+        Categoria::create(['nombre' => 'Categoria Exclusiva Empresa B', 'empresa_id' => $this->empresaB->id]);
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/categorias/export/csv')
+            ->streamedContent();
+
+        $this->assertStringNotContainsString('Categoria Exclusiva Empresa B', $contenido);
+    }
+
+    public function test_multi_tenant_export_only_includes_the_actors_own_company(): void
+    {
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->empresaB->id);
+        $rolB = Role::create(['name' => 'Test Categorias B', 'guard_name' => 'api', 'empresa_id' => $this->empresaB->id]);
+        $rolB->givePermissionTo(['categorias.ver']);
+        $this->userB->assignRole($rolB);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Categoria::create(['nombre' => 'Categoria Real De B', 'empresa_id' => $this->empresaB->id]);
+
+        $contenido = $this->actingAs($this->userB, 'api')
+            ->get('/api/v1/categorias/export/csv')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Categoria Real De B', $contenido);
+        $this->assertStringNotContainsString('Alimentos', $contenido); // categoriaA, Empresa A
+    }
+
+    public function test_a_user_without_categorias_ver_cannot_export(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/categorias/export/csv')->assertStatus(403);
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/categorias/export/pdf')->assertStatus(403);
+    }
+
+    public function test_export_endpoints_reject_unauthenticated_requests(): void
+    {
+        $this->getJson('/api/v1/categorias/export/csv')->assertUnauthorized();
+        $this->getJson('/api/v1/categorias/export/pdf')->assertUnauthorized();
+    }
 }
