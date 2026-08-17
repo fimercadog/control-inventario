@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToEmpresa;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -50,5 +51,23 @@ class Proveedor extends Model
     public function productosAsociados(): HasMany
     {
         return $this->hasMany(ProductoProveedor::class);
+    }
+
+    /** WO "Modelo de base de datos" (2026-08-17). Convenience añadida junto a
+     * productosAsociados() — ver el docblock equivalente en Producto::proveedores()
+     * (mismo motivo para no usar ->using(ProductoProveedor::class) aquí). */
+    public function productos(): BelongsToMany
+    {
+        return $this->belongsToMany(Producto::class, 'producto_proveedor')
+            ->withPivot(['es_principal', 'precio_compra', 'codigo_proveedor', 'estado'])
+            ->withTimestamps();
+    }
+
+    /** WO "Modelo de base de datos" (2026-08-17). Marca↔Proveedor, tabla nueva marca_proveedor. */
+    public function marcas(): BelongsToMany
+    {
+        return $this->belongsToMany(Marca::class, 'marca_proveedor')
+            ->using(MarcaProveedor::class)
+            ->withTimestamps();
     }
 }
