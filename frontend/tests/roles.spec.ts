@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import { login } from "./helpers";
 
@@ -243,6 +244,70 @@ test.describe("Roles list", () => {
 
     expect(requestBody).toMatchObject({ name: "Auxiliar Contable Editado" });
   });
+
+  test("CSV and PDF export buttons are visible in the toolbar", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "CSV" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "PDF" })).toBeVisible();
+    await expect(page.getByLabel("Buscar roles")).toBeVisible();
+  });
+
+  test("CSV button downloads a real CSV file with real data", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^roles-.*\.csv$/);
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    expect(contenido).toContain("#,Nombre,Estado,Permisos,Usuarios");
+    // Administrador is real, permanent, seeded data.
+    expect(contenido).toContain("Administrador");
+  });
+
+  test("PDF button downloads a real, valid PDF file", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^roles-.*\.pdf$/);
+    const filePath = await download.path();
+    const header = fs.readFileSync(filePath).subarray(0, 4).toString("utf-8");
+    expect(header).toBe("%PDF");
+    expect(fs.statSync(filePath).size).toBeGreaterThan(1000);
+  });
+
+  test("CSV export respects the current search filter, covering the full filtered set", async ({ page }) => {
+    await page.getByLabel("Buscar roles").fill("Auxiliar Contable");
+    await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    const filas = contenido.trim().split("\n");
+    // Header + exactly the one matching role — not the ~230 role company roster.
+    expect(filas).toHaveLength(2);
+    expect(contenido).toContain("Auxiliar Contable");
+  });
+
+  test("exporting does not disturb the list, search, filters, or pagination", async ({ page }) => {
+    await page.getByLabel("Buscar roles").fill("Bodeguero");
+    await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+    await download.path();
+
+    await expect(page.getByRole("row")).toHaveCount(2);
+    await expect(page.getByLabel("Buscar roles")).toHaveValue("Bodeguero");
+  });
 });
 
 test.describe("Roles RBAC and multi-tenant isolation", () => {
@@ -267,6 +332,9 @@ test.describe("Roles RBAC and multi-tenant isolation", () => {
     await page.goto("/roles");
     await expect(page.getByText("No tienes permiso para ver este módulo.")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("table")).toHaveCount(0);
+    // The export buttons live inside the gated page body — never rendered for this user.
+    await expect(page.getByRole("button", { name: "CSV" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "PDF" })).toHaveCount(0);
   });
 
   test("multi-tenant: Empresa B's Administrador only sees Empresa B's roles", async ({ page }) => {
@@ -281,5 +349,22 @@ test.describe("Roles RBAC and multi-tenant isolation", () => {
     // (by name or by count) should leak across the tenant boundary.
     await expect(page.getByText(/5 resultados? · página 1 de 1/)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/^E2E /)).toHaveCount(0);
+  });
+
+  test("multi-tenant: Empresa B's Administrador exports only Empresa B's roles", async ({ page }) => {
+    await login(page, "qa-rbac-admin-b@example.com", QA_PASSWORD);
+    await page.goto("/roles");
+    await waitForRolesLoaded(page);
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    const filas = contenido.trim().split("\n");
+    expect(filas).toHaveLength(6); // header + Empresa B's 5 real seeded roles
+    expect(contenido).not.toContain("E2E ");
   });
 });
