@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\DTO\Report\ReporteResultadoDTO;
 use App\Http\Controllers\Concerns\FiltersByEmpresa;
 use App\Http\Controllers\Concerns\ResolvesPagination;
 use App\Http\Controllers\Controller;
@@ -12,8 +13,11 @@ use App\Http\Resources\Proveedor\ProveedorResource;
 use App\Http\Support\ApiResponse;
 use App\Models\Proveedor;
 use App\Services\Audit\AuditLogger;
+use App\Services\Reports\ReporteExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * FEATURE-003 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). Mismo patrón que
@@ -29,6 +33,7 @@ class ProveedorController extends Controller
 
     public function __construct(
         private readonly AuditLogger $auditoria,
+        private readonly ReporteExportService $exportador,
     ) {}
 
     /**
@@ -150,6 +155,82 @@ class ProveedorController extends Controller
         $this->registrarAuditoria($request, $proveedor, 'proveedores.habilitar', ['estado' => 'activo']);
 
         return ApiResponse::success(new ProveedorResource($proveedor), 'Proveedor habilitado correctamente');
+    }
+
+    /**
+     * Exportación (WO "Módulo Proveedores"). Gateada por `proveedores.ver`
+     * (viewAny) — mismo criterio ya aplicado en Usuarios/Roles/Categorías:
+     * reutiliza `ReporteExportService` directamente, sin pasar por
+     * `ReporteController`/`ReporteService::CATALOGO` (ese catálogo gatea
+     * todo con `reportes.ver`, un permiso distinto).
+     */
+    public function exportarCsv(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Proveedor::class);
+
+        return $this->exportador->csv($this->construirResultadoExport($request));
+    }
+
+    public function exportarPdf(Request $request): Response
+    {
+        $this->authorize('viewAny', Proveedor::class);
+
+        return $this->exportador->pdf($this->construirResultadoExport($request));
+    }
+
+    /**
+     * Mismo filtrado exacto que index() (busqueda sobre nombre/nit/contacto,
+     * estado, empresa), sin paginar. Proveedores no tiene capa Repository/
+     * Service propia — la lógica ya vive inline en este controller (WO
+     * sección 28: no crear esa capa solo por consistencia), así que la
+     * extensión correcta es un método privado aquí.
+     */
+    private function construirResultadoExport(Request $request): ReporteResultadoDTO
+    {
+        $query = $this->paraEmpresaActual(Proveedor::query());
+
+        if ($busqueda = $request->query('busqueda')) {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('nombre', 'like', "%{$busqueda}%")
+                    ->orWhere('nit', 'like', "%{$busqueda}%")
+                    ->orWhere('contacto', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $estado = $request->query('estado', 'activo');
+        if ($estado !== 'todos') {
+            $query->where('estado', $estado);
+        }
+
+        $proveedores = $query->orderBy('nombre')->get();
+
+        $filas = $proveedores->values()->map(function (Proveedor $proveedor, int $indice) {
+            return [
+                'numero' => $indice + 1,
+                'nombre' => $proveedor->nombre,
+                'nit' => $proveedor->nit ?? '',
+                'contacto' => $proveedor->contacto ?? '',
+                'telefono' => $proveedor->telefono ?? '',
+                'email' => $proveedor->email ?? '',
+                'estado' => $proveedor->estado === 'activo' ? 'Activo' : 'Inactivo',
+            ];
+        })->all();
+
+        return new ReporteResultadoDTO(
+            clave: 'proveedores',
+            titulo: 'Proveedores',
+            columnas: [
+                ['clave' => 'numero', 'etiqueta' => '#'],
+                ['clave' => 'nombre', 'etiqueta' => 'Nombre'],
+                ['clave' => 'nit', 'etiqueta' => 'NIT'],
+                ['clave' => 'contacto', 'etiqueta' => 'Contacto'],
+                ['clave' => 'telefono', 'etiqueta' => 'Teléfono'],
+                ['clave' => 'email', 'etiqueta' => 'Email'],
+                ['clave' => 'estado', 'etiqueta' => 'Estado'],
+            ],
+            filas: $filas,
+            total: $proveedores->count(),
+        );
     }
 
     /**

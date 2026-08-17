@@ -105,6 +105,12 @@ Route::prefix('v1/productos')->name('productos.')->middleware(['auth:api', 'empr
 Route::prefix('v1/proveedores')->name('proveedores.')->middleware(['auth:api', 'empresa'])->group(function () {
     Route::get('/', [ProveedorController::class, 'index'])->name('index');
     Route::post('/', [ProveedorController::class, 'store'])->name('store');
+    // Exportación (WO "Módulo Proveedores") — declaradas antes de {proveedor},
+    // que tampoco tiene whereNumber() aquí (mismo cuidado ya aplicado en
+    // categorias.{categoria}/roles.{role}): sin este orden, "export" se
+    // resolvería como show(proveedor: "export") en silencio.
+    Route::get('export/csv', [ProveedorController::class, 'exportarCsv'])->name('export.csv');
+    Route::get('export/pdf', [ProveedorController::class, 'exportarPdf'])->name('export.pdf');
     Route::get('{proveedor}', [ProveedorController::class, 'show'])->name('show');
     Route::patch('{proveedor}', [ProveedorController::class, 'update'])->name('update');
     Route::post('{proveedor}/deshabilitar', [ProveedorController::class, 'disable'])->name('disable');
