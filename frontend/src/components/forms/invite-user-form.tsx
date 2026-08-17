@@ -118,7 +118,9 @@ export function InviteUserForm({ roles }: { roles: Role[] }) {
             render={({ field }) => (
               <Select value={field.value} onValueChange={(value) => field.onChange(value ?? "")}>
                 <SelectTrigger id="invite-role" className="w-full">
-                  <SelectValue placeholder="Sin rol asignado" />
+                  <SelectValue placeholder="Sin rol asignado">
+                    {(value: string) => roles.find((role) => String(role.id) === value)?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((role) => (

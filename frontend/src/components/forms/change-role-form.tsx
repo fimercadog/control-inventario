@@ -61,7 +61,9 @@ export function ChangeRoleForm({
         <Label htmlFor="change-role">Rol</Label>
         <Select value={roleId} onValueChange={(value) => value && setRoleId(value)}>
           <SelectTrigger id="change-role" className="w-full">
-            <SelectValue placeholder="Seleccionar rol" />
+            <SelectValue placeholder="Seleccionar rol">
+              {(value: string) => roles.find((role) => String(role.id) === value)?.name ?? value}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {roles.map((role) => (

@@ -227,7 +227,7 @@ export default function UsuariosPage() {
 
         <Select value={estado} onValueChange={(value) => setEstado((value as "activo" | "todos") ?? "activo")}>
           <SelectTrigger className="w-40" aria-label="Filtrar por estado">
-            <SelectValue />
+            <SelectValue>{(value: string) => (value === "activo" ? "Activos" : "Todos")}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="activo">Activos</SelectItem>
@@ -238,7 +238,9 @@ export default function UsuariosPage() {
         {canListRoles ? (
           <Select value={rol} onValueChange={(value) => setRol(value ?? "todos")}>
             <SelectTrigger className="w-48" aria-label="Filtrar por rol">
-              <SelectValue placeholder="Todos los roles" />
+              <SelectValue placeholder="Todos los roles">
+                {(value: string) => (value === "todos" ? "Todos los roles" : value)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos los roles</SelectItem>
