@@ -32,10 +32,13 @@ export interface UsuariosQueryParams {
 
 /**
  * Matches StoreInvitationRequest (backend). There is no direct user-creation
- * endpoint, and no `name` field — the invitee sets their own name when they
- * accept the invitation (InvitationService::aceptar), not the inviting admin.
+ * endpoint — `name` is a suggested name captured at invite time and returned
+ * by GET /invitaciones/{token} for the (not yet built) acceptance page to
+ * pre-fill; the invitee still confirms/sets their own name when they accept
+ * (AcceptInvitationRequest, unchanged).
  */
 export interface InvitarUsuarioPayload {
+  name: string;
   email: string;
   role_id?: number;
 }

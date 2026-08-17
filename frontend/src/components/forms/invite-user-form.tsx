@@ -21,6 +21,7 @@ import { extractApiErrorMessage } from "@/lib/api/errors";
 import type { Role } from "@/types/role";
 
 const inviteUserSchema = z.object({
+  name: z.string().min(1, "El nombre es obligatorio."),
   email: z.string().min(1, "El correo es obligatorio.").email("Ingresa un correo válido."),
   role_id: z.string(),
 });
@@ -38,7 +39,7 @@ export function InviteUserForm({ roles }: { roles: Role[] }) {
     formState: { errors },
   } = useForm<InviteUserValues>({
     resolver: zodResolver(inviteUserSchema),
-    defaultValues: { email: "", role_id: "" },
+    defaultValues: { name: "", email: "", role_id: "" },
   });
 
   async function onSubmit(values: InviteUserValues) {
@@ -46,6 +47,7 @@ export function InviteUserForm({ roles }: { roles: Role[] }) {
     setError(null);
     try {
       await invitarUsuario({
+        name: values.name,
         email: values.email,
         role_id: values.role_id ? Number(values.role_id) : undefined,
       });
@@ -71,6 +73,23 @@ export function InviteUserForm({ roles }: { roles: Role[] }) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="invite-name">Nombre completo</Label>
+        <Input
+          id="invite-name"
+          autoComplete="name"
+          placeholder="Nombre y apellido"
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? "invite-name-error" : undefined}
+          {...register("name")}
+        />
+        {errors.name ? (
+          <p id="invite-name-error" className="text-sm text-destructive">
+            {errors.name.message}
+          </p>
+        ) : null}
+      </div>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="invite-email">Correo electrónico</Label>

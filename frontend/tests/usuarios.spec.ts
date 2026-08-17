@@ -198,15 +198,45 @@ test.describe("Usuarios list", () => {
     await expect(page.getByRole("heading", { name: "Nuevo Usuario" })).toBeVisible();
     await expect(page.getByText(/FidelOS no crea usuarios directamente/)).toBeVisible();
 
-    // No name/password/avatar/empresa fields — the backend's invitation endpoint
-    // (StoreInvitationRequest) only accepts email + role_id; the invitee names
-    // themselves when they accept.
-    await expect(page.getByLabel("Nombre completo")).toHaveCount(0);
+    // Nombre + Correo + Rol match StoreInvitationRequest exactly (name added after
+    // confirming the invitations table schema and adding a real, minimal backend
+    // migration for it — see report). No password/avatar/empresa fields: those
+    // still don't exist on this endpoint.
+    await expect(page.getByLabel("Nombre completo")).toBeVisible();
     await expect(page.getByLabel("Contraseña", { exact: true })).toHaveCount(0);
     await expect(page.getByLabel("Seleccionar imagen de avatar")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Enviar invitación" }).click();
+    await expect(page.getByText("El nombre es obligatorio.")).toBeVisible();
     await expect(page.getByText("El correo es obligatorio.")).toBeVisible();
+  });
+
+  test("Nuevo Usuario sends name, email, and role in the request payload", async ({ page }) => {
+    // Intercepts and fulfills locally instead of letting this hit the real backend: there is
+    // no delete-invitation endpoint (confirmed by the backend's own test suite), so a real
+    // submission here would create a permanent, uncleanable row on every test run. The real
+    // end-to-end path (real 201 from the real backend) was verified manually and is reported
+    // separately; this test only pins down the payload shape the frontend actually sends.
+    let requestBody: unknown;
+    await page.route("**/api/v1/usuarios/invitar", async (route) => {
+      requestBody = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true, message: "Invitación enviada correctamente", data: null }),
+      });
+    });
+
+    await page.getByRole("button", { name: "Nuevo Usuario" }).click();
+    await page.getByLabel("Nombre completo").fill("Persona De Prueba");
+    await page.getByLabel("Correo electrónico").fill("payload-shape-check@example.com");
+    await page.getByRole("button", { name: "Enviar invitación" }).click();
+    await expect(page.getByText("Invitación enviada correctamente.")).toBeVisible();
+
+    expect(requestBody).toMatchObject({
+      name: "Persona De Prueba",
+      email: "payload-shape-check@example.com",
+    });
   });
 });
 
