@@ -129,6 +129,12 @@ Route::prefix('v1/clientes')->name('clientes.')->middleware(['auth:api', 'empres
 Route::prefix('v1/categorias')->name('categorias.')->middleware(['auth:api', 'empresa'])->group(function () {
     Route::get('/', [CategoriaController::class, 'index'])->name('index');
     Route::post('/', [CategoriaController::class, 'store'])->name('store');
+    // Exportación (Work Order "Categorías: Exportación CSV y PDF") —
+    // declaradas antes de {categoria}, que tampoco tiene whereNumber() aquí
+    // (mismo cuidado ya aplicado en roles.{role}): sin este orden, "export"
+    // se resolvería como show(categoria: "export") en silencio.
+    Route::get('export/csv', [CategoriaController::class, 'exportarCsv'])->name('export.csv');
+    Route::get('export/pdf', [CategoriaController::class, 'exportarPdf'])->name('export.pdf');
     Route::get('{categoria}', [CategoriaController::class, 'show'])->name('show');
     Route::patch('{categoria}', [CategoriaController::class, 'update'])->name('update');
     Route::post('{categoria}/deshabilitar', [CategoriaController::class, 'disable'])->name('disable');

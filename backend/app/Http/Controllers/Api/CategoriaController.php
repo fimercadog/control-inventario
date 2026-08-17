@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\DTO\Report\ReporteResultadoDTO;
 use App\Http\Controllers\Concerns\FiltersByEmpresa;
 use App\Http\Controllers\Concerns\ResolvesPagination;
 use App\Http\Controllers\Controller;
@@ -12,8 +13,11 @@ use App\Http\Resources\Producto\ProductoResource;
 use App\Http\Support\ApiResponse;
 use App\Models\Categoria;
 use App\Services\Audit\AuditLogger;
+use App\Services\Reports\ReporteExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * RC1 (docs/03_FUNCTIONAL_SPEC/Categories.md). Mismo patrón exacto que
@@ -33,6 +37,7 @@ class CategoriaController extends Controller
 
     public function __construct(
         private readonly AuditLogger $auditoria,
+        private readonly ReporteExportService $exportador,
     ) {
     }
 
@@ -155,6 +160,81 @@ class CategoriaController extends Controller
             ->each->setRelation('categoria', $categoria);
 
         return ApiResponse::success(ProductoResource::collection($productos)->resolve());
+    }
+
+    /**
+     * Exportación (Work Order "Categorías: Exportación CSV y PDF"). Gateada
+     * por `categorias.ver` (viewAny) — el permiso de lectura real de este
+     * módulo, no `reportes.ver`. Mismo criterio ya aplicado en Usuarios y
+     * Roles: reutiliza `ReporteExportService` (renderizadores genéricos
+     * sobre `columnas`/`filas`, sin conocer Categorías ni ningún otro
+     * reporte) directamente, sin pasar por
+     * `ReporteController`/`ReporteService::CATALOGO`, que gatearía todo
+     * uniformemente con un permiso distinto.
+     */
+    public function exportarCsv(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Categoria::class);
+
+        return $this->exportador->csv($this->construirResultadoExport($request));
+    }
+
+    public function exportarPdf(Request $request): Response
+    {
+        $this->authorize('viewAny', Categoria::class);
+
+        return $this->exportador->pdf($this->construirResultadoExport($request));
+    }
+
+    /**
+     * Mismo filtrado exacto que `index()` (busqueda sobre nombre O
+     * descripcion, estado, empresa, orden), sin paginar — el conjunto
+     * completo de resultados filtrados, no solo la página visible.
+     * Categorías no tiene capa Repository/Service propia (a diferencia de
+     * Roles) — la lógica ya vive inline en este controller, así que la
+     * extensión correcta es un método privado aquí, no una capa nueva.
+     */
+    private function construirResultadoExport(Request $request): ReporteResultadoDTO
+    {
+        $query = $this->paraEmpresaActual(Categoria::query())->withCount('productos');
+
+        if ($busqueda = $request->query('busqueda')) {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('nombre', 'like', "%{$busqueda}%")
+                    ->orWhere('descripcion', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $estado = $request->query('estado', 'activo');
+        if ($estado !== 'todos') {
+            $query->where('estado', $estado);
+        }
+
+        $categorias = $query->orderBy('nombre')->get();
+
+        $filas = $categorias->values()->map(function (Categoria $categoria, int $indice) {
+            return [
+                'numero' => $indice + 1,
+                'nombre' => $categoria->nombre,
+                'descripcion' => $categoria->descripcion ?? '',
+                'estado' => $categoria->estado === 'activo' ? 'Activo' : 'Inactivo',
+                'productos' => $categoria->productos_count ?? 0,
+            ];
+        })->all();
+
+        return new ReporteResultadoDTO(
+            clave: 'categorias',
+            titulo: 'Categorías',
+            columnas: [
+                ['clave' => 'numero', 'etiqueta' => '#'],
+                ['clave' => 'nombre', 'etiqueta' => 'Nombre'],
+                ['clave' => 'descripcion', 'etiqueta' => 'Descripción'],
+                ['clave' => 'estado', 'etiqueta' => 'Estado'],
+                ['clave' => 'productos', 'etiqueta' => 'Productos'],
+            ],
+            filas: $filas,
+            total: $categorias->count(),
+        );
     }
 
     /**
