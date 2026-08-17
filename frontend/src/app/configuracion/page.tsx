@@ -59,7 +59,7 @@ export default function ConfiguracionPage() {
             El tema, idioma y zona horaria son preferencias personales, no de la empresa — se
             administran desde tu perfil.
           </p>
-          <Button variant="outline" className="w-fit" render={<Link href="/perfil" />}>
+          <Button variant="outline" className="w-fit" nativeButton={false} render={<Link href="/perfil" />}>
             Ir a Mi Perfil
           </Button>
         </CardContent>

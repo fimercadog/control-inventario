@@ -90,7 +90,7 @@ export default function ReportesPage() {
                   </CardHeader>
                   <CardContent className="flex flex-col gap-3">
                     <p className="text-sm text-muted-foreground">{reporte.descripcion}</p>
-                    <Button variant="outline" size="sm" className="w-fit" render={<Link href={`/reportes/${reporte.clave}`} />}>
+                    <Button variant="outline" size="sm" className="w-fit" nativeButton={false} render={<Link href={`/reportes/${reporte.clave}`} />}>
                       Ver reporte
                     </Button>
                   </CardContent>
