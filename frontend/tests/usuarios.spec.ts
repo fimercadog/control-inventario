@@ -1,10 +1,26 @@
+import path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 import { login, DEMO_EMAIL } from "./helpers";
+
+const TEST_AVATAR_PATH = path.join(__dirname, "fixtures", "test-avatar.png");
 
 /** Waits for the list's initial fetch to settle before a test starts interacting with it. */
 async function waitForUsuariosLoaded(page: Page) {
   await expect(page.getByRole("heading", { name: "Usuarios" })).toBeVisible();
   await expect(page.getByText("Cargando…")).not.toBeVisible({ timeout: 15000 });
+}
+
+/**
+ * Fills the search box and waits for the debounced fetch to fully settle on exactly one
+ * match before returning. Interacting with a row's dropdown before the search response
+ * lands is a real race: a late-arriving refetch replaces the whole row (and any open
+ * dropdown anchored to it) mid-interaction, which is what earlier flakiness here traced
+ * back to — not a backend speed issue by itself.
+ */
+async function searchForUniqueUser(page: Page, term: string) {
+  await page.getByLabel("Buscar usuarios").fill(term);
+  await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 }); // header + 1 match
+  return page.getByRole("row").filter({ hasText: term });
 }
 
 test.describe("Usuarios list", () => {
@@ -71,8 +87,7 @@ test.describe("Usuarios list", () => {
   test("activates and deactivates a user, then restores the original state", async ({ page }) => {
     // Client-side navigation via search + row click — avoids a hard page.goto(), which would
     // drop the in-memory access token and force a refresh-token rotation mid-test (see helpers).
-    await page.getByLabel("Buscar usuarios").fill("bturcotte@example.net");
-    const targetRow = page.getByRole("row").filter({ hasText: "bturcotte@example.net" });
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
     await targetRow.getByRole("link").click();
     await expect(page).toHaveURL(/\/usuarios\/2$/);
 
@@ -100,43 +115,80 @@ test.describe("Usuarios list", () => {
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
   });
 
-  test("Actualizar opens a per-user edit modal with operational fields only", async ({ page }) => {
-    await page.getByLabel("Buscar usuarios").fill("bturcotte@example.net");
-    const targetRow = page.getByRole("row").filter({ hasText: "bturcotte@example.net" });
-    await targetRow.getByRole("button", { name: "Actualizar" }).click();
+  test("shows an avatar (or initials placeholder) for each user", async ({ page }) => {
+    const firstRow = page.getByRole("row").nth(1);
+    // AvatarFallback renders the person's initials as a <span> when there is no avatar_url.
+    await expect(firstRow.locator('[data-slot="avatar"]')).toBeVisible();
+  });
+
+  test("row actions menu is Ver / Cambiar rol / Editar avatar / Activar-Desactivar — no generic Actualizar", async ({
+    page,
+  }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+
+    const menu = page.getByRole("menu");
+    await expect(menu.getByRole("menuitem", { name: "Ver" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Cambiar rol" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: "Editar avatar" })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: /^(Desactivar|Activar)$/ })).toBeVisible();
+  });
+
+  test("Cambiar rol assigns a real role, persists it, and can be restored", async ({ page }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    await expect(targetRow.getByText("Administrador")).toBeVisible();
+
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Cambiar rol" }).click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "Actualizar usuario" })).toBeVisible();
-    // Identity fields are shown as read-only context, never as editable inputs.
-    await expect(dialog.getByText("bturcotte@example.net")).toBeVisible();
-    await expect(page.getByLabel("Correo electrónico")).toHaveCount(0);
-    await expect(page.getByLabel("Nombre")).toHaveCount(0);
-    // Only the real operational fields are editable.
-    await expect(page.getByLabel("Tema")).toBeVisible();
-    await expect(page.getByLabel("Idioma")).toBeVisible();
-    const timezoneInput = page.getByLabel("Zona horaria");
-    await expect(timezoneInput).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Cambiar rol" })).toBeVisible();
+    await dialog.getByLabel("Rol").click();
+    await page.getByRole("option", { name: "Bodeguero", exact: true }).click();
+    await dialog.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
 
-    const originalTimezone = await timezoneInput.inputValue();
-    const newTimezone =
-      originalTimezone === "America/Bogota" ? "America/Mexico_City" : "America/Bogota";
+    // Persistence: the list re-fetched and now shows the new role.
+    await expect(targetRow.getByText("Bodeguero")).toBeVisible({ timeout: 10000 });
 
-    await timezoneInput.fill(newTimezone);
-    await page.getByRole("button", { name: "Guardar cambios" }).click();
-    await expect(page.getByRole("heading", { name: "Actualizar usuario" })).not.toBeVisible({
-      timeout: 10000,
-    });
+    // Restore the original role so the shared demo dataset is left unchanged.
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Cambiar rol" }).click();
+    await dialog.getByLabel("Rol").click();
+    await page.getByRole("option", { name: "Administrador", exact: true }).click();
+    await dialog.getByRole("button", { name: "Guardar cambios" }).click();
+    await expect(targetRow.getByText("Administrador")).toBeVisible({ timeout: 10000 });
+  });
 
-    // Persistence: reopen the same user and confirm the change actually landed on the backend.
-    await targetRow.getByRole("button", { name: "Actualizar" }).click();
-    await expect(page.getByLabel("Zona horaria")).toHaveValue(newTimezone, { timeout: 10000 });
+  test("Editar avatar uploads and removes a real avatar, persists, and restores no-avatar state", async ({
+    page,
+  }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    // Starts with no avatar — fallback initials, no <img>.
+    await expect(targetRow.locator('[data-slot="avatar-image"]')).toHaveCount(0);
 
-    // Restore the original value so the shared demo dataset is left unchanged.
-    await page.getByLabel("Zona horaria").fill(originalTimezone);
-    await page.getByRole("button", { name: "Guardar cambios" }).click();
-    await expect(page.getByRole("heading", { name: "Actualizar usuario" })).not.toBeVisible({
-      timeout: 10000,
-    });
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Editar avatar" }).click();
+
+    // Upload succeeds and closes the dialog immediately (same "submit -> done" pattern as
+    // ChangeRoleForm/InviteUserForm) — no separate save step to wait for within this session.
+    let dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("heading", { name: "Editar avatar" })).toBeVisible();
+    await dialog.getByLabel("Seleccionar imagen de avatar").setInputFiles(TEST_AVATAR_PATH);
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
+
+    // Persistence: the list re-fetched and now shows a real <img> avatar.
+    await expect(targetRow.locator('[data-slot="avatar-image"]')).toBeVisible({ timeout: 10000 });
+
+    // Restore: reopen fresh and remove the avatar so the shared demo dataset is left unchanged.
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Editar avatar" }).click();
+    dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("button", { name: "Quitar avatar" })).toBeVisible({ timeout: 10000 });
+    await dialog.getByRole("button", { name: "Quitar avatar" }).click();
+    await expect(dialog).not.toBeVisible({ timeout: 10000 });
+
+    await expect(targetRow.locator('[data-slot="avatar-image"]')).toHaveCount(0, { timeout: 10000 });
   });
 
   test("Nuevo Usuario opens a modal with the real invitation flow, not a fake creation form", async ({
@@ -145,6 +197,13 @@ test.describe("Usuarios list", () => {
     await page.getByRole("button", { name: "Nuevo Usuario" }).click();
     await expect(page.getByRole("heading", { name: "Nuevo Usuario" })).toBeVisible();
     await expect(page.getByText(/FidelOS no crea usuarios directamente/)).toBeVisible();
+
+    // No name/password/avatar/empresa fields — the backend's invitation endpoint
+    // (StoreInvitationRequest) only accepts email + role_id; the invitee names
+    // themselves when they accept.
+    await expect(page.getByLabel("Nombre completo")).toHaveCount(0);
+    await expect(page.getByLabel("Contraseña", { exact: true })).toHaveCount(0);
+    await expect(page.getByLabel("Seleccionar imagen de avatar")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Enviar invitación" }).click();
     await expect(page.getByText("El correo es obligatorio.")).toBeVisible();

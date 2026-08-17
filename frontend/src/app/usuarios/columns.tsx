@@ -2,32 +2,45 @@
 
 import Link from "next/link";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
-import { Loader2, Pencil } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Shield, UserRoundCog } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Usuario } from "@/types/user";
-import { formatDateTime } from "@/lib/utils/format";
+import { formatDateTime, initialsFor } from "@/lib/utils/format";
 
 interface BuildColumnsOptions {
   canEdit: boolean;
   togglingId: number | null;
   onToggleActivo: (usuario: Usuario) => void;
-  onEditUsuario: (usuario: Usuario) => void;
+  onChangeRole: (usuario: Usuario) => void;
+  onEditAvatar: (usuario: Usuario) => void;
 }
 
 export function buildUsuarioColumns({
   canEdit,
   togglingId,
   onToggleActivo,
-  onEditUsuario,
+  onChangeRole,
+  onEditAvatar,
 }: BuildColumnsOptions): ColumnDef<Usuario, unknown>[] {
   const columns: ColumnDef<Usuario, unknown>[] = [
     {
       accessorKey: "name",
       header: "Usuario",
       cell: ({ row }) => (
-        <Link href={`/usuarios/${row.original.id}`} className="font-medium text-foreground hover:underline">
-          {row.original.name}
+        <Link href={`/usuarios/${row.original.id}`} className="flex items-center gap-2.5 hover:underline">
+          <Avatar size="sm">
+            {row.original.avatar_url ? <AvatarImage src={row.original.avatar_url} alt="" /> : null}
+            <AvatarFallback>{initialsFor(row.original.name)}</AvatarFallback>
+          </Avatar>
+          <span className="font-medium text-foreground">{row.original.name}</span>
         </Link>
       ),
     },
@@ -68,26 +81,34 @@ export function buildUsuarioColumns({
         const usuario = row.original;
         const isToggling = togglingId === usuario.id;
         return (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => onEditUsuario(usuario)}>
-              <Pencil className="size-4" />
-              Actualizar
-            </Button>
-            <Button
-              variant={usuario.is_active ? "destructive" : "outline"}
-              className={
-                usuario.is_active
-                  ? undefined
-                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-              }
-              size="sm"
-              disabled={isToggling}
-              onClick={() => onToggleActivo(usuario)}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button variant="outline" size="sm" disabled={isToggling} />}
             >
-              {isToggling ? <Loader2 className="size-4 animate-spin" /> : null}
-              {usuario.is_active ? "Desactivar" : "Activar"}
-            </Button>
-          </div>
+              {isToggling ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
+              Acciones
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem render={<Link href={`/usuarios/${usuario.id}`} />}>
+                <Eye className="size-4" />
+                Ver
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onChangeRole(usuario)}>
+                <Shield className="size-4" />
+                Cambiar rol
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditAvatar(usuario)}>
+                <UserRoundCog className="size-4" />
+                Editar avatar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant={usuario.is_active ? "destructive" : "default"}
+                onClick={() => onToggleActivo(usuario)}
+              >
+                {usuario.is_active ? "Desactivar" : "Activar"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     });

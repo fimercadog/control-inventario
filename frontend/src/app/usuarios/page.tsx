@@ -23,7 +23,8 @@ import {
 import { DataTable } from "@/components/data-table/data-table";
 import { buildUsuarioColumns } from "@/app/usuarios/columns";
 import { InviteUserForm } from "@/components/forms/invite-user-form";
-import { EditUserForm } from "@/components/forms/edit-user-form";
+import { ChangeRoleForm } from "@/components/forms/change-role-form";
+import { AvatarForm } from "@/components/forms/avatar-form";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { fetchUsuarios, activarUsuario, desactivarUsuario } from "@/lib/api/users";
@@ -87,7 +88,8 @@ export default function UsuariosPage() {
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [editingUsuario, setEditingUsuario] = useState<Usuario | null>(null);
+  const [roleDialogUsuario, setRoleDialogUsuario] = useState<Usuario | null>(null);
+  const [avatarDialogUsuario, setAvatarDialogUsuario] = useState<Usuario | null>(null);
 
   useEffect(() => {
     if (!canView) return;
@@ -120,11 +122,13 @@ export default function UsuariosPage() {
   }, [canView, searchTerm, rol, estado, pageSize, page, refetchNonce]);
 
   useEffect(() => {
-    if (!canListRoles) return;
+    // Needed both for the rol filter (canListRoles) and the "Cambiar rol" dialog (canEdit) —
+    // a user could hold usuarios.editar without roles.ver, so gate on either.
+    if (!canListRoles && !canEdit) return;
     fetchRolesActivos()
       .then(setRoles)
       .catch(() => setRoles([]));
-  }, [canListRoles]);
+  }, [canListRoles, canEdit]);
 
   const isLoading = result.key !== queryKey;
   const isError = !isLoading && result.error !== null;
@@ -146,8 +150,13 @@ export default function UsuariosPage() {
     }
   }
 
-  function handleEditSuccess() {
-    setEditingUsuario(null);
+  function handleRoleChanged() {
+    setRoleDialogUsuario(null);
+    setRefetchNonce((n) => n + 1);
+  }
+
+  function handleAvatarChanged() {
+    setAvatarDialogUsuario(null);
     setRefetchNonce((n) => n + 1);
   }
 
@@ -155,7 +164,8 @@ export default function UsuariosPage() {
     canEdit,
     togglingId,
     onToggleActivo: handleToggleActivo,
-    onEditUsuario: setEditingUsuario,
+    onChangeRole: setRoleDialogUsuario,
+    onEditAvatar: setAvatarDialogUsuario,
   });
 
   if (!canView) {
@@ -263,17 +273,34 @@ export default function UsuariosPage() {
         }}
       />
 
-      <Dialog open={editingUsuario !== null} onOpenChange={(open) => !open && setEditingUsuario(null)}>
+      <Dialog
+        open={roleDialogUsuario !== null}
+        onOpenChange={(open) => !open && setRoleDialogUsuario(null)}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Actualizar usuario</DialogTitle>
+            <DialogTitle>Cambiar rol</DialogTitle>
+            <DialogDescription>Asigna un rol real de tu empresa a este usuario.</DialogDescription>
+          </DialogHeader>
+          {roleDialogUsuario ? (
+            <ChangeRoleForm usuario={roleDialogUsuario} roles={roles} onSuccess={handleRoleChanged} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={avatarDialogUsuario !== null}
+        onOpenChange={(open) => !open && setAvatarDialogUsuario(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar avatar</DialogTitle>
             <DialogDescription>
-              Solo los campos operativos son editables aquí; nombre y correo no se pueden cambiar
-              desde este formulario.
+              Nombre y correo no son editables aquí; solo el avatar de este usuario.
             </DialogDescription>
           </DialogHeader>
-          {editingUsuario ? (
-            <EditUserForm usuario={editingUsuario} onSuccess={handleEditSuccess} />
+          {avatarDialogUsuario ? (
+            <AvatarForm usuario={avatarDialogUsuario} onSuccess={handleAvatarChanged} />
           ) : null}
         </DialogContent>
       </Dialog>

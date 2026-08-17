@@ -24,6 +24,7 @@ import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
+import { initialsFor } from "@/lib/utils/format";
 
 export function Header() {
   const router = useRouter();
@@ -35,14 +36,7 @@ export function Header() {
     router.replace("/login");
   }
 
-  const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((part) => part[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "?";
+  const initials = user?.name ? initialsFor(user.name) : "?";
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 md:px-6">

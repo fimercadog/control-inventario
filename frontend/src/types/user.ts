@@ -30,19 +30,17 @@ export interface UsuariosQueryParams {
   page?: number;
 }
 
-/** Matches StoreInvitationRequest (backend). There is no direct user-creation endpoint. */
+/**
+ * Matches StoreInvitationRequest (backend). There is no direct user-creation
+ * endpoint, and no `name` field — the invitee sets their own name when they
+ * accept the invitation (InvitationService::aceptar), not the inviting admin.
+ */
 export interface InvitarUsuarioPayload {
   email: string;
   role_id?: number;
 }
 
-/**
- * Matches UpdateUsuarioRequest (backend, ADR-015). `name`/`email` are Identity
- * fields and deliberately excluded — only these three Operational fields are
- * editable for another user via this endpoint.
- */
-export interface ActualizarUsuarioPayload {
-  theme?: "light" | "dark" | "system";
-  language?: "es" | "en";
-  timezone?: string;
+/** Matches AssignRoleRequest (backend). Single role — syncRoles() replaces, not adds. */
+export interface AsignarRolPayload {
+  role_id: number;
 }
