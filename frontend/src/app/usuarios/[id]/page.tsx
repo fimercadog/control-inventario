@@ -3,15 +3,13 @@
 import { useEffect, useState, use as usePromise } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { usePermission } from "@/hooks/use-permission";
 import { activarUsuario, desactivarUsuario, fetchUsuario } from "@/lib/api/users";
 import { extractApiErrorMessage } from "@/lib/api/errors";
-import { formatDateTime, initialsFor } from "@/lib/utils/format";
+import { UsuarioSummary } from "@/app/usuarios/usuario-summary";
 import type { Usuario } from "@/types/user";
 
 export default function UsuarioDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -86,30 +84,11 @@ export default function UsuarioDetailPage({ params }: { params: Promise<{ id: st
         </Alert>
       ) : usuario ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Avatar size="lg">
-                {usuario.avatar_url ? <AvatarImage src={usuario.avatar_url} alt="" /> : null}
-                <AvatarFallback>{initialsFor(usuario.name)}</AvatarFallback>
-              </Avatar>
-              <CardTitle className="text-xl">{usuario.name}</CardTitle>
-            </div>
-            {usuario.is_active ? (
-              <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
-            ) : (
-              <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
-            )}
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" value={usuario.email} />
-            <Field label="Rol" value={usuario.role ?? "Sin rol"} />
-            <Field label="Empresa" value={usuario.empresa?.nombre ?? "—"} />
-            <Field label="Última actividad" value={formatDateTime(usuario.last_activity_at)} />
-            <Field label="Última IP" value={usuario.last_login_ip ?? "—"} />
-            <Field label="Invitado el" value={formatDateTime(usuario.invited_at)} />
+          <CardContent className="flex flex-col gap-4">
+            <UsuarioSummary usuario={usuario} />
 
             {canEdit ? (
-              <div className="sm:col-span-2">
+              <div>
                 <Button variant="outline" disabled={isToggling} onClick={handleToggleActivo}>
                   {isToggling ? <Loader2 className="size-4 animate-spin" /> : null}
                   {usuario.is_active ? "Desactivar usuario" : "Activar usuario"}
@@ -119,15 +98,6 @@ export default function UsuarioDetailPage({ params }: { params: Promise<{ id: st
           </CardContent>
         </Card>
       ) : null}
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="text-sm text-foreground">{value}</p>
     </div>
   );
 }

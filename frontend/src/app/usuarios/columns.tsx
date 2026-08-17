@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Eye, Loader2, MoreHorizontal, Shield, UserRoundCog } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +20,7 @@ interface BuildColumnsOptions {
   onToggleActivo: (usuario: Usuario) => void;
   onChangeRole: (usuario: Usuario) => void;
   onEditAvatar: (usuario: Usuario) => void;
+  onViewUsuario: (usuario: Usuario) => void;
 }
 
 export function buildUsuarioColumns({
@@ -29,19 +29,24 @@ export function buildUsuarioColumns({
   onToggleActivo,
   onChangeRole,
   onEditAvatar,
+  onViewUsuario,
 }: BuildColumnsOptions): ColumnDef<Usuario, unknown>[] {
   const columns: ColumnDef<Usuario, unknown>[] = [
     {
       accessorKey: "name",
       header: "Usuario",
       cell: ({ row }) => (
-        <Link href={`/usuarios/${row.original.id}`} className="flex items-center gap-2.5 hover:underline">
+        <button
+          type="button"
+          onClick={() => onViewUsuario(row.original)}
+          className="flex items-center gap-2.5 text-left hover:underline"
+        >
           <Avatar size="sm">
             {row.original.avatar_url ? <AvatarImage src={row.original.avatar_url} alt="" /> : null}
             <AvatarFallback>{initialsFor(row.original.name)}</AvatarFallback>
           </Avatar>
           <span className="font-medium text-foreground">{row.original.name}</span>
-        </Link>
+        </button>
       ),
     },
     {
@@ -89,7 +94,7 @@ export function buildUsuarioColumns({
               Acciones
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem render={<Link href={`/usuarios/${usuario.id}`} />}>
+              <DropdownMenuItem onClick={() => onViewUsuario(usuario)}>
                 <Eye className="size-4" />
                 Ver
               </DropdownMenuItem>

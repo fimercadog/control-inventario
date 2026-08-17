@@ -77,32 +77,56 @@ test.describe("Usuarios list", () => {
     await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
   });
 
-  test("opens a user detail page", async ({ page }) => {
-    await page.getByRole("row").nth(1).getByRole("link").click();
-    await expect(page).toHaveURL(/\/usuarios\/\d+/);
-    await expect(page.getByText("Email", { exact: true })).toBeVisible();
-    await expect(page.getByText("Rol", { exact: true })).toBeVisible();
+  test("Ver opens a modal with the user's details, not a page navigation", async ({ page }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Ver" }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("bturcotte@example.net")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Cambiar rol" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Editar avatar" })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /^(Desactivar|Activar)$/ })).toBeVisible();
+    // No navigation happened — still on the list.
+    await expect(page).toHaveURL(/\/usuarios(\?.*)?$/);
   });
 
-  test("activates and deactivates a user, then restores the original state", async ({ page }) => {
-    // Client-side navigation via search + row click — avoids a hard page.goto(), which would
-    // drop the in-memory access token and force a refresh-token rotation mid-test (see helpers).
+  test("clicking a user's name also opens the Ver modal", async ({ page }) => {
     const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
-    await targetRow.getByRole("link").click();
-    await expect(page).toHaveURL(/\/usuarios\/2$/);
+    await targetRow.getByRole("button").first().click();
+    await expect(page.getByRole("dialog").getByText("bturcotte@example.net")).toBeVisible();
+  });
 
-    const toggleButton = page.getByRole("button", { name: /Desactivar usuario|Activar usuario/ });
+  test("the standalone user detail page is still reachable by direct URL", async ({ page }) => {
+    // Hard navigation: drops the in-memory access token, so this waits out a real
+    // refresh-cookie bootstrap plus the user fetch — longer than the default timeout.
+    await page.goto("/usuarios/2");
+    await expect(page.getByText("bturcotte@example.net")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("link", { name: "Volver a usuarios" })).toBeVisible();
+  });
+
+  test("activates and deactivates a user from the Ver modal, then restores the original state", async ({
+    page,
+  }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    await targetRow.getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("menuitem", { name: "Ver" }).click();
+
+    const dialog = page.getByRole("dialog");
+    const toggleButton = dialog.getByRole("button", { name: /^(Desactivar|Activar)$/ });
     const initialLabel = await toggleButton.textContent();
 
     await toggleButton.click();
-    await expect(page.getByRole("button", { name: /Desactivar usuario|Activar usuario/ })).not.toHaveText(
-      initialLabel ?? ""
+    await expect(dialog.getByRole("button", { name: /^(Desactivar|Activar)$/ })).not.toHaveText(
+      initialLabel ?? "",
+      { timeout: 10000 }
     );
 
     // restore original state so the shared demo dataset is left unchanged
-    await page.getByRole("button", { name: /Desactivar usuario|Activar usuario/ }).click();
-    await expect(page.getByRole("button", { name: /Desactivar usuario|Activar usuario/ })).toHaveText(
-      initialLabel ?? ""
+    await dialog.getByRole("button", { name: /^(Desactivar|Activar)$/ }).click();
+    await expect(dialog.getByRole("button", { name: /^(Desactivar|Activar)$/ })).toHaveText(
+      initialLabel ?? "",
+      { timeout: 10000 }
     );
   });
 

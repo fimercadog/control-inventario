@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Loader2, Plus, Search, Shield, UserRoundCog } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { DataTable } from "@/components/data-table/data-table";
 import { buildUsuarioColumns } from "@/app/usuarios/columns";
+import { UsuarioSummary } from "@/app/usuarios/usuario-summary";
 import { InviteUserForm } from "@/components/forms/invite-user-form";
 import { ChangeRoleForm } from "@/components/forms/change-role-form";
 import { AvatarForm } from "@/components/forms/avatar-form";
@@ -90,6 +91,7 @@ export default function UsuariosPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [roleDialogUsuario, setRoleDialogUsuario] = useState<Usuario | null>(null);
   const [avatarDialogUsuario, setAvatarDialogUsuario] = useState<Usuario | null>(null);
+  const [viewingUsuario, setViewingUsuario] = useState<Usuario | null>(null);
 
   useEffect(() => {
     if (!canView) return;
@@ -137,12 +139,12 @@ export default function UsuariosPage() {
     setTogglingId(usuario.id);
     setToggleError(null);
     try {
-      if (usuario.is_active) {
-        await desactivarUsuario(usuario.id);
-      } else {
-        await activarUsuario(usuario.id);
-      }
+      const updated = usuario.is_active
+        ? await desactivarUsuario(usuario.id)
+        : await activarUsuario(usuario.id);
       setRefetchNonce((n) => n + 1);
+      // Keep the "Ver" modal's snapshot in sync if it's showing the same user.
+      setViewingUsuario((current) => (current?.id === usuario.id ? updated : current));
     } catch (error) {
       setToggleError(extractApiErrorMessage(error, "No se pudo actualizar el estado del usuario."));
     } finally {
@@ -166,6 +168,7 @@ export default function UsuariosPage() {
     onToggleActivo: handleToggleActivo,
     onChangeRole: setRoleDialogUsuario,
     onEditAvatar: setAvatarDialogUsuario,
+    onViewUsuario: setViewingUsuario,
   });
 
   if (!canView) {
@@ -301,6 +304,61 @@ export default function UsuariosPage() {
           </DialogHeader>
           {avatarDialogUsuario ? (
             <AvatarForm usuario={avatarDialogUsuario} onSuccess={handleAvatarChanged} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={viewingUsuario !== null} onOpenChange={(open) => !open && setViewingUsuario(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Usuario</DialogTitle>
+          </DialogHeader>
+          {viewingUsuario ? (
+            <div className="flex flex-col gap-5">
+              <UsuarioSummary usuario={viewingUsuario} />
+              {canEdit ? (
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setRoleDialogUsuario(viewingUsuario);
+                      setViewingUsuario(null);
+                    }}
+                  >
+                    <Shield className="size-4" />
+                    Cambiar rol
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setAvatarDialogUsuario(viewingUsuario);
+                      setViewingUsuario(null);
+                    }}
+                  >
+                    <UserRoundCog className="size-4" />
+                    Editar avatar
+                  </Button>
+                  <Button
+                    variant={viewingUsuario.is_active ? "destructive" : "outline"}
+                    className={
+                      viewingUsuario.is_active
+                        ? undefined
+                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                    }
+                    size="sm"
+                    disabled={togglingId === viewingUsuario.id}
+                    onClick={() => handleToggleActivo(viewingUsuario)}
+                  >
+                    {togglingId === viewingUsuario.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : null}
+                    {viewingUsuario.is_active ? "Desactivar" : "Activar"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </DialogContent>
       </Dialog>
