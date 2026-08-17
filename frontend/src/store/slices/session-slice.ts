@@ -46,6 +46,11 @@ const sessionSlice = createSlice({
       state.user = null;
       state.status = "unauthenticated";
     },
+    /** Perfil (Fase 5): pushes a freshly-saved profile/avatar into the session so the
+     * header/sidebar reflect it immediately, without a full bootstrapSession() round trip. */
+    updateUser(state, action: { payload: AuthenticatedUser }) {
+      state.user = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder

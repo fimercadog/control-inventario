@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Settings, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -82,6 +83,15 @@ export function Header() {
               <span className="block truncate font-normal text-muted-foreground">{user?.email}</span>
             </DropdownMenuLabel>
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem render={<Link href="/perfil" />}>
+            <UserCircle className="size-4" />
+            Mi Perfil
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/configuracion" />}>
+            <Settings className="size-4" />
+            Configuración
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="size-4" />
