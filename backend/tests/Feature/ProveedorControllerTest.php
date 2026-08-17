@@ -530,4 +530,111 @@ class ProveedorControllerTest extends TestCase
             ])
             ->assertStatus(404);
     }
+
+    /**
+     * WO "Módulo Proveedores". Gateado por `proveedores.ver` (viewAny), no
+     * `reportes.ver` — mismo criterio ya aplicado en Usuarios/Roles/Categorías.
+     */
+    public function test_a_user_can_export_csv_with_real_data(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/proveedores/export/csv');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('attachment', $response->headers->get('Content-Disposition'));
+
+        $contenido = $response->streamedContent();
+        $this->assertStringContainsString('Distribuidora Central', $contenido);
+        $this->assertStringContainsString('900123456', $contenido);
+        $this->assertStringContainsString('#,Nombre,NIT,Contacto,Teléfono,Email,Estado', $contenido);
+    }
+
+    public function test_a_user_can_export_pdf(): void
+    {
+        $response = $this->actingAs($this->userA, 'api')->get('/api/v1/proveedores/export/pdf');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_csv_export_respects_the_current_search_filter(): void
+    {
+        Proveedor::create(['nombre' => 'Otro Distinto Export', 'empresa_id' => $this->empresaA->id]);
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/proveedores/export/csv?busqueda=Distribuidora')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Distribuidora Central', $contenido);
+        $this->assertStringNotContainsString('Otro Distinto Export', $contenido);
+    }
+
+    public function test_csv_export_respects_the_current_estado_filter(): void
+    {
+        $inactivo = Proveedor::create(['nombre' => 'Proveedor Inactivo Export', 'empresa_id' => $this->empresaA->id]);
+        $inactivo->update(['estado' => 'inactivo']);
+
+        $activosContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/proveedores/export/csv')->streamedContent();
+        $this->assertStringNotContainsString('Proveedor Inactivo Export', $activosContenido);
+
+        $todosContenido = $this->actingAs($this->userA, 'api')->get('/api/v1/proveedores/export/csv?estado=todos')->streamedContent();
+        $this->assertStringContainsString('Proveedor Inactivo Export', $todosContenido);
+    }
+
+    public function test_csv_export_includes_the_full_filtered_set_not_just_one_page(): void
+    {
+        for ($i = 1; $i <= 55; $i++) {
+            Proveedor::create(['nombre' => "Proveedor Masivo Export {$i}", 'empresa_id' => $this->empresaA->id]);
+        }
+
+        // El listado real pagina de a 50 por defecto; la exportación debe
+        // traer las 55 filas filtradas completas, no solo las primeras 50.
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/proveedores/export/csv?busqueda=Proveedor Masivo Export')
+            ->streamedContent();
+
+        $filas = array_filter(explode("\n", trim($contenido)));
+        $this->assertCount(56, $filas); // encabezado + 55 proveedores
+    }
+
+    public function test_export_never_includes_another_companys_suppliers(): void
+    {
+        Proveedor::create(['nombre' => 'Proveedor Exclusivo Empresa B', 'empresa_id' => $this->empresaB->id]);
+
+        $contenido = $this->actingAs($this->userA, 'api')
+            ->get('/api/v1/proveedores/export/csv')
+            ->streamedContent();
+
+        $this->assertStringNotContainsString('Proveedor Exclusivo Empresa B', $contenido);
+    }
+
+    public function test_multi_tenant_export_only_includes_the_actors_own_company(): void
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $registrar->setPermissionsTeamId($this->empresaB->id);
+        $this->userB->givePermissionTo('proveedores.ver');
+        $registrar->forgetCachedPermissions();
+
+        Proveedor::create(['nombre' => 'Proveedor Real De B', 'empresa_id' => $this->empresaB->id]);
+
+        $contenido = $this->actingAs($this->userB, 'api')
+            ->get('/api/v1/proveedores/export/csv')
+            ->streamedContent();
+
+        $this->assertStringContainsString('Proveedor Real De B', $contenido);
+        $this->assertStringNotContainsString('Distribuidora Central', $contenido); // proveedorA, Empresa A
+    }
+
+    public function test_a_user_without_proveedores_ver_cannot_export(): void
+    {
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/proveedores/export/csv')->assertStatus(403);
+        $this->actingAs($this->userSinPermiso, 'api')->get('/api/v1/proveedores/export/pdf')->assertStatus(403);
+    }
+
+    public function test_export_endpoints_reject_unauthenticated_requests(): void
+    {
+        $this->getJson('/api/v1/proveedores/export/csv')->assertUnauthorized();
+        $this->getJson('/api/v1/proveedores/export/pdf')->assertUnauthorized();
+    }
 }
