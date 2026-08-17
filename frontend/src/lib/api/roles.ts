@@ -43,3 +43,25 @@ export async function fetchUsuariosDelRol(id: number): Promise<RoleUsuario[]> {
   const { data } = await apiClient.get<ApiSuccessResponse<RoleUsuario[]>>(`/roles/${id}/usuarios`);
   return data.data;
 }
+
+export interface RolesExportResult {
+  blob: Blob;
+  filename: string;
+}
+
+function extractFilename(contentDisposition: string | undefined, fallback: string): string {
+  const match = contentDisposition?.match(/filename="?([^";]+)"?/);
+  return match?.[1] ?? fallback;
+}
+
+/** Same busqueda/estado params as fetchRoles — the export reflects exactly what the list
+ * is currently showing, and covers the full filtered result set, not just one page. */
+export async function exportarRolesCsv(params: RolesQueryParams): Promise<RolesExportResult> {
+  const response = await apiClient.get<Blob>("/roles/export/csv", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "roles.csv") };
+}
+
+export async function exportarRolesPdf(params: RolesQueryParams): Promise<RolesExportResult> {
+  const response = await apiClient.get<Blob>("/roles/export/pdf", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "roles.pdf") };
+}

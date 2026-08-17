@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Search } from "lucide-react";
+import { FileSpreadsheet, FileText, Loader2, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,7 +27,7 @@ import { RoleForm } from "@/components/forms/role-form";
 import { useRoleDetail } from "@/hooks/use-role-detail";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
-import { fetchRoles, activarRol, desactivarRol } from "@/lib/api/roles";
+import { fetchRoles, activarRol, desactivarRol, exportarRolesCsv, exportarRolesPdf } from "@/lib/api/roles";
 import { fetchPermisos } from "@/lib/api/permissions";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import type { Role, RolesQueryParams } from "@/types/role";
@@ -45,6 +45,17 @@ interface QueryState {
 
 function buildQueryKey(query: QueryState): string {
   return JSON.stringify(query);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 interface RolesResult {
@@ -82,6 +93,7 @@ export default function RolesPage() {
   const [result, setResult] = useState<RolesResult>(EMPTY_RESULT);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<"csv" | "pdf" | null>(null);
   const [allPermissions, setAllPermissions] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [viewingRoleId, setViewingRoleId] = useState<number | null>(null);
@@ -140,6 +152,22 @@ export default function RolesPage() {
       setToggleError(extractApiErrorMessage(error, "No se pudo actualizar el estado del rol."));
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleExport(formato: "csv" | "pdf") {
+    setExportingFormat(formato);
+    setToggleError(null);
+    try {
+      // Same busqueda/estado the list is currently showing — never page/per_page, the
+      // export covers the full filtered result set, not just the visible page.
+      const params: RolesQueryParams = { busqueda: searchTerm || undefined, estado };
+      const { blob, filename } = formato === "csv" ? await exportarRolesCsv(params) : await exportarRolesPdf(params);
+      downloadBlob(blob, filename);
+    } catch (error) {
+      setToggleError(extractApiErrorMessage(error, "No se pudo generar el archivo de exportación."));
+    } finally {
+      setExportingFormat(null);
     }
   }
 
@@ -203,6 +231,35 @@ export default function RolesPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("csv")}
+          >
+            {exportingFormat === "csv" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-4" />
+            )}
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("pdf")}
+          >
+            {exportingFormat === "pdf" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileText className="size-4" />
+            )}
+            PDF
+          </Button>
+        </div>
+
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
