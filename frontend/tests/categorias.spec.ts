@@ -117,9 +117,16 @@ test.describe("Categorías list", () => {
     // with assigned users (409); CategoriaController explicitly documents the opposite —
     // categoria_id on productos is nullable and never nulled on disable, so disabling a
     // populated category is safe by design. Restored immediately after (real shared data).
-    await page.getByLabel("Buscar categorías").fill("Accesorios");
+    // Uses "Antipulgas y garrapatas" (29 real products), not "Accesorios" — Accesorios is
+    // read by four other tests in this file, and fullyParallel:true runs tests within a
+    // file concurrently across workers, so toggling a record other tests are reading at
+    // the same time is a real, previously-hit race (a concurrent reader can catch it
+    // mid-toggle, filtered out by the default estado=activo search). A dedicated,
+    // otherwise-unreferenced record sidesteps the race entirely rather than serializing
+    // the tests to work around it.
+    await page.getByLabel("Buscar categorías").fill("Antipulgas y garrapatas");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    const row = page.getByRole("row").filter({ hasText: "Accesorios" });
+    const row = page.getByRole("row").filter({ hasText: "Antipulgas y garrapatas" });
     await row.getByRole("button").first().click();
 
     const dialog = page.getByRole("dialog");
