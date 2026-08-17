@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { login } from "./helpers";
 
@@ -226,6 +227,70 @@ test.describe("Categorías list", () => {
 
     expect(requestBody).toMatchObject({ nombre: "Adiestramiento Editado" });
   });
+
+  test("CSV and PDF export buttons are visible in the toolbar", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "CSV" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "PDF" })).toBeVisible();
+    await expect(page.getByLabel("Buscar categorías")).toBeVisible();
+  });
+
+  test("CSV button downloads a real CSV file with real data", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^categorias-.*\.csv$/);
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    expect(contenido).toContain("#,Nombre,Descripción,Estado,Productos");
+    // Accesorios is real, permanent, seeded data.
+    expect(contenido).toContain("Accesorios");
+  });
+
+  test("PDF button downloads a real, valid PDF file", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^categorias-.*\.pdf$/);
+    const filePath = await download.path();
+    const header = fs.readFileSync(filePath).subarray(0, 4).toString("utf-8");
+    expect(header).toBe("%PDF");
+    expect(fs.statSync(filePath).size).toBeGreaterThan(1000);
+  });
+
+  test("CSV export respects the current search filter, covering the full filtered set", async ({ page }) => {
+    await page.getByLabel("Buscar categorías").fill("Accesorios");
+    await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    const filas = contenido.trim().split("\n");
+    // Header + exactly the one matching category — not the ~400 category company total.
+    expect(filas).toHaveLength(2);
+    expect(contenido).toContain("Accesorios");
+  });
+
+  test("exporting does not disturb the list, search, filters, or pagination", async ({ page }) => {
+    await page.getByLabel("Buscar categorías").fill("Adiestramiento");
+    await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+    await download.path();
+
+    await expect(page.getByRole("row")).toHaveCount(2);
+    await expect(page.getByLabel("Buscar categorías")).toHaveValue("Adiestramiento");
+  });
 });
 
 test.describe("Categorías RBAC and multi-tenant isolation", () => {
@@ -249,6 +314,9 @@ test.describe("Categorías RBAC and multi-tenant isolation", () => {
     await page.goto("/categorias");
     await expect(page.getByText("No tienes permiso para ver este módulo.")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("table")).toHaveCount(0);
+    // The export buttons live inside the gated page body — never rendered for this user.
+    await expect(page.getByRole("button", { name: "CSV" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "PDF" })).toHaveCount(0);
   });
 
   test("multi-tenant: Empresa B's Administrador never sees Empresa A's categories", async ({ page }) => {
@@ -289,5 +357,22 @@ test.describe("Categorías RBAC and multi-tenant isolation", () => {
       headers: { Authorization: authHeader! },
     });
     expect(response.status()).toBe(404);
+  });
+
+  test("multi-tenant: Empresa B's Administrador exports only Empresa B's categories", async ({ page }) => {
+    await login(page, "qa-rbac-admin-b@example.com", QA_PASSWORD);
+    await page.goto("/categorias");
+    await waitForCategoriasLoaded(page);
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    // Accesorios only exists in Empresa A; the default estado=activo export here should
+    // only ever contain Empresa B's own real categories.
+    expect(contenido).not.toContain("Accesorios");
   });
 });
