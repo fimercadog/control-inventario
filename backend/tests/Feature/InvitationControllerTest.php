@@ -77,6 +77,7 @@ class InvitationControllerTest extends TestCase
 
         $invitacion = Invitation::create(array_merge([
             'email' => 'invitado@example.com',
+            'name' => 'Invitado de Prueba',
             'empresa_id' => $this->empresaA->id,
             'role_id' => $this->roleA->id,
             'token_hash' => hash('sha256', $rawToken),
@@ -93,6 +94,7 @@ class InvitationControllerTest extends TestCase
 
         $this->actingAs($this->adminA, 'api')
             ->postJson('/api/v1/usuarios/invitar', [
+                'name' => 'Nuevo Usuario',
                 'email' => 'nuevo@example.com',
                 'role_id' => $this->roleA->id,
             ])
@@ -100,6 +102,7 @@ class InvitationControllerTest extends TestCase
 
         $this->assertDatabaseHas('invitations', [
             'email' => 'nuevo@example.com',
+            'name' => 'Nuevo Usuario',
             'empresa_id' => $this->empresaA->id,
             'role_id' => $this->roleA->id,
         ]);
@@ -115,7 +118,7 @@ class InvitationControllerTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->adminA, 'api')
-            ->postJson('/api/v1/usuarios/invitar', ['email' => $this->userSinPermiso->email])
+            ->postJson('/api/v1/usuarios/invitar', ['name' => 'Alguien', 'email' => $this->userSinPermiso->email])
             ->assertStatus(422);
 
         Notification::assertNothingSent();
@@ -124,8 +127,20 @@ class InvitationControllerTest extends TestCase
     public function test_inviting_with_a_role_from_another_company_fails_validation(): void
     {
         $this->actingAs($this->adminA, 'api')
-            ->postJson('/api/v1/usuarios/invitar', ['email' => 'nuevo@example.com', 'role_id' => $this->roleB->id])
+            ->postJson('/api/v1/usuarios/invitar', [
+                'name' => 'Alguien',
+                'email' => 'nuevo@example.com',
+                'role_id' => $this->roleB->id,
+            ])
             ->assertStatus(422);
+    }
+
+    public function test_inviting_without_a_name_fails_validation(): void
+    {
+        $this->actingAs($this->adminA, 'api')
+            ->postJson('/api/v1/usuarios/invitar', ['email' => 'nuevo@example.com'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('name');
     }
 
     public function test_re_inviting_the_same_email_replaces_the_pending_invitation(): void
@@ -133,11 +148,11 @@ class InvitationControllerTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->adminA, 'api')
-            ->postJson('/api/v1/usuarios/invitar', ['email' => 'nuevo@example.com'])
+            ->postJson('/api/v1/usuarios/invitar', ['name' => 'Alguien', 'email' => 'nuevo@example.com'])
             ->assertCreated();
 
         $this->actingAs($this->adminA, 'api')
-            ->postJson('/api/v1/usuarios/invitar', ['email' => 'nuevo@example.com'])
+            ->postJson('/api/v1/usuarios/invitar', ['name' => 'Alguien', 'email' => 'nuevo@example.com'])
             ->assertCreated();
 
         $this->assertSame(
@@ -149,7 +164,7 @@ class InvitationControllerTest extends TestCase
     public function test_a_user_without_permission_cannot_invite(): void
     {
         $this->actingAs($this->userSinPermiso, 'api')
-            ->postJson('/api/v1/usuarios/invitar', ['email' => 'nuevo@example.com'])
+            ->postJson('/api/v1/usuarios/invitar', ['name' => 'Alguien', 'email' => 'nuevo@example.com'])
             ->assertStatus(403);
     }
 
@@ -166,6 +181,7 @@ class InvitationControllerTest extends TestCase
         $this->getJson("/api/v1/invitaciones/{$rawToken}")
             ->assertOk()
             ->assertJsonPath('data.email', 'invitado@example.com')
+            ->assertJsonPath('data.name', 'Invitado de Prueba')
             ->assertJsonPath('data.empresa', 'Empresa A')
             ->assertJsonPath('data.rol', 'Bodeguero');
     }

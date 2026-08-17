@@ -30,7 +30,12 @@ class InvitationController extends Controller
         $this->authorize('create', Invitation::class);
 
         $datos = $request->validated();
-        $invitacion = $this->invitaciones->crear($datos['email'], $datos['role_id'] ?? null, $request->user());
+        $invitacion = $this->invitaciones->crear(
+            $datos['email'],
+            $datos['name'],
+            $datos['role_id'] ?? null,
+            $request->user()
+        );
 
         $this->auditoria->registrarAccionManual(
             empresaId: $invitacion->empresa_id,
@@ -39,7 +44,7 @@ class InvitationController extends Controller
             accion: 'usuarios.invitar',
             auditableType: Invitation::class,
             auditableId: $invitacion->id,
-            valoresNuevos: ['email' => $invitacion->email, 'role_id' => $invitacion->role_id],
+            valoresNuevos: ['email' => $invitacion->email, 'name' => $invitacion->name, 'role_id' => $invitacion->role_id],
             ip: $request->ip(),
             userAgent: $request->userAgent(),
         );
@@ -53,6 +58,7 @@ class InvitationController extends Controller
 
         return ApiResponse::success([
             'email' => $invitacion->email,
+            'name' => $invitacion->name,
             'empresa' => $invitacion->empresa->nombre,
             'rol' => $invitacion->role?->name,
         ]);

@@ -28,7 +28,7 @@ class InvitationService
         private readonly InvitationRepository $invitaciones,
     ) {}
 
-    public function crear(string $email, ?int $roleId, User $invitador): Invitation
+    public function crear(string $email, string $name, ?int $roleId, User $invitador): Invitation
     {
         $empresaId = $invitador->is_platform_admin
             ? throw ValidationException::withMessages(['email' => 'Un Platform Super Admin no puede invitar usuarios a una empresa.'])
@@ -40,6 +40,7 @@ class InvitationService
 
         $invitacion = $this->invitaciones->crear([
             'email' => $email,
+            'name' => $name,
             'empresa_id' => $empresaId,
             'role_id' => $roleId,
             'token_hash' => hash('sha256', $rawToken),
@@ -48,7 +49,7 @@ class InvitationService
         ]);
 
         Notification::route('mail', $email)->notify(
-            new InvitationNotification($rawToken, $invitador->empresa->nombre)
+            new InvitationNotification($rawToken, $invitador->empresa->nombre, $name)
         );
 
         return $invitacion;

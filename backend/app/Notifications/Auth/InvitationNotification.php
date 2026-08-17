@@ -16,6 +16,7 @@ class InvitationNotification extends Notification
     public function __construct(
         private readonly string $rawToken,
         private readonly string $empresaNombre,
+        private readonly ?string $name = null,
     ) {}
 
     /**
@@ -32,8 +33,11 @@ class InvitationNotification extends Notification
             'token' => $this->rawToken,
         ]);
 
+        $saludo = $this->name ? "Hola, {$this->name}." : 'Hola.';
+
         return (new MailMessage)
             ->subject("Te invitaron a unirte a {$this->empresaNombre} — Fidel OS")
+            ->line($saludo)
             ->line("Te invitaron a unirte a {$this->empresaNombre} en Fidel OS.")
             ->action('Aceptar invitación', $url)
             ->line('Este enlace expira en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.');
