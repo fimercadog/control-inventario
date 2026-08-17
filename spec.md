@@ -1,7 +1,3 @@
-Aquí tienes una versión altamente optimizada. Al consolidar listas verticales en texto continuo y eliminar redundancias, se reduce drásticamente el consumo de tokens manteniendo el 100% de las reglas y la rigurosidad técnica.
-
----
-
 # FidelOS — Especificación Maestra Frontend
 
 ## 0. PROPÓSITO Y REGLA ABSOLUTA
@@ -46,7 +42,6 @@ Crear la siguiente estructura en el repositorio:
 * `frontend/avances/`: `README.md`, `01-foundation.md`, `02-maestros.md`, `03-seguridad.md`, `04-inventario.md`, `05-especiales.md`, `06-qa-final.md`.
 * `frontend/incidentes/`: `README.md`, `INCIDENTES.md`, `pendientes.md`.
 * `frontend/spec.md`
-
 
 ## 3.1 GIT POR CADA MÓDULO — OBLIGATORIO
 
@@ -108,13 +103,13 @@ Puede haber más de un commit por módulo cuando existan bloques lógicos claros
 
 NO hacer commits con:
 
-- TypeScript roto;
-- tests atribuibles fallando;
-- conflictos;
-- código incompleto;
-- archivos ajenos a la unidad;
-- secretos;
-- `.env`.
+* TypeScript roto;
+* tests atribuibles fallando;
+* conflictos;
+* código incompleto;
+* archivos ajenos a la unidad;
+* secretos;
+* `.env`.
 
 ### Regla de push
 
@@ -148,12 +143,12 @@ Si el push falla:
 
 En `frontend/avances/` registrar por módulo:
 
-- Estado
-- Tests
-- Commit(s)
-- Hash(es)
-- Push confirmado
-- Fecha
+* Estado
+* Tests
+* Commit(s)
+* Hash(es)
+* Push confirmado
+* Fecha
 
 Ejemplo:
 
@@ -164,8 +159,9 @@ Estado: COMPLETE
 Tests: 19/19 PASS
 
 Commits:
-- `abc1234 feat(categories): complete categories frontend`
-- `def5678 test(categories): add categories coverage`
+
+* `abc1234 feat(categories): complete categories frontend`
+* `def5678 test(categories): add categories coverage`
 
 Push:
 CONFIRMED
@@ -173,12 +169,11 @@ CONFIRMED
 Origin:
 SYNCED
 
-
-# CORRECCIÓN GLOBAL — SELECTS DE RELACIONES Y PRESENTACIÓN
+## CORRECCIÓN GLOBAL — SELECTS DE RELACIONES Y PRESENTACIÓN
 
 Se detectó un error de UX y mapeo de datos en los formularios.
 
-## PROBLEMA 1 — SELECTS MOSTRANDO IDs
+### PROBLEMA 1 — SELECTS MOSTRANDO IDs
 
 Actualmente algunos Select muestran valores internos como:
 
@@ -220,21 +215,21 @@ Purina
 
 ---
 
-## ALCANCE GLOBAL
+### ALCANCE GLOBAL
 
 Auditar TODOS los formularios y filtros del frontend que utilicen relaciones por ID.
 
 Buscar campos como:
 
-- marca_id
-- categoria_id
-- unidad_medida_id
-- proveedor_id
-- role_id
-- empresa_id
-- producto_id
-- cliente_id
-- cualquier otro FK usado en Select
+* marca_id
+* categoria_id
+* unidad_medida_id
+* proveedor_id
+* role_id
+* empresa_id
+* producto_id
+* cliente_id
+* cualquier otro FK usado en Select
 
 Regla global:
 
@@ -246,7 +241,7 @@ Nunca mostrar el ID como texto visible si existe nombre asociado.
 
 ---
 
-## PROBLEMA 2 — PRESENTACIÓN
+### PROBLEMA 2 — PRESENTACIÓN
 
 Auditar el campo `presentacion` del Producto.
 
@@ -258,7 +253,7 @@ Verificar backend REAL, BD REAL y manual.
 
 Determinar exactamente qué significa `presentacion`.
 
-### Si `presentacion` realmente debe derivarse de Unidad de Medida:
+#### Si `presentacion` realmente debe derivarse de Unidad de Medida
 
 reemplazar el input libre por un Select que cargue las Unidades de Medida reales desde:
 
@@ -282,7 +277,7 @@ Docena
 
 Guardar el ID/campo correcto según contrato backend.
 
-### Si `presentacion` es un campo independiente REAL:
+#### Si `presentacion` es un campo independiente REAL
 
 NO eliminarlo sin verificar.
 
@@ -297,9 +292,98 @@ Unidad de medida:
 Cantidad/peso:
 15
 
+y asi con cuaLquier lista desplegable que se  use
 
-y aasi con cuyaquier lista deesplegable que se  use 
+ CORRECCIÓN GLOBAL DE SELECTS
 
+Aplicar esta regla a TODOS los Select/listas desplegables del frontend FidelOS.
+
+1. Cuando todavía no exista un valor seleccionado, el Select debe mostrar
+   un placeholder descriptivo según el campo.
+
+Ejemplos:
+
+Rol:
+"Seleccione un rol"
+
+Categoría:
+"Seleccione una categoría"
+
+Marca:
+"Seleccione una marca"
+
+Unidad de medida:
+"Seleccione una unidad de medida"
+
+Proveedor:
+"Seleccione un proveedor"
+
+Producto:
+"Seleccione un producto"
+
+Estado:
+"Seleccione un estado"
+
+Tipo de movimiento:
+"Seleccione un tipo de movimiento"
+
+2. El placeholder NO debe ser una opción válida enviada al backend.
+
+3. Después de seleccionar un elemento:
+   - mostrar el NOMBRE legible;
+   - conservar internamente el ID requerido por backend.
+
+Ejemplo:
+
+VISIBLE:
+Purina
+
+VALUE:
+17
+
+4. En formularios de EDICIÓN:
+   - cargar automáticamente el valor actual;
+   - mostrar su nombre, nunca su ID.
+
+5. Auditar TODOS los Select del frontend, no solamente Usuarios o Productos.
+
+6. No modificar backend ni BD.
+
+7. REUSE → EXTEND → CREATE.
+   Si existe un componente/helper compartido para Select, solucionar allí
+   el comportamiento común en vez de parchear cada pantalla por separado,
+   siempre que no provoque regresiones.
+
+8. Verificar especialmente:
+   Roles
+   Categorías
+   Marcas
+   Unidades de Medida
+   Proveedores
+   Clientes
+   Usuarios
+   Productos
+   Movimientos
+   Stock
+   Reportes
+   Captura IA
+   Perfil
+   Configuración
+   y cualquier otro Select encontrado durante la auditoría.
+
+9. Probar:
+   - placeholder inicial;
+   - apertura del Select;
+   - selección;
+   - label visible correcto;
+   - ID correcto enviado al backend;
+   - formulario de edición;
+   - mobile;
+   - teclado;
+   - ausencia de errores de consola.
+
+10. No detener el proyecto.
+    Corregir, probar, commit, push y continuar.
 
 o el esquema real existente.
 
@@ -313,7 +397,7 @@ La fuente de verdad es:
 
 ---
 
-## REGLA IMPORTANTE
+### REGLA IMPORTANTE
 
 No modificar backend ni BD.
 
@@ -327,7 +411,7 @@ NO detener el proyecto.
 
 ---
 
-## PONYTAIL
+### PONYTAIL
 
 Antes de crear nada:
 
@@ -337,18 +421,18 @@ REUSE
 
 Buscar si ya existe:
 
-- catálogo de marcas
-- catálogo de categorías
-- catálogo de unidades
-- hook de catálogos
-- Select reusable
-- helper label/value
+* catálogo de marcas
+* catálogo de categorías
+* catálogo de unidades
+* hook de catálogos
+* Select reusable
+* helper label/value
 
 NO crear un fetch distinto para cada formulario si ya existe infraestructura compartida.
 
 ---
 
-## RESULTADO ESPERADO
+### RESULTADO ESPERADO
 
 ANTES:
 
@@ -370,7 +454,7 @@ unidad_medida_id: 3
 
 ---
 
-## PRUEBAS
+### PRUEBAS
 
 Verificar al menos:
 
@@ -396,7 +480,7 @@ No hacer refactorización general fuera de esta corrección.
 
 ---
 
-## GIT
+### GIT
 
 Después de corregir:
 
