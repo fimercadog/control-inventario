@@ -36,3 +36,25 @@ export async function fetchProductosDeCategoria(id: number): Promise<CategoriaPr
   const { data } = await apiClient.get<ApiSuccessResponse<CategoriaProducto[]>>(`/categorias/${id}/productos`);
   return data.data;
 }
+
+export interface CategoriasExportResult {
+  blob: Blob;
+  filename: string;
+}
+
+function extractFilename(contentDisposition: string | undefined, fallback: string): string {
+  const match = contentDisposition?.match(/filename="?([^";]+)"?/);
+  return match?.[1] ?? fallback;
+}
+
+/** Same busqueda/estado params as fetchCategorias — the export reflects exactly what the
+ * list is currently showing, and covers the full filtered result set, not just one page. */
+export async function exportarCategoriasCsv(params: CategoriasQueryParams): Promise<CategoriasExportResult> {
+  const response = await apiClient.get<Blob>("/categorias/export/csv", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "categorias.csv") };
+}
+
+export async function exportarCategoriasPdf(params: CategoriasQueryParams): Promise<CategoriasExportResult> {
+  const response = await apiClient.get<Blob>("/categorias/export/pdf", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "categorias.pdf") };
+}

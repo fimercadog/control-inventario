@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Search } from "lucide-react";
+import { FileSpreadsheet, FileText, Loader2, Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,7 +27,13 @@ import { CategoriaForm } from "@/components/forms/categoria-form";
 import { useCategoriaDetail } from "@/hooks/use-categoria-detail";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
-import { fetchCategorias, habilitarCategoria, deshabilitarCategoria } from "@/lib/api/categorias";
+import {
+  fetchCategorias,
+  habilitarCategoria,
+  deshabilitarCategoria,
+  exportarCategoriasCsv,
+  exportarCategoriasPdf,
+} from "@/lib/api/categorias";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import type { Categoria, CategoriasQueryParams } from "@/types/categoria";
 import type { PaginationMeta } from "@/types/api";
@@ -44,6 +50,17 @@ interface QueryState {
 
 function buildQueryKey(query: QueryState): string {
   return JSON.stringify(query);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 interface CategoriasResult {
@@ -86,6 +103,7 @@ export default function CategoriasPage() {
   const [result, setResult] = useState<CategoriasResult>(EMPTY_RESULT);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<"csv" | "pdf" | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [viewingCategoriaId, setViewingCategoriaId] = useState<number | null>(null);
   const [editingCategoriaId, setEditingCategoriaId] = useState<number | null>(null);
@@ -136,6 +154,23 @@ export default function CategoriasPage() {
       setToggleError(extractApiErrorMessage(error, "No se pudo actualizar el estado de la categoría."));
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleExport(formato: "csv" | "pdf") {
+    setExportingFormat(formato);
+    setToggleError(null);
+    try {
+      // Same busqueda/estado the list is currently showing — never page/per_page, the
+      // export covers the full filtered result set, not just the visible page.
+      const params: CategoriasQueryParams = { busqueda: searchTerm || undefined, estado };
+      const { blob, filename } =
+        formato === "csv" ? await exportarCategoriasCsv(params) : await exportarCategoriasPdf(params);
+      downloadBlob(blob, filename);
+    } catch (error) {
+      setToggleError(extractApiErrorMessage(error, "No se pudo generar el archivo de exportación."));
+    } finally {
+      setExportingFormat(null);
     }
   }
 
@@ -200,6 +235,35 @@ export default function CategoriasPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("csv")}
+          >
+            {exportingFormat === "csv" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-4" />
+            )}
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("pdf")}
+          >
+            {exportingFormat === "pdf" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileText className="size-4" />
+            )}
+            PDF
+          </Button>
+        </div>
+
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
