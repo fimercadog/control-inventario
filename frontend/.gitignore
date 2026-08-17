@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+.vercel/
+
+# Production
+build/
+dist/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# TypeScript
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Runtime / temporary
+*.pid
+*.seed
+*.pid.lock
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs / editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# ESLint cache
+.eslintcache
+
+# Turbopack
+.turbo/
+
+# Sentry
+.sentryclirc
+
+# Misc
+*.local
+
+# Generated files
+.next-env.d.ts
+
+# shadcn / generated caches
+components.json.bak
