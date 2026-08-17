@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { login, DEMO_EMAIL } from "./helpers";
 
@@ -261,6 +262,76 @@ test.describe("Usuarios list", () => {
       name: "Persona De Prueba",
       email: "payload-shape-check@example.com",
     });
+  });
+
+  test("CSV and PDF export buttons are visible in the toolbar", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "CSV" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "PDF" })).toBeVisible();
+    // Nothing else in the toolbar moved — search stays reachable right after them.
+    await expect(page.getByLabel("Buscar usuarios")).toBeVisible();
+  });
+
+  test("CSV button downloads a real CSV file with real data", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^usuarios-.*\.csv$/);
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    expect(contenido).toContain("#,Usuario,Email,Rol,Estado");
+    expect(contenido).toContain(DEMO_EMAIL);
+    // No sensitive fields ever leave the export.
+    expect(contenido).not.toContain("password");
+    expect(contenido).not.toContain("remember_token");
+  });
+
+  test("PDF button downloads a real, valid PDF file", async ({ page }) => {
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+
+    expect(download.suggestedFilename()).toMatch(/^usuarios-.*\.pdf$/);
+    const filePath = await download.path();
+    const header = fs.readFileSync(filePath).subarray(0, 4).toString("utf-8");
+    expect(header).toBe("%PDF");
+    expect(fs.statSync(filePath).size).toBeGreaterThan(1000);
+  });
+
+  test("CSV export respects the current search filter, not just the visible page", async ({ page }) => {
+    const targetRow = await searchForUniqueUser(page, "bturcotte@example.net");
+    await expect(targetRow).toBeVisible();
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "CSV" }).click(),
+    ]);
+
+    const filePath = await download.path();
+    const contenido = fs.readFileSync(filePath, "utf-8");
+    const filas = contenido.trim().split("\n");
+    // Header + exactly the one matching user — the export reflects the active
+    // search, not the full company roster (which has hundreds of real rows).
+    expect(filas).toHaveLength(2);
+    expect(contenido).toContain("bturcotte@example.net");
+  });
+
+  test("exporting does not disturb the list, search, filters, or pagination", async ({ page }) => {
+    // Regression guard for the export Work Order's own "touch nothing else" constraint.
+    await page.getByLabel("Buscar usuarios").fill("bturcotte");
+    await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "PDF" }).click(),
+    ]);
+    await download.path();
+
+    // The list itself is untouched by the export action.
+    await expect(page.getByRole("row")).toHaveCount(2);
+    await expect(page.getByLabel("Buscar usuarios")).toHaveValue("bturcotte");
   });
 });
 
