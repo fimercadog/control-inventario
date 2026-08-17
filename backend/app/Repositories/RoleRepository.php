@@ -35,6 +35,30 @@ class RoleRepository
         return $query->orderBy('name')->paginate($porPagina);
     }
 
+    /**
+     * Mismo filtrado exacto que `paginar()` (busqueda/estado/empresa/orden),
+     * sin paginar — Work Order "Roles: Exportación CSV y PDF": la
+     * exportación cubre el conjunto completo de resultados filtrados, no
+     * solo la página visible.
+     *
+     * @param array{busqueda?: string, estado?: string} $filtros
+     * @return Collection<int, Role>
+     */
+    public function listarParaExportar(array $filtros): Collection
+    {
+        $query = $this->paraEmpresaActual(Role::query())->withCount(['permissions', 'usuarios']);
+
+        if (! empty($filtros['busqueda'])) {
+            $query->where('name', 'like', '%'.$filtros['busqueda'].'%');
+        }
+
+        if (($filtros['estado'] ?? null) !== 'todos') {
+            $query->where('estado', $filtros['estado'] ?? 'activo');
+        }
+
+        return $query->orderBy('name')->get();
+    }
+
     public function crear(string $name, string $estado = 'activo'): Role
     {
         return Role::create(['name' => $name, 'guard_name' => 'api', 'estado' => $estado]);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\DTO\Report\ReporteResultadoDTO;
 use App\DTO\Role\RoleDTO;
 use App\Http\Controllers\Concerns\FiltersByEmpresa;
 use App\Http\Controllers\Concerns\ResolvesPagination;
@@ -11,9 +12,12 @@ use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\Role\RoleResource;
 use App\Http\Support\ApiResponse;
 use App\Models\Role;
+use App\Services\Reports\ReporteExportService;
 use App\Services\RoleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Módulo 5 — Role Management (2026-08-02, docs/security/ROLES_MATRIX.md).
@@ -29,6 +33,7 @@ class RoleController extends Controller
 
     public function __construct(
         private readonly RoleService $roles,
+        private readonly ReporteExportService $exportador,
     ) {
     }
 
@@ -122,5 +127,70 @@ class RoleController extends Controller
             'email' => $u->email,
             'is_active' => (bool) $u->is_active,
         ])->values());
+    }
+
+    /**
+     * Exportación (Work Order "Roles: Exportación CSV y PDF"). Gateada por
+     * `roles.ver` (viewAny) — el único permiso de lectura real de este
+     * módulo, mismo criterio ya usado en Usuarios (ver el docblock de
+     * `UserController::exportarCsv()`): reutiliza `ReporteExportService`
+     * (renderizadores genéricos sobre `columnas`/`filas`, sin conocer Roles
+     * ni ningún otro reporte) directamente, sin pasar por
+     * `ReporteController`/`ReporteService::CATALOGO` — ese catálogo gatea
+     * todo uniformemente con `reportes.ver`, un permiso distinto.
+     */
+    public function exportarCsv(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', Role::class);
+
+        return $this->exportador->csv($this->construirResultadoExport($request));
+    }
+
+    public function exportarPdf(Request $request): Response
+    {
+        $this->authorize('viewAny', Role::class);
+
+        return $this->exportador->pdf($this->construirResultadoExport($request));
+    }
+
+    /**
+     * Mismas columnas que la tabla de Roles realmente muestra (Nombre,
+     * Estado, conteo de Permisos, conteo de Usuarios) — el listado nunca
+     * trae los nombres de permisos de cada rol (`RoleRepository::paginar()`
+     * solo hace `withCount`, no `with('permissions')`; los nombres reales
+     * solo llegan en `show()`), así que exportar más que el conteo
+     * implicaría una consulta N+1 por rol para mostrar información que ni
+     * siquiera el listado que se está exportando muestra.
+     */
+    private function construirResultadoExport(Request $request): ReporteResultadoDTO
+    {
+        $roles = $this->roles->listarParaExportar([
+            'busqueda' => $request->query('busqueda'),
+            'estado' => $request->query('estado'),
+        ]);
+
+        $filas = $roles->values()->map(function (Role $role, int $indice) {
+            return [
+                'numero' => $indice + 1,
+                'nombre' => $role->name,
+                'estado' => $role->estado === 'activo' ? 'Activo' : 'Inactivo',
+                'permisos' => $role->permissions_count ?? 0,
+                'usuarios' => $role->usuarios_count ?? 0,
+            ];
+        })->all();
+
+        return new ReporteResultadoDTO(
+            clave: 'roles',
+            titulo: 'Roles',
+            columnas: [
+                ['clave' => 'numero', 'etiqueta' => '#'],
+                ['clave' => 'nombre', 'etiqueta' => 'Nombre'],
+                ['clave' => 'estado', 'etiqueta' => 'Estado'],
+                ['clave' => 'permisos', 'etiqueta' => 'Permisos'],
+                ['clave' => 'usuarios', 'etiqueta' => 'Usuarios'],
+            ],
+            filas: $filas,
+            total: $roles->count(),
+        );
     }
 }

@@ -9,6 +9,7 @@ use App\Repositories\RoleRepository;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 /**
  * Módulo 5 — Role Management (2026-08-02, docs/security/ROLES_MATRIX.md).
@@ -27,6 +28,15 @@ class RoleService
     public function listar(array $filtros, int $porPagina = 20): LengthAwarePaginator
     {
         return $this->roles->paginar($filtros, $porPagina);
+    }
+
+    /**
+     * @param array{busqueda?: string, estado?: string} $filtros
+     * @return Collection<int, Role>
+     */
+    public function listarParaExportar(array $filtros): Collection
+    {
+        return $this->roles->listarParaExportar($filtros);
     }
 
     public function crear(RoleDTO $datos, Request $request): Role

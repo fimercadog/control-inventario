@@ -238,6 +238,12 @@ Route::prefix('v1/invitaciones')->name('invitaciones.')->group(function () {
 Route::prefix('v1/roles')->name('roles.')->middleware(['auth:api', 'empresa'])->group(function () {
     Route::get('/', [RoleController::class, 'index'])->name('index');
     Route::post('/', [RoleController::class, 'store'])->name('store');
+    // Exportación (Work Order "Roles: Exportación CSV y PDF") — declaradas
+    // antes de {role}, que NO tiene whereNumber() aquí (a diferencia de
+    // usuarios.{id}): sin este orden, "export" se resolvería como show(role:
+    // "export") y estas rutas quedarían inalcanzables en silencio.
+    Route::get('export/csv', [RoleController::class, 'exportarCsv'])->name('export.csv');
+    Route::get('export/pdf', [RoleController::class, 'exportarPdf'])->name('export.pdf');
     Route::get('{role}', [RoleController::class, 'show'])->name('show');
     Route::patch('{role}', [RoleController::class, 'update'])->name('update');
     Route::post('{role}/activar', [RoleController::class, 'activar'])->name('activar');
