@@ -16,12 +16,12 @@ Desarrollar el frontend completo de FidelOS (funcional, seguro, responsive y pro
 
 Implementar TODAS las funcionalidades reales cruzando Manual + Backend + Frontend. Seguir este orden estricto:
 
-* **Fase 1 - Foundation:** Auditorías, dependencias, theme, layout (sidebar/header), API Client, Auth (JWT, refresh, logout, rutas protegidas), Login, Recuperación, Dashboard.
-* **Fase 2 - Maestros:** Empresa, Categorías, Marcas, U. Medida, Proveedores, Clientes.
-* **Fase 3 - Seguridad:** Permissions, Roles, Usuarios (usar módulo Usuarios actual como plantilla base).
-* **Fase 4 - Inventario:** Productos, Prod-Prov, Marca-Prov, Stock, Movimientos.
-* **Fase 5 - Especiales:** Captura IA, Reportes, Auditoría, Perfil, Configuración.
-* **Fase 6 - QA Final:** TS, ESLint, Build, pruebas (Playwright, regresión), RBAC, multiempresa, responsive, revisión final, commit/push.
+- **Fase 1 - Foundation:** Auditorías, dependencias, theme, layout (sidebar/header), API Client, Auth (JWT, refresh, logout, rutas protegidas), Login, Recuperación, Dashboard.
+- **Fase 2 - Maestros:** Empresa, Categorías, Marcas, U. Medida, Proveedores, Clientes.
+- **Fase 3 - Seguridad:** Permissions, Roles, Usuarios (usar módulo Usuarios actual como plantilla base).
+- **Fase 4 - Inventario:** Productos, Prod-Prov, Marca-Prov, Stock, Movimientos.
+- **Fase 5 - Especiales:** Captura IA, Reportes, Auditoría, Perfil, Configuración.
+- **Fase 6 - QA Final:** TS, ESLint, Build, pruebas (Playwright, regresión), RBAC, multiempresa, responsive, revisión final, commit/push.
 
 ## 3. CONTINUIDAD AUTOMÁTICA (CRÍTICA)
 
@@ -31,17 +31,17 @@ Implementar TODAS las funcionalidades reales cruzando Manual + Backend + Fronten
 
 Nunca detener el proyecto general.
 
-* **Tipo A (Resoluble):** Solucionar ajustando UI/código frontend.
-* **Tipo B (Duda Funcional):** Resolver consultando manual, backend, frontend actual o tests.
-* **Tipo C (Bloqueo Externo):** Si exige modificar backend/BD, NO tocar backend. Documentar en `frontend/incidentes/` y saltar a otra tarea posible.
+- **Tipo A (Resoluble):** Solucionar ajustando UI/código frontend.
+- **Tipo B (Duda Funcional):** Resolver consultando manual, backend, frontend actual o tests.
+- **Tipo C (Bloqueo Externo):** Si exige modificar backend/BD, NO tocar backend. Documentar en `frontend/incidentes/` y saltar a otra tarea posible.
 
 ## 5. ESTRUCTURA DE SEGUIMIENTO
 
 Crear la siguiente estructura en el repositorio:
 
-* `frontend/avances/`: `README.md`, `01-foundation.md`, `02-maestros.md`, `03-seguridad.md`, `04-inventario.md`, `05-especiales.md`, `06-qa-final.md`.
-* `frontend/incidentes/`: `README.md`, `INCIDENTES.md`, `pendientes.md`.
-* `frontend/spec.md`
+- `frontend/avances/`: `README.md`, `01-foundation.md`, `02-maestros.md`, `03-seguridad.md`, `04-inventario.md`, `05-especiales.md`, `06-qa-final.md`.
+- `frontend/incidentes/`: `README.md`, `INCIDENTES.md`, `pendientes.md`.
+- `frontend/spec.md`
 
 ## 3.1 GIT POR CADA MÓDULO — OBLIGATORIO
 
@@ -103,13 +103,13 @@ Puede haber más de un commit por módulo cuando existan bloques lógicos claros
 
 NO hacer commits con:
 
-* TypeScript roto;
-* tests atribuibles fallando;
-* conflictos;
-* código incompleto;
-* archivos ajenos a la unidad;
-* secretos;
-* `.env`.
+- TypeScript roto;
+- tests atribuibles fallando;
+- conflictos;
+- código incompleto;
+- archivos ajenos a la unidad;
+- secretos;
+- `.env`.
 
 ### Regla de push
 
@@ -143,12 +143,12 @@ Si el push falla:
 
 En `frontend/avances/` registrar por módulo:
 
-* Estado
-* Tests
-* Commit(s)
-* Hash(es)
-* Push confirmado
-* Fecha
+- Estado
+- Tests
+- Commit(s)
+- Hash(es)
+- Push confirmado
+- Fecha
 
 Ejemplo:
 
@@ -160,8 +160,8 @@ Tests: 19/19 PASS
 
 Commits:
 
-* `abc1234 feat(categories): complete categories frontend`
-* `def5678 test(categories): add categories coverage`
+- `abc1234 feat(categories): complete categories frontend`
+- `def5678 test(categories): add categories coverage`
 
 Push:
 CONFIRMED
@@ -221,15 +221,15 @@ Auditar TODOS los formularios y filtros del frontend que utilicen relaciones por
 
 Buscar campos como:
 
-* marca_id
-* categoria_id
-* unidad_medida_id
-* proveedor_id
-* role_id
-* empresa_id
-* producto_id
-* cliente_id
-* cualquier otro FK usado en Select
+- marca_id
+- categoria_id
+- unidad_medida_id
+- proveedor_id
+- role_id
+- empresa_id
+- producto_id
+- cliente_id
+- cualquier otro FK usado en Select
 
 Regla global:
 
@@ -292,9 +292,9 @@ Unidad de medida:
 Cantidad/peso:
 15
 
-y asi con cuaLquier lista desplegable que se  use
+y asi con cuaLquier lista desplegable que se use
 
- CORRECCIÓN GLOBAL DE SELECTS
+CORRECCIÓN GLOBAL DE SELECTS
 
 Aplicar esta regla a TODOS los Select/listas desplegables del frontend FidelOS.
 
@@ -330,8 +330,8 @@ Tipo de movimiento:
 2. El placeholder NO debe ser una opción válida enviada al backend.
 
 3. Después de seleccionar un elemento:
-   - mostrar el NOMBRE legible;
-   - conservar internamente el ID requerido por backend.
+    - mostrar el NOMBRE legible;
+    - conservar internamente el ID requerido por backend.
 
 Ejemplo:
 
@@ -342,8 +342,8 @@ VALUE:
 17
 
 4. En formularios de EDICIÓN:
-   - cargar automáticamente el valor actual;
-   - mostrar su nombre, nunca su ID.
+    - cargar automáticamente el valor actual;
+    - mostrar su nombre, nunca su ID.
 
 5. Auditar TODOS los Select del frontend, no solamente Usuarios o Productos.
 
@@ -372,15 +372,15 @@ VALUE:
    y cualquier otro Select encontrado durante la auditoría.
 
 9. Probar:
-   - placeholder inicial;
-   - apertura del Select;
-   - selección;
-   - label visible correcto;
-   - ID correcto enviado al backend;
-   - formulario de edición;
-   - mobile;
-   - teclado;
-   - ausencia de errores de consola.
+    - placeholder inicial;
+    - apertura del Select;
+    - selección;
+    - label visible correcto;
+    - ID correcto enviado al backend;
+    - formulario de edición;
+    - mobile;
+    - teclado;
+    - ausencia de errores de consola.
 
 10. No detener el proyecto.
     Corregir, probar, commit, push y continuar.
@@ -421,12 +421,12 @@ REUSE
 
 Buscar si ya existe:
 
-* catálogo de marcas
-* catálogo de categorías
-* catálogo de unidades
-* hook de catálogos
-* Select reusable
-* helper label/value
+- catálogo de marcas
+- catálogo de categorías
+- catálogo de unidades
+- hook de catálogos
+- Select reusable
+- helper label/value
 
 NO crear un fetch distinto para cada formulario si ya existe infraestructura compartida.
 
@@ -496,3 +496,479 @@ Ejemplo:
 fix(forms): display relation labels instead of raw ids
 
 No detener el proyecto después del push.
+
+# 31. MODO CONTINGENCIA — OBLIGATORIO
+
+El rediseño visual de FidelOS DEBE conservar e integrar completamente
+el Modo Contingencia existente.
+
+NO eliminarlo.
+NO ocultarlo.
+NO convertirlo en una función secundaria.
+NO reconstruir su lógica sin antes auditar la implementación actual.
+
+El Manual de Usuario es fuente funcional para esta característica,
+pero antes de modificarla se debe revisar:
+
+1. frontend actual;
+2. servicios/API utilizados;
+3. almacenamiento local utilizado;
+4. lógica de sincronización;
+5. guards/bloqueos globales;
+6. permisos;
+7. pruebas existentes.
+
+REGLA:
+
+REUSE → EXTEND → REBUILD únicamente si fuera estrictamente necesario.
+
+El objetivo principal de este Work Order es REDISEÑO VISUAL.
+Si la funcionalidad de Contingencia ya funciona correctamente,
+se conserva su lógica y solamente se adapta al nuevo sistema visual.
+
+---
+
+## 31.1 UBICACIÓN DEL BOTÓN
+
+Debe existir un botón claramente visible:
+
+"Modo Contingencia"
+
+Ubicación:
+
+PARTE SUPERIOR DEL SIDEBAR.
+
+Debe quedar visualmente separado de la navegación ordinaria porque
+no representa un módulo normal sino un modo especial de operación.
+
+Orden conceptual:
+
+FidelOS [BETA]
+
+[ Información Beta ]
+
+[ Modo Contingencia ]
+
+---
+
+GENERAL
+Dashboard
+Reportes
+Captura IA
+
+INVENTARIO
+Productos
+Categorías
+...
+
+El botón debe conservarse también en:
+
+- desktop;
+- tablet;
+- sidebar colapsado;
+- drawer móvil.
+
+---
+
+## 31.2 APARIENCIA
+
+Cuando NO está activo:
+
+[ ⚠ Modo Contingencia ]
+
+Debe utilizar un tratamiento visual de advertencia.
+
+Puede utilizar:
+
+TriangleAlert
+o icono equivalente de Lucide.
+
+NO utilizar un diseño excesivamente agresivo que parezca un error
+del sistema.
+
+Debe comunicar:
+
+"función especial / emergencia / pérdida de conexión".
+
+---
+
+## 31.3 PERMISOS
+
+El Modo Contingencia requiere:
+
+productos.crear
+
+O
+
+productos.editar
+
+NO mostrar/habilitar la operación para usuarios que no tengan
+los permisos reales correspondientes.
+
+No inventar permisos nuevos.
+
+Verificar el comportamiento contra el sistema actual antes de tocarlo.
+
+---
+
+## 31.4 ACTIVACIÓN
+
+Al pulsar:
+
+"Modo Contingencia"
+
+NO activar inmediatamente.
+
+Abrir primero un Dialog de confirmación.
+
+Título:
+
+"Activar Modo Contingencia"
+
+Explicar claramente:
+
+"El Modo Contingencia permite continuar trabajando con Productos
+cuando la conexión con el servidor no está disponible o es inestable.
+
+Mientras permanezca activo, las operaciones normales de escritura
+del resto del sistema estarán bloqueadas."
+
+Acciones:
+
+[ Cancelar ]
+
+[ Activar Contingencia ]
+
+El botón de confirmación debe tener tratamiento visual de advertencia.
+
+---
+
+## 31.5 ESTADO ACTIVO
+
+Después de activar:
+
+el botón debe cambiar visualmente a:
+
+"Contingencia activa"
+
+Debe resultar imposible confundir el estado normal con el estado
+de Contingencia.
+
+Además debe aparecer un BANNER GLOBAL en la parte superior del
+contenido de FidelOS.
+
+Ejemplo conceptual:
+
+┌──────────────────────────────────────────────────────────┐
+│ ⚠ Modo Contingencia activo │
+│ Las operaciones normales de escritura están bloqueadas. │
+└──────────────────────────────────────────────────────────┘
+
+El banner debe permanecer visible aunque el usuario navegue entre
+módulos.
+
+NO limitar el aviso únicamente a la pantalla de Contingencia.
+
+---
+
+## 31.6 FUNCIONALIDAD PERMITIDA
+
+Durante Contingencia solamente están permitidas dos operaciones:
+
+CREAR PRODUCTO
+
+EDITAR PRODUCTO
+
+Ambas exclusivamente mediante texto.
+
+NO permitir durante Contingencia:
+
+- Captura IA;
+- fotografía;
+- cámara;
+- voz;
+- Foto + Voz;
+- eliminación;
+- escrituras normales en otros módulos.
+
+"Actualizar producto" NO constituye una tercera operación.
+
+Actualizar = EDITAR.
+
+---
+
+## 31.7 TRABAJO OFFLINE
+
+Las operaciones realizadas durante Contingencia NO deben enviarse
+inmediatamente al servidor.
+
+Cada operación:
+
+CREAR
+o
+EDITAR
+
+debe quedar almacenada localmente en:
+
+"Operaciones pendientes"
+
+Auditar y reutilizar la implementación existente.
+
+NO sustituir arbitrariamente el mecanismo de persistencia actual.
+
+La interfaz debe mostrar claramente:
+
+- tipo de operación;
+- producto;
+- fecha/hora si existe;
+- estado;
+- conflicto si existe;
+- acciones disponibles.
+
+---
+
+## 31.8 ESTADO DE CONEXIÓN
+
+Mostrar claramente:
+
+● Conectado
+
+o
+
+● Sin conexión
+
+IMPORTANTE:
+
+Este indicador es únicamente informativo.
+
+Detectar nuevamente conexión NO debe iniciar automáticamente una
+sincronización.
+
+La sincronización debe continuar siendo una decisión explícita
+del usuario.
+
+---
+
+## 31.9 SINCRONIZACIÓN
+
+Debe existir un botón:
+
+"Sincronizar ahora"
+
+Al pulsarlo:
+
+1. comprobar realmente disponibilidad del servidor;
+2. procesar operaciones pendientes;
+3. hacerlo una por una;
+4. respetar su orden;
+5. actualizar visualmente el resultado;
+6. manejar errores;
+7. detectar conflictos.
+
+No asumir que navigator.onLine significa que el backend está disponible.
+
+Utilizar la lógica existente si ya está implementada.
+
+---
+
+## 31.10 CONFLICTOS Y DUPLICADOS
+
+La interfaz debe manejar visualmente los conflictos existentes.
+
+CREAR:
+
+si en el servidor ya existe un producto equivalente según las reglas
+reales del sistema, NO crear automáticamente un duplicado.
+
+EDITAR:
+
+si el producto del servidor cambió mientras el usuario estaba offline,
+NO sobrescribirlo automáticamente.
+
+Mostrar:
+
+VERSIÓN LOCAL
+
+vs.
+
+VERSIÓN DEL SERVIDOR
+
+El usuario debe poder revisar el conflicto.
+
+Nunca resolver automáticamente un conflicto destruyendo información.
+
+La acción de descartar una operación pendiente elimina únicamente
+esa operación local.
+
+NO debe eliminar ni modificar el producto real del servidor.
+
+## 31.11 SALIR DE CONTINGENCIA
+
+Debe existir:
+
+"Salir de Contingencia"
+
+Si NO existen operaciones pendientes:
+
+permitir salir normalmente.
+
+Si existen operaciones pendientes:
+
+NO descartarlas automáticamente.
+
+Mostrar Dialog:
+
+"Hay operaciones pendientes"
+
+Explicar que todavía existen cambios locales sin sincronizar.
+
+Ofrecer únicamente las opciones compatibles con la implementación
+real existente, incluyendo mantener las operaciones para sincronizarlas
+posteriormente o descartarlas cuando corresponda.
+
+Nunca perder operaciones silenciosamente.
+
+---
+
+## 31.12 BLOQUEO GLOBAL
+
+Mientras Contingencia esté activa:
+
+TODOS los módulos normales deben respetar el bloqueo de escritura
+definido por el sistema.
+
+Ejemplos:
+
+Categorías → lectura permitida / escritura bloqueada
+Marcas → lectura permitida / escritura bloqueada
+Unidades → lectura permitida / escritura bloqueada
+Proveedores → lectura permitida / escritura bloqueada
+Clientes → lectura permitida / escritura bloqueada
+Usuarios → escritura bloqueada
+Roles → escritura bloqueada
+Movimientos → escritura bloqueada
+Captura IA → bloqueada para nuevas operaciones
+
+NO basta con ocultar botones.
+
+Reutilizar los guards/bloqueos globales existentes.
+
+---
+
+## 31.13 RELACIÓN CON EL NUEVO DISEÑO
+
+El rediseño visual NO puede romper Contingencia.
+
+Debe adaptarse al nuevo estilo general de FidelOS:
+
+- sidebar moderno;
+- cards;
+- tipografía;
+- espaciados;
+- bordes;
+- sombras;
+- estados;
+- responsive;
+- Dialog;
+- Tooltip;
+- Badge;
+- Alert.
+
+Pero conservar la semántica de advertencia.
+
+Contingencia debe destacar más que una navegación ordinaria,
+pero no convertir toda la interfaz permanentemente en rojo.
+
+Rojo/advertencia debe reservarse principalmente para:
+
+- botón Modo Contingencia;
+- estado activo;
+- banner global;
+- advertencias importantes.
+
+---
+
+## 31.14 RELACIÓN BETA + CONTINGENCIA
+
+NO confundir:
+
+BETA = estado de madurez de FidelOS.
+
+CONTINGENCIA = modo operativo para trabajar ante problemas de conexión.
+
+Deben existir simultáneamente y ser visualmente diferentes.
+
+Ejemplo:
+
+FidelOS [BETA]
+
+ⓘ Información Beta
+
+⚠ Modo Contingencia
+
+---
+
+GENERAL
+Dashboard
+Reportes
+Captura IA
+...
+
+El usuario debe comprender inmediatamente que son conceptos diferentes.
+
+---
+
+## 31.15 PLAYWRIGHT — CONTINGENCIA OBLIGATORIA
+
+Agregar Contingencia a la prueba general del sistema.
+
+Probar como mínimo:
+
+1. botón visible para usuario autorizado;
+2. permisos correctos;
+3. apertura del Dialog;
+4. cancelar activación;
+5. activar Contingencia;
+6. cambio visual a "Contingencia activa";
+7. banner global visible;
+8. navegar a otro módulo y comprobar que el banner continúa;
+9. comprobar bloqueo de escritura normal;
+10. Crear Producto offline;
+11. Editar Producto offline;
+12. operación aparece en pendientes;
+13. persistencia después de navegar;
+14. persistencia después de recargar cuando corresponda;
+15. Captura IA no utilizable en Contingencia;
+16. eliminación no disponible;
+17. estado Conectado/Sin conexión;
+18. recuperar conexión NO sincroniza automáticamente;
+19. botón "Sincronizar ahora";
+20. sincronización en orden;
+21. conflicto de creación;
+22. conflicto de edición;
+23. comparación local/servidor;
+24. descartar conflicto sin alterar producto servidor;
+25. salir sin pendientes;
+26. salir con pendientes;
+27. comprobar que ninguna operación pendiente se pierde accidentalmente;
+28. responsive desktop;
+29. responsive tablet;
+30. responsive mobile;
+31. TypeScript;
+32. ESLint;
+33. build;
+34. errores de consola.
+
+Las pruebas deben utilizar la funcionalidad REAL existente.
+
+NO mocks salvo que exista una razón técnica documentada.
+
+Si simular pérdida de conexión mediante Playwright requiere interceptar
+red, hacerlo exclusivamente para reproducir el escenario offline,
+no para falsificar las respuestas funcionales del backend.
+
+Registrar cualquier imposibilidad real en:
+
+frontend/incidentes/
+
+pero NO detener el resto del Work Order.

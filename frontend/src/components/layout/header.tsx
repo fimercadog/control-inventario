@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { ContingenciaControls } from "@/components/layout/contingencia-controls";
 import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
@@ -50,6 +51,7 @@ export function Header() {
             <SheetHeader className="p-0 pb-4">
               <SheetTitle>FidelOS</SheetTitle>
             </SheetHeader>
+            <div className="mb-5"><ContingenciaControls /></div>
             <SidebarNav />
           </SheetContent>
         </Sheet>

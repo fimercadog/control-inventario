@@ -23,7 +23,7 @@ import { fetchMarcas } from "@/lib/api/marcas";
 import { fetchCategorias } from "@/lib/api/categorias";
 import { fetchUnidadesMedida } from "@/lib/api/unidades-medida";
 import { extractApiErrorMessage } from "@/lib/api/errors";
-import type { Producto } from "@/types/producto";
+import type { Producto, CreateProductoPayload, UpdateProductoPayload } from "@/types/producto";
 import type { Marca } from "@/types/marca";
 import type { Categoria } from "@/types/categoria";
 import type { UnidadMedida } from "@/types/unidad-medida";
@@ -58,7 +58,12 @@ type ProductoFormValues = z.infer<typeof productoFormSchema>;
  * UpdateProductoRequest lo confirman); categoria es solo selección, sin campo *_nuevo en el
  * backend real.
  */
-export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onSuccess: (producto: Producto) => void }) {
+export function ProductoForm({ producto, onSuccess, onQueue }: {
+  producto?: Producto;
+  onSuccess: (producto: Producto) => void;
+  /** Used only by the product screen while Contingencia is active. */
+  onQueue?: (payload: CreateProductoPayload | UpdateProductoPayload) => void;
+}) {
   const isEdit = Boolean(producto);
   const [status, setStatus] = useState<"idle" | "submitting">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -119,14 +124,15 @@ export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onS
         stock_minimo: values.stock_minimo ? Number(values.stock_minimo) : undefined,
         stock_maximo: values.stock_maximo ? Number(values.stock_maximo) : null,
       };
-      const saved =
-        isEdit && producto
-          ? await actualizarProducto(producto.id, base)
-          : await crearProducto({
-              ...base,
-              codigo: values.codigo || null,
-              codigo_barras: values.codigo_barras || null,
-            });
+      const payload = isEdit && producto
+        ? base
+        : { ...base, codigo: values.codigo || null, codigo_barras: values.codigo_barras || null };
+      if (onQueue) {
+        onQueue(payload);
+        setStatus("idle");
+        return;
+      }
+      const saved = isEdit && producto ? await actualizarProducto(producto.id, payload) : await crearProducto(payload);
       onSuccess(saved);
     } catch (submitError) {
       setError(extractApiErrorMessage(submitError, "No se pudo guardar el producto."));
@@ -343,7 +349,7 @@ export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onS
 
       <Button type="submit" disabled={status === "submitting"} className="w-full">
         {status === "submitting" ? <Loader2 className="size-4 animate-spin" /> : null}
-        {isEdit ? "Guardar cambios" : "Crear producto"}
+        {onQueue ? "Guardar operación pendiente" : isEdit ? "Guardar cambios" : "Crear producto"}
       </Button>
     </form>
   );

@@ -24,7 +24,9 @@ import { formatDateTime } from "@/lib/utils/format";
 import { ProductoForm } from "@/components/forms/producto-form";
 import { RegistrarIngresoForm } from "@/components/forms/registrar-ingreso-form";
 import { ProductoProveedorForm } from "@/components/forms/producto-proveedor-form";
-import type { Producto, ProductoMovimiento } from "@/types/producto";
+import { useContingencia } from "@/hooks/use-contingencia";
+import { agregarOperacion } from "@/lib/contingencia/store";
+import type { CreateProductoPayload, Producto, ProductoMovimiento, UpdateProductoPayload } from "@/types/producto";
 import type { ProductoProveedorAsociacion } from "@/types/producto-proveedor";
 import type { PaginationMeta } from "@/types/api";
 
@@ -36,6 +38,7 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
   const canDisable = usePermission("productos.gestionar");
   const canManageProveedores = usePermission("producto-proveedor.crear");
   const canDisableProveedores = usePermission("producto-proveedor.gestionar");
+  const { activo: contingenciaActiva } = useContingencia();
 
   const { producto, isLoading, error, setProducto } = useProductoDetail(productoId);
   const [toggleStatus, setToggleStatus] = useState<"idle" | "toggling">("idle");
@@ -59,6 +62,12 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
 
   function handleEdited(updated: Producto) {
     setProducto(updated);
+    setEditOpen(false);
+  }
+
+  function queueEdition(payload: UpdateProductoPayload | CreateProductoPayload) {
+    if (!producto) return;
+    agregarOperacion({ tipo: "actualizar", productoId: producto.id, productoNombre: producto.nombre, baseVersion: producto.updated_at, payload });
     setEditOpen(false);
   }
 
@@ -107,7 +116,7 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {canEdit ? (
+          {canEdit && !contingenciaActiva ? (
             <Dialog open={ingresoOpen} onOpenChange={setIngresoOpen}>
               <DialogTrigger render={<Button variant="outline" />}>
                 <Plus className="size-4" />
@@ -130,11 +139,11 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
                   <DialogTitle>Editar producto</DialogTitle>
                   <DialogDescription>Código y código de barras no son editables.</DialogDescription>
                 </DialogHeader>
-                <ProductoForm producto={producto} onSuccess={handleEdited} />
+                <ProductoForm producto={producto} onSuccess={handleEdited} onQueue={contingenciaActiva ? queueEdition : undefined} />
               </DialogContent>
             </Dialog>
           ) : null}
-          {(producto.estado === "activo" ? canDisable : canEdit) ? (
+          {!contingenciaActiva && (producto.estado === "activo" ? canDisable : canEdit) ? (
             <Button
               variant={producto.estado === "activo" ? "destructive" : "outline"}
               className={

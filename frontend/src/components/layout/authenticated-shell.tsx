@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { ContingenciaBanner } from "@/components/layout/contingencia-banner";
 import { useAppSelector } from "@/store/hooks";
 
 /**
@@ -36,7 +37,7 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6"><ContingenciaBanner />{children}</main>
       </div>
     </div>
   );

@@ -11,6 +11,22 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Contingencia is intentionally enforced at the transport boundary too: hiding a
+// button is not sufficient because any existing screen could otherwise submit a
+// normal write. The dedicated sync endpoint remains available and product writes
+// are created only from the local queue.
+apiClient.interceptors.request.use((config) => {
+  if (typeof window === "undefined") return config;
+  const method = (config.method ?? "get").toLowerCase();
+  const isWrite = !["get", "head", "options"].includes(method);
+  const active = JSON.parse(window.localStorage.getItem("fidelos-contingencia") ?? "{}").activo === true;
+  const isAllowedDuringContingency = config.url?.includes("/contingencia/productos/sincronizar") || config.url?.includes("/auth/logout");
+  if (active && isWrite && !isAllowedDuringContingency) {
+    return Promise.reject(new Error("Modo Contingencia activo: las escrituras normales están bloqueadas."));
+  }
+  return config;
+});
+
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {

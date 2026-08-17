@@ -37,3 +37,9 @@ Tres modos (Foto/Voz/Foto+Voz) vía subida de archivo real (`<input type="file">
 **Archivos nuevos:** `types/{audit-log,captura-ia,reporte}.ts`, `lib/api/{audit-log,captura-ia,reportes,perfil}.ts`, `components/forms/{cambiar-password,perfil-avatar,perfil-datos,movimiento}-form.tsx` (movimiento-form ya contado en Fase 4), `app/auditoria/*`, `app/perfil/*`, `app/configuracion/*`, `app/reportes/*` (incluye `[clave]/page.tsx`, `reporte-filtros-form.tsx`, `programados-tab.tsx`), `app/captura-ia/*` (incluye `[uuid]/page.tsx`). Modificados: `header.tsx` (enlaces Mi Perfil/Configuración), `store/slices/session-slice.ts` (`updateUser`).
 
 **Verificación:** `tsc`/ESLint/build limpios (3 errores reales de `set-state-in-effect` encontrados y corregidos durante esta fase — mismo patrón recurrente de React Compiler ya documentado; ver commits). Smoke tests reales contra el backend real para los 5 módulos, incluyendo una llamada real al proveedor de IA configurado.
+
+## Modo Contingencia — completado
+
+Implementado contra el endpoint real `POST /v1/contingencia/productos/sincronizar`, sin cambios en backend ni base de datos. El control aparece arriba del sidebar y dentro del drawer móvil solo cuando el usuario tiene `productos.crear` o `productos.editar`; solicita confirmación, persiste el estado y la cola de operaciones en almacenamiento local, muestra un banner global y bloquea las escrituras normales desde el cliente mientras está activo. Crear se realiza como operación local de texto; editar desde la ficha de Producto guarda una operación con la versión base para que el backend detecte conflictos. La sincronización es manual, individual y ordenada; un error o conflicto conserva la operación para revisión o descarte explícito. El indicador de conectividad es solo informativo y nunca sincroniza por sí mismo.
+
+Verificación: `npx tsc --noEmit`, ESLint (sin errores; advertencias preexistentes de React Hook Form) y `npm run build` correctos.

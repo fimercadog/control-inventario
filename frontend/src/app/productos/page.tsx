@@ -29,6 +29,7 @@ import { fetchProductos, habilitarProducto, deshabilitarProducto } from "@/lib/a
 import { fetchCategorias } from "@/lib/api/categorias";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import { findLabel } from "@/lib/utils/select-label";
+import { useContingencia } from "@/hooks/use-contingencia";
 import type { Producto, ProductosQueryParams } from "@/types/producto";
 import type { Categoria } from "@/types/categoria";
 import type { PaginationMeta } from "@/types/api";
@@ -64,6 +65,7 @@ export default function ProductosPage() {
   // (productos.gestionar) gates Deshabilitar only — same asymmetry as the rest of the ERP.
   const canEdit = usePermission("productos.editar");
   const canDisable = usePermission("productos.gestionar");
+  const { activo: contingenciaActiva } = useContingencia();
 
   const { inputValue: searchInput, setInputValue: setSearchInput, searchTerm } = useDebouncedSearch();
   const [estado, setEstado] = useState<"activo" | "todos">("activo");
@@ -165,7 +167,7 @@ export default function ProductosPage() {
           <p className="text-sm text-muted-foreground">Gestiona el catálogo de productos de tu empresa.</p>
         </div>
 
-        {canCreate ? (
+        {canCreate && !contingenciaActiva ? (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger
               render={
