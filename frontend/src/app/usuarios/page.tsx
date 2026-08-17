@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Search, Shield, UserRoundCog } from "lucide-react";
+import { FileSpreadsheet, FileText, Loader2, Plus, Search, Shield, UserRoundCog } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -28,7 +28,13 @@ import { ChangeRoleForm } from "@/components/forms/change-role-form";
 import { AvatarForm } from "@/components/forms/avatar-form";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
-import { fetchUsuarios, activarUsuario, desactivarUsuario } from "@/lib/api/users";
+import {
+  fetchUsuarios,
+  activarUsuario,
+  desactivarUsuario,
+  exportarUsuariosCsv,
+  exportarUsuariosPdf,
+} from "@/lib/api/users";
 import { fetchRolesActivos } from "@/lib/api/roles";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import type { Usuario, UsuariosQueryParams } from "@/types/user";
@@ -48,6 +54,17 @@ interface QueryState {
 
 function buildQueryKey(query: QueryState): string {
   return JSON.stringify(query);
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 interface UsuariosResult {
@@ -88,6 +105,7 @@ export default function UsuariosPage() {
   const [result, setResult] = useState<UsuariosResult>(EMPTY_RESULT);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<"csv" | "pdf" | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [roleDialogUsuario, setRoleDialogUsuario] = useState<Usuario | null>(null);
   const [avatarDialogUsuario, setAvatarDialogUsuario] = useState<Usuario | null>(null);
@@ -149,6 +167,26 @@ export default function UsuariosPage() {
       setToggleError(extractApiErrorMessage(error, "No se pudo actualizar el estado del usuario."));
     } finally {
       setTogglingId(null);
+    }
+  }
+
+  async function handleExport(formato: "csv" | "pdf") {
+    setExportingFormat(formato);
+    setToggleError(null);
+    try {
+      // Same busqueda/rol/estado the list is currently showing — never page/per_page,
+      // the export covers the full filtered result set, not just the visible page.
+      const params: UsuariosQueryParams = {
+        busqueda: searchTerm || undefined,
+        rol: rol === "todos" ? undefined : rol,
+        estado,
+      };
+      const { blob, filename } = formato === "csv" ? await exportarUsuariosCsv(params) : await exportarUsuariosPdf(params);
+      downloadBlob(blob, filename);
+    } catch (error) {
+      setToggleError(extractApiErrorMessage(error, "No se pudo generar el archivo de exportación."));
+    } finally {
+      setExportingFormat(null);
     }
   }
 
@@ -214,6 +252,35 @@ export default function UsuariosPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("csv")}
+          >
+            {exportingFormat === "csv" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="size-4" />
+            )}
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={exportingFormat !== null}
+            onClick={() => handleExport("pdf")}
+          >
+            {exportingFormat === "pdf" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <FileText className="size-4" />
+            )}
+            PDF
+          </Button>
+        </div>
+
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input

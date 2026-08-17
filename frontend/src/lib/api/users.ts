@@ -49,3 +49,25 @@ export async function eliminarAvatarUsuario(id: number): Promise<Usuario> {
   const { data } = await apiClient.delete<ApiSuccessResponse<Usuario>>(`/usuarios/${id}/avatar`);
   return data.data;
 }
+
+export interface UsuariosExportResult {
+  blob: Blob;
+  filename: string;
+}
+
+function extractFilename(contentDisposition: string | undefined, fallback: string): string {
+  const match = contentDisposition?.match(/filename="?([^";]+)"?/);
+  return match?.[1] ?? fallback;
+}
+
+/** Same busqueda/rol/estado params as fetchUsuarios — the export reflects exactly what the
+ * list is currently showing, and covers the full filtered result set, not just one page. */
+export async function exportarUsuariosCsv(params: UsuariosQueryParams): Promise<UsuariosExportResult> {
+  const response = await apiClient.get<Blob>("/usuarios/export/csv", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "usuarios.csv") };
+}
+
+export async function exportarUsuariosPdf(params: UsuariosQueryParams): Promise<UsuariosExportResult> {
+  const response = await apiClient.get<Blob>("/usuarios/export/pdf", { params, responseType: "blob" });
+  return { blob: response.data, filename: extractFilename(response.headers["content-disposition"], "usuarios.pdf") };
+}
