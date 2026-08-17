@@ -37,6 +37,26 @@
 
 ---
 
+## INC-007 — Selects de relación mostraban el ID crudo en vez del nombre (corrección global de spec.md)
+
+**Tipo:** A (resoluble) → corregido.
+**Hallazgo, confirmado en vivo (no asumido):** en la ficha de edición de un producto real (id=1, marca_id=17, categoria_id=17, unidad_medida_id=4), los tres Select mostraban literalmente "17", "17" y "4" en vez de los nombres reales. Causa raíz: `base-ui`'s `Select.Value` renderiza el `value` crudo cuando no se le pasa una función `children`; ninguno de los Select de relación (marca/categoría/unidad de medida en Productos; producto/proveedor en Movimientos, Registrar Ingreso y asociar Proveedor; tipo_reporte en Programados; los filtros dinámicos de Reportes) se la pasaba.
+**Resolución:** helper compartido nuevo, `frontend/src/lib/utils/select-label.ts` (`findLabel`), reutilizado en los 8 archivos afectados en vez de duplicar un `.find()` por formulario (Ponytail). `value` sigue siendo el id real enviado al backend; solo cambia lo que el trigger muestra.
+**Hallazgo secundario, también real:** el helper por sí solo no basta cuando el valor ya asignado no está en la página actual del picker — la Empresa A demo tiene **247 unidades de medida activas** (coincide con la contaminación de datos E2E ya documentada en memoria del proyecto), así que un fetch con `per_page:100` puede legítimamente no incluir una unidad válida y ya asignada. Corregido sin ningún fetch adicional: `ProductoForm` usa los nombres ya desnormalizados que `ProductoResource` entrega (`producto.marca`/`producto.categoria`/`producto.unidad_medida`) como respaldo cuando el id seleccionado coincide con el del producto pero no aparece en la lista recién cargada.
+**Auditoría de alcance ampliado** (spec.md pide auditar "TODOS los formularios", incluyendo módulos previos a esta ejecución): `change-role-form.tsx` e `invite-user-form.tsx` (Usuarios, construidos en una fase anterior) ya usaban el patrón correcto desde el principio — no requirieron corrección.
+**Verificado en vivo:** nombre real visible al editar: ✓; placeholder ("Sin marca") visible al crear sin seleccionar aún: ✓; selección fresca en un filtro dinámico (Kardex por Producto): ✓; `tsc`/build limpios.
+
+---
+
+## INC-008 — Campo `presentacion` del Producto: confirmado independiente, no derivado de Unidad de Medida
+
+**Tipo:** B (duda funcional) → resuelta, sin cambio de código.
+**Duda planteada por spec.md:** si el input de texto libre de `presentacion` debería reemplazarse por un Select de Unidades de Medida.
+**Verificación (backend + BD + manual, en ese orden):** `productos.presentacion` es una columna `VARCHAR` independiente en la migración (sin FK); `StoreProductoRequest`/`UpdateProductoRequest` la validan como `string` simple, nunca como `exists:unidades_medida,id`; el manual la lista consistentemente como un atributo separado de "unidad de medida" en las tres menciones que existen (glosario de Producto, sección 6.1, y la clave de duplicados del Modo Contingencia: "mismo nombre, marca y presentación").
+**Resolución:** el campo de texto libre ya construido es correcto — no se cambia. No se inventa una relación con Unidades de Medida que no existe en el contrato real.
+
+---
+
 ## INC-006 — `/auth/refresh` puede devolver 401 transitorio bajo navegación rápida repetida
 
 **Tipo:** B (duda funcional) → investigada y caracterizada, no es un defecto de los módulos nuevos.

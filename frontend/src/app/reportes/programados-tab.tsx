@@ -31,6 +31,7 @@ import {
   eliminarReporteProgramado,
 } from "@/lib/api/reportes";
 import { extractApiErrorMessage } from "@/lib/api/errors";
+import { findLabel } from "@/lib/utils/select-label";
 import type { ReporteCatalogoItem, ReporteProgramadoEntry } from "@/types/reporte";
 
 const schema = z.object({
@@ -214,7 +215,9 @@ function ProgramadoForm({ catalogo, onSuccess }: { catalogo: ReporteCatalogoItem
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger id="prog-reporte" aria-invalid={Boolean(errors.tipo_reporte)}>
-                <SelectValue placeholder="Selecciona un reporte" />
+                <SelectValue placeholder="Selecciona un reporte">
+                  {(value: string) => findLabel(value, catalogo, (r) => r.clave, (r) => r.nombre, "Selecciona un reporte")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {catalogo.map((r) => (

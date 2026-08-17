@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { registrarIngreso } from "@/lib/api/productos";
 import { fetchProveedores } from "@/lib/api/proveedores";
+import { findLabel } from "@/lib/utils/select-label";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import type { Producto } from "@/types/producto";
 import type { Proveedor } from "@/types/proveedor";
@@ -136,7 +137,19 @@ export function RegistrarIngresoForm({
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger id="ingreso-proveedor">
-                <SelectValue placeholder="Usar el proveedor principal del producto (si existe)" />
+                <SelectValue placeholder="Usar el proveedor principal del producto (si existe)">
+                  {(value: string) =>
+                    value === NUEVO
+                      ? "+ Crear proveedor nuevo…"
+                      : findLabel(
+                          value,
+                          proveedores,
+                          (p) => p.id,
+                          (p) => p.nombre,
+                          "Usar el proveedor principal del producto (si existe)"
+                        )
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {proveedores.map((p) => (

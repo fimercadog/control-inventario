@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { crearProducto, actualizarProducto } from "@/lib/api/productos";
+import { findLabel } from "@/lib/utils/select-label";
 import { fetchMarcas } from "@/lib/api/marcas";
 import { fetchCategorias } from "@/lib/api/categorias";
 import { fetchUnidadesMedida } from "@/lib/api/unidades-medida";
@@ -181,7 +182,23 @@ export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onS
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="producto-marca">
-                  <SelectValue placeholder="Sin marca" />
+                  <SelectValue placeholder="Sin marca">
+                    {(value: string) =>
+                      value === NUEVA
+                        ? "+ Crear nueva marca…"
+                        : findLabel(
+                            value,
+                            marcas,
+                            (m) => m.id,
+                            (m) => m.nombre,
+                            // Falls back to the product's own denormalized marca name when the
+                            // real marca exists but isn't in this picker's fetched page (the
+                            // demo data has 247 marcas for this company — a plain per_page:100
+                            // fetch can genuinely miss one that's still perfectly valid).
+                            producto && value === String(producto.marca_id) ? (producto.marca ?? "Sin marca") : "Sin marca"
+                          )
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {marcas.map((m) => (
@@ -206,7 +223,17 @@ export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onS
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger id="producto-categoria">
-                  <SelectValue placeholder="Sin categoría" />
+                  <SelectValue placeholder="Sin categoría">
+                    {(value: string) =>
+                      findLabel(
+                        value,
+                        categorias,
+                        (c) => c.id,
+                        (c) => c.nombre,
+                        producto && value === String(producto.categoria_id) ? (producto.categoria ?? "Sin categoría") : "Sin categoría"
+                      )
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {categorias.map((c) => (
@@ -229,7 +256,21 @@ export function ProductoForm({ producto, onSuccess }: { producto?: Producto; onS
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger id="producto-unidad">
-                <SelectValue placeholder="Sin unidad de medida" />
+                <SelectValue placeholder="Sin unidad de medida">
+                  {(value: string) =>
+                    value === NUEVA
+                      ? "+ Crear nueva unidad de medida…"
+                      : findLabel(
+                          value,
+                          unidades,
+                          (u) => u.id,
+                          (u) => (u.abreviatura ? `${u.nombre} (${u.abreviatura})` : u.nombre),
+                          producto && value === String(producto.unidad_medida_id)
+                            ? (producto.unidad_medida ?? "Sin unidad de medida")
+                            : "Sin unidad de medida"
+                        )
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {unidades.map((u) => (

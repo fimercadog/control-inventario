@@ -28,6 +28,7 @@ import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { fetchProductos, habilitarProducto, deshabilitarProducto } from "@/lib/api/productos";
 import { fetchCategorias } from "@/lib/api/categorias";
 import { extractApiErrorMessage } from "@/lib/api/errors";
+import { findLabel } from "@/lib/utils/select-label";
 import type { Producto, ProductosQueryParams } from "@/types/producto";
 import type { Categoria } from "@/types/categoria";
 import type { PaginationMeta } from "@/types/api";
@@ -201,7 +202,11 @@ export default function ProductosPage() {
 
         <Select value={categoriaId} onValueChange={(value) => setCategoriaId(value ?? "todas")}>
           <SelectTrigger className="w-48" aria-label="Filtrar por categoría">
-            <SelectValue />
+            <SelectValue>
+              {(value: string) =>
+                value === "todas" ? "Todas las categorías" : findLabel(value, categorias, (c) => c.id, (c) => c.nombre)
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas las categorías</SelectItem>

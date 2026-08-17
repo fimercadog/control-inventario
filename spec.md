@@ -172,3 +172,243 @@ CONFIRMED
 
 Origin:
 SYNCED
+
+
+# CORRECCIÓN GLOBAL — SELECTS DE RELACIONES Y PRESENTACIÓN
+
+Se detectó un error de UX y mapeo de datos en los formularios.
+
+## PROBLEMA 1 — SELECTS MOSTRANDO IDs
+
+Actualmente algunos Select muestran valores internos como:
+
+Marca: 17
+Categoría: 5
+Unidad de medida: 3
+
+Esto es INCORRECTO.
+
+El usuario nunca debe ver IDs internos cuando existe una relación con una entidad de catálogo.
+
+Debe mostrarse el valor legible real.
+
+Ejemplos:
+
+Marca:
+Purina
+
+Categoría:
+Alimentos
+
+Unidad de medida:
+Kilogramo (kg)
+
+El ID debe seguir utilizándose internamente como `value` para enviar al backend.
+
+Ejemplo conceptual:
+
+value = 17
+label = "Purina"
+
+NO mostrar:
+
+17
+
+MOSTRAR:
+
+Purina
+
+---
+
+## ALCANCE GLOBAL
+
+Auditar TODOS los formularios y filtros del frontend que utilicen relaciones por ID.
+
+Buscar campos como:
+
+- marca_id
+- categoria_id
+- unidad_medida_id
+- proveedor_id
+- role_id
+- empresa_id
+- producto_id
+- cliente_id
+- cualquier otro FK usado en Select
+
+Regla global:
+
+`value` = ID real requerido por backend
+
+`label` = nombre/descripcion legible para el usuario
+
+Nunca mostrar el ID como texto visible si existe nombre asociado.
+
+---
+
+## PROBLEMA 2 — PRESENTACIÓN
+
+Auditar el campo `presentacion` del Producto.
+
+Actualmente aparece como Input libre:
+
+"Ej. Bolsa 15kg"
+
+Verificar backend REAL, BD REAL y manual.
+
+Determinar exactamente qué significa `presentacion`.
+
+### Si `presentacion` realmente debe derivarse de Unidad de Medida:
+
+reemplazar el input libre por un Select que cargue las Unidades de Medida reales desde:
+
+GET /unidades-medida
+
+o el endpoint real correspondiente.
+
+Mostrar:
+
+nombre + abreviatura
+
+Ejemplos:
+
+Unidad (und)
+Kilogramo (kg)
+Gramo (g)
+Litro (L)
+Mililitro (ml)
+Caja
+Docena
+
+Guardar el ID/campo correcto según contrato backend.
+
+### Si `presentacion` es un campo independiente REAL:
+
+NO eliminarlo sin verificar.
+
+En ese caso determinar si el modelo correcto es:
+
+Presentación:
+"Bolsa"
+
+Unidad de medida:
+"kg"
+
+Cantidad/peso:
+15
+
+
+y aasi con cuyaquier lista deesplegable que se  use 
+
+
+o el esquema real existente.
+
+NO inventar estructura nueva.
+
+La fuente de verdad es:
+
+1. backend
+2. BD
+3. manual
+
+---
+
+## REGLA IMPORTANTE
+
+No modificar backend ni BD.
+
+Adaptar únicamente el frontend al contrato real existente.
+
+Si backend/BD no permiten representar correctamente la presentación:
+
+registrar incidente.
+
+NO detener el proyecto.
+
+---
+
+## PONYTAIL
+
+Antes de crear nada:
+
+REUSE
+→ EXTEND
+→ CREATE
+
+Buscar si ya existe:
+
+- catálogo de marcas
+- catálogo de categorías
+- catálogo de unidades
+- hook de catálogos
+- Select reusable
+- helper label/value
+
+NO crear un fetch distinto para cada formulario si ya existe infraestructura compartida.
+
+---
+
+## RESULTADO ESPERADO
+
+ANTES:
+
+Marca: 17
+Categoría: 5
+Unidad: 3
+
+DESPUÉS:
+
+Marca: Purina
+Categoría: Alimentos húmedos
+Unidad de medida: Kilogramo (kg)
+
+El backend continúa recibiendo:
+
+marca_id: 17
+categoria_id: 5
+unidad_medida_id: 3
+
+---
+
+## PRUEBAS
+
+Verificar al menos:
+
+1. Crear Producto
+2. Editar Producto
+3. Select Marca muestra nombres
+4. Select Categoría muestra nombres
+5. Select Unidad de medida muestra nombres
+6. El valor enviado sigue siendo el ID correcto
+7. Persistencia real
+8. Al reabrir Editar aparece seleccionado el nombre correcto
+9. Filtros relacionados también muestran labels, no IDs
+10. Mobile
+11. No hay errores de consola
+
+Auditar además otros módulos para detectar el mismo defecto.
+
+Si se encuentra el mismo patrón:
+
+corregirlo usando la misma solución compartida.
+
+No hacer refactorización general fuera de esta corrección.
+
+---
+
+## GIT
+
+Después de corregir:
+
+tests
+→ TypeScript
+→ build
+→ commit
+→ push
+→ continuar automáticamente
+
+Ejemplo:
+
+fix(forms): display relation labels instead of raw ids
+
+No detener el proyecto después del push.

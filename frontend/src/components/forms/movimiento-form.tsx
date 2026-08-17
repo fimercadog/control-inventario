@@ -20,6 +20,7 @@ import { crearMovimiento } from "@/lib/api/movimientos";
 import { fetchProductos } from "@/lib/api/productos";
 import { fetchProveedores } from "@/lib/api/proveedores";
 import { extractApiErrorMessage } from "@/lib/api/errors";
+import { findLabel } from "@/lib/utils/select-label";
 import type { Movimiento } from "@/types/movimiento";
 import type { Producto } from "@/types/producto";
 import type { Proveedor } from "@/types/proveedor";
@@ -145,7 +146,9 @@ export function MovimientoForm({ onSuccess }: { onSuccess: (movimiento: Movimien
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger id="movimiento-producto" aria-invalid={Boolean(errors.producto_id)}>
-                <SelectValue placeholder="Selecciona un producto" />
+                <SelectValue placeholder="Selecciona un producto">
+                  {(value: string) => findLabel(value, productos, (p) => p.id, (p) => p.nombre, "Selecciona un producto")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {productos.map((p) => (
@@ -205,7 +208,9 @@ export function MovimientoForm({ onSuccess }: { onSuccess: (movimiento: Movimien
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger id="movimiento-proveedor">
-                    <SelectValue placeholder="Sin proveedor" />
+                    <SelectValue placeholder="Sin proveedor">
+                      {(value: string) => findLabel(value, proveedores, (p) => p.id, (p) => p.nombre, "Sin proveedor")}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {proveedores.map((p) => (

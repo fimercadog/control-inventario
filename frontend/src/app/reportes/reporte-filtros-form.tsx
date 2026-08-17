@@ -14,6 +14,7 @@ import { fetchCategorias } from "@/lib/api/categorias";
 import { fetchMarcas } from "@/lib/api/marcas";
 import { fetchProductos } from "@/lib/api/productos";
 import { fetchAuditLog } from "@/lib/api/audit-log";
+import { findLabel } from "@/lib/utils/select-label";
 import type { ReporteFiltro } from "@/types/reporte";
 
 interface Option {
@@ -106,7 +107,9 @@ export function ReporteFiltrosForm({
           {filtro.tipo === "select" ? (
             <Select value={values[filtro.clave] ?? ""} onValueChange={(v) => onChange(filtro.clave, v ?? "")}>
               <SelectTrigger id={`filtro-${filtro.clave}`}>
-                <SelectValue placeholder="Todos" />
+                <SelectValue placeholder="Todos">
+                  {(value: string) => findLabel(value, options[filtro.clave] ?? [], (o) => o.value, (o) => o.label, "Todos")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {(options[filtro.clave] ?? []).map((opt) => (

@@ -20,6 +20,7 @@ import {
 import { asociarProveedor } from "@/lib/api/producto-proveedor";
 import { fetchProveedores } from "@/lib/api/proveedores";
 import { extractApiErrorMessage } from "@/lib/api/errors";
+import { findLabel } from "@/lib/utils/select-label";
 import type { ProductoProveedorAsociacion } from "@/types/producto-proveedor";
 import type { Proveedor } from "@/types/proveedor";
 
@@ -100,7 +101,9 @@ export function ProductoProveedorForm({
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger id="asociacion-proveedor" aria-invalid={Boolean(errors.proveedor_id)}>
-                <SelectValue placeholder="Selecciona un proveedor" />
+                <SelectValue placeholder="Selecciona un proveedor">
+                  {(value: string) => findLabel(value, disponibles, (p) => p.id, (p) => p.nombre, "Selecciona un proveedor")}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {disponibles.map((p) => (
