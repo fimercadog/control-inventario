@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Contracts\Auth\RefreshTokenServiceInterface;
+use App\DTO\Report\ReporteResultadoDTO;
 use App\Exceptions\CannotDeactivateSelfException;
 use App\Exceptions\LastCompanyAdminException;
 use App\Http\Controllers\Concerns\FiltersByEmpresa;
@@ -16,9 +17,12 @@ use App\Http\Support\ApiResponse;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Audit\AuditLogger;
+use App\Services\Reports\ReporteExportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 con
@@ -70,6 +74,7 @@ class UserController extends Controller
     public function __construct(
         private readonly AuditLogger $auditoria,
         private readonly RefreshTokenServiceInterface $refreshTokens,
+        private readonly ReporteExportService $exportador,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -267,6 +272,89 @@ class UserController extends Controller
         return ApiResponse::success(
             new UserResource($usuario->fresh()->load(['invitedBy', 'empresa'])),
             'Rol asignado correctamente'
+        );
+    }
+
+    /**
+     * Exportación (Work Order "Usuarios: Exportación CSV y PDF"). Gateada por
+     * `usuarios.ver` (viewAny), no `reportes.ver` — deliberadamente NO se
+     * enruta a través de `ReporteController`/`ReporteService::CATALOGO`: ese
+     * catálogo gatea todo uniformemente con el permiso del módulo Reportes,
+     * lo que excluiría a un administrador de Usuarios sin acceso a Reportes.
+     * Sí se reutiliza `ReporteExportService` (los renderizadores PDF/CSV son
+     * genéricos sobre `columnas`/`filas`, no conocen ningún reporte
+     * específico — ver su propio docblock) y la vista `reports.pdf`, sin
+     * modificar ninguna de las dos. Solo CSV y PDF, sin Excel: el Work
+     * Order pide exactamente esos dos botones, nada más.
+     */
+    public function exportarCsv(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', User::class);
+
+        return $this->exportador->csv($this->construirResultadoExport($request));
+    }
+
+    public function exportarPdf(Request $request): Response
+    {
+        $this->authorize('viewAny', User::class);
+
+        return $this->exportador->pdf($this->construirResultadoExport($request));
+    }
+
+    /**
+     * Mismos filtros y el mismo orden que `index()`, a propósito — la
+     * exportación debe reflejar exactamente lo que el usuario está viendo
+     * en el listado (búsqueda/rol/estado), nunca una consulta distinta. Sin
+     * paginar (`get()`, no `paginate()`): el conjunto completo de resultados
+     * filtrados, no solo la página actual — el volumen real de usuarios por
+     * empresa es acotado (un directorio de empleados, no un catálogo de
+     * miles de filas), así que no hace falta un límite adicional aquí.
+     */
+    private function construirResultadoExport(Request $request): ReporteResultadoDTO
+    {
+        $query = User::query()->where('empresa_id', $this->empresaIdActual());
+
+        if ($busqueda = $request->query('busqueda')) {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('name', 'like', "%{$busqueda}%")
+                    ->orWhere('email', 'like', "%{$busqueda}%");
+            });
+        }
+
+        if ($rol = $request->query('rol')) {
+            $query->whereHas('roles', fn ($q) => $q->where('name', $rol));
+        }
+
+        if ($request->query('estado') !== 'todos') {
+            $query->where('is_active', $request->query('estado', 'activo') === 'activo');
+        }
+
+        $usuarios = $query->orderBy('name')->get();
+
+        $filas = $usuarios->values()->map(function (User $usuario, int $indice) {
+            return [
+                'numero' => $indice + 1,
+                'usuario' => $usuario->name,
+                'email' => $usuario->email,
+                'rol' => $usuario->getRoleNames()->first() ?? '—',
+                'estado' => $usuario->is_active ? 'Activo' : 'Inactivo',
+                'ultima_actividad' => $usuario->last_activity_at?->format('Y-m-d H:i') ?? '—',
+            ];
+        })->all();
+
+        return new ReporteResultadoDTO(
+            clave: 'usuarios',
+            titulo: 'Usuarios',
+            columnas: [
+                ['clave' => 'numero', 'etiqueta' => '#'],
+                ['clave' => 'usuario', 'etiqueta' => 'Usuario'],
+                ['clave' => 'email', 'etiqueta' => 'Email'],
+                ['clave' => 'rol', 'etiqueta' => 'Rol'],
+                ['clave' => 'estado', 'etiqueta' => 'Estado'],
+                ['clave' => 'ultima_actividad', 'etiqueta' => 'Última actividad'],
+            ],
+            filas: $filas,
+            total: $usuarios->count(),
         );
     }
 

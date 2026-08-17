@@ -209,6 +209,10 @@ Route::prefix('v1/contingencia/productos')->name('contingencia.productos.')->mid
 Route::prefix('v1/usuarios')->name('usuarios.')->middleware(['auth:api', 'empresa'])->group(function () {
     Route::get('/', [UserController::class, 'index'])->name('index');
     Route::post('invitar', [InvitationController::class, 'store'])->name('invitar');
+    // Exportación (Work Order "Usuarios: Exportación CSV y PDF") — literales
+    // declaradas antes de {id}, mismo criterio ya usado por `invitar`.
+    Route::get('export/csv', [UserController::class, 'exportarCsv'])->name('export.csv');
+    Route::get('export/pdf', [UserController::class, 'exportarPdf'])->name('export.pdf');
     Route::get('{id}', [UserController::class, 'show'])->name('show')->whereNumber('id');
     Route::patch('{id}', [UserController::class, 'actualizar'])->name('actualizar')->whereNumber('id');
     Route::post('{id}/activar', [UserController::class, 'activar'])->name('activar')->whereNumber('id');
