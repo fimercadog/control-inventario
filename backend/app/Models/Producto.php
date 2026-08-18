@@ -81,6 +81,15 @@ class Producto extends Model
         return $this->hasMany(Movimiento::class);
     }
 
+    /** Punto 8 (docs/diagrama-bd.md) — saldo por bodega, base estructural aun sin cablear al camino de escritura. */
+    public function bodegas(): BelongsToMany
+    {
+        return $this->belongsToMany(Bodega::class, 'producto_bodega')
+            ->using(ProductoBodega::class)
+            ->withPivot(['stock_actual'])
+            ->withTimestamps();
+    }
+
     /** FEATURE-005 (docs/03_FUNCTIONAL_SPEC/Suppliers.md). */
     public function proveedoresAsociados(): HasMany
     {

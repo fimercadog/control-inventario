@@ -57,6 +57,12 @@ class Movimiento extends Model
         return $this->belongsTo(Producto::class);
     }
 
+    /** Punto 8 (docs/diagrama-bd.md). Backfill a la bodega "Principal" en movimientos existentes; InventoryService aun no la escribe en movimientos nuevos. */
+    public function bodega(): BelongsTo
+    {
+        return $this->belongsTo(Bodega::class);
+    }
+
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'usuario_id');
