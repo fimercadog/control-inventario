@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePermission } from "@/hooks/use-permission";
 import { capturarPorFoto, capturarPorVoz, capturarPorFotoVoz, fetchCapturasIA } from "@/lib/api/captura-ia";
 import { extractApiErrorMessage } from "@/lib/api/errors";
@@ -18,6 +19,9 @@ type Modo = "foto" | "voz" | "foto_voz";
 
 const MAX_IMAGEN_BYTES = 10240 * 1024; // matches StoreFotoRequest: image, max:10240 (KB)
 const MAX_AUDIO_BYTES = 20480 * 1024; // matches StoreVozRequest: file, max:20480 (KB)
+// La pantalla se publica como vista previa mientras se configura el proveedor
+// de IA. Cambiar esta bandera a false habilita el flujo ya implementado.
+const CAPTURA_IA_EN_PREPARACION = true;
 
 const ESTADO_BADGE: Record<string, string> = {
   aplicado: "border-emerald-500/40 bg-emerald-500/15 text-emerald-400",
@@ -79,6 +83,7 @@ export default function CapturaIAPage() {
   }
 
   async function handleAnalizar() {
+    if (CAPTURA_IA_EN_PREPARACION) return;
     setStatus("analizando");
     setError(null);
     try {
@@ -117,7 +122,29 @@ export default function CapturaIAPage() {
   }
 
   return (
-    <div className="flex max-w-5xl flex-col gap-7">
+    <>
+      <Dialog open={CAPTURA_IA_EN_PREPARACION || status === "analizando"} onOpenChange={() => {}}>
+        <DialogContent showCloseButton={false} className="gap-5 p-6 text-center sm:max-w-sm">
+          <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/12 text-primary shadow-[0_8px_22px_rgb(79_70_229/0.16)]">
+            {CAPTURA_IA_EN_PREPARACION ? <Sparkles className="size-7" aria-hidden="true" /> : <Loader2 className="size-7 animate-spin" aria-hidden="true" />}
+          </div>
+          <DialogHeader className="items-center gap-2">
+            <DialogTitle>{CAPTURA_IA_EN_PREPARACION ? "Captura IA está en preparación" : "Estamos trabajando en tu captura"}</DialogTitle>
+            <DialogDescription className="max-w-xs text-center leading-6">
+              {CAPTURA_IA_EN_PREPARACION
+                ? "Puedes recorrer y conocer esta interfaz, pero la carga de archivos y el análisis estarán disponibles cuando configuremos la conexión con IA."
+                : "Analizamos los archivos y preparamos el movimiento de inventario. No cierres esta ventana ni recargues la página."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-xs leading-5 text-muted-foreground">
+            {CAPTURA_IA_EN_PREPARACION
+              ? "Modo de solo visualización: por ahora no se puede activar ninguna acción en esta sección."
+              : "La interfaz permanece bloqueada para evitar envíos duplicados. Los audios largos pueden tardar unos minutos."}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+    <div className="flex max-w-5xl flex-col gap-7" aria-busy={status === "analizando"}>
       <div className="rounded-2xl border border-primary/10 bg-linear-to-br from-primary/10 via-card to-card px-6 py-7 shadow-sm md:px-8">
         <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm"><Sparkles className="size-5" /></div>
         <p className="mb-1 text-xs font-bold tracking-[0.16em] text-primary uppercase">Asistente de inventario</p>
@@ -128,15 +155,15 @@ export default function CapturaIAPage() {
       </div>
 
       <div className="flex w-fit rounded-xl border border-border bg-card p-1 shadow-sm">
-        <Button className="rounded-lg" variant={modo === "foto" ? "default" : "ghost"} onClick={() => setModo("foto")}>
+        <Button disabled={CAPTURA_IA_EN_PREPARACION} className="rounded-lg" variant={modo === "foto" ? "default" : "ghost"} onClick={() => setModo("foto")}>
           <Camera className="size-4" />
           Foto
         </Button>
-        <Button className="rounded-lg" variant={modo === "voz" ? "default" : "ghost"} onClick={() => setModo("voz")}>
+        <Button disabled={CAPTURA_IA_EN_PREPARACION} className="rounded-lg" variant={modo === "voz" ? "default" : "ghost"} onClick={() => setModo("voz")}>
           <Mic className="size-4" />
           Voz
         </Button>
-        <Button className="rounded-lg" variant={modo === "foto_voz" ? "default" : "ghost"} onClick={() => setModo("foto_voz")}>
+        <Button disabled={CAPTURA_IA_EN_PREPARACION} className="rounded-lg" variant={modo === "foto_voz" ? "default" : "ghost"} onClick={() => setModo("foto_voz")}>
           <Video className="size-4" />
           Foto + Voz
         </Button>
@@ -165,6 +192,7 @@ export default function CapturaIAPage() {
                 type="file"
                 accept="image/*"
                 capture="environment"
+                disabled={CAPTURA_IA_EN_PREPARACION}
                 onChange={handleImagenChange}
                 className="mt-2 text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/15"
                 aria-label="Seleccionar imagen"
@@ -184,6 +212,7 @@ export default function CapturaIAPage() {
                 ref={audioInputRef}
                 type="file"
                 accept="audio/*"
+                disabled={CAPTURA_IA_EN_PREPARACION}
                 onChange={handleAudioChange}
                 className="mt-2 text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/15"
                 aria-label="Seleccionar audio"
@@ -193,7 +222,7 @@ export default function CapturaIAPage() {
             </div>
           ) : null}
 
-          <Button disabled={!puedeAnalizar} onClick={handleAnalizar} className="w-fit px-4 shadow-sm">
+          <Button disabled={CAPTURA_IA_EN_PREPARACION || !puedeAnalizar} onClick={handleAnalizar} className="w-fit px-4 shadow-sm">
             {status === "analizando" ? <Loader2 className="size-4 animate-spin" /> : null}
             Analizar
           </Button>
@@ -230,6 +259,7 @@ export default function CapturaIAPage() {
           </ul>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
