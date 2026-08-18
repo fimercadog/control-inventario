@@ -15,7 +15,7 @@ import type { Movimiento } from "@/types/movimiento";
 import type { StockItem } from "@/types/stock";
 
 const schema = z.object({
-  stock_contado: z.string().min(1, "Indica el stock contado."),
+  cantidad: z.string().min(1, "Indica una cantidad."),
   observacion: z.string().trim().min(3, "Indica el motivo del ajuste."),
 });
 
@@ -29,23 +29,26 @@ type FormValues = z.infer<typeof schema>;
 export function AjustarStockForm({ item, onSuccess }: { item: StockItem; onSuccess: (movimiento: Movimiento) => void }) {
   const [status, setStatus] = useState<"idle" | "submitting">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [modo, setModo] = useState<"conteo" | "ingreso">("conteo");
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { stock_contado: "", observacion: "" },
+    defaultValues: { cantidad: "", observacion: "" },
   });
 
-  const contado = Number(watch("stock_contado"));
-  const diferencia = Number.isFinite(contado) ? contado - item.stock_actual : null;
+  const cantidad = Number(watch("cantidad"));
+  const diferencia = Number.isFinite(cantidad)
+    ? modo === "conteo" ? cantidad - item.stock_actual : cantidad
+    : null;
 
   async function onSubmit(values: FormValues) {
-    const nuevoStock = Number(values.stock_contado);
-    const delta = nuevoStock - item.stock_actual;
-    if (!Number.isFinite(nuevoStock) || nuevoStock < 0) {
-      setError("El stock contado debe ser un número igual o mayor que cero.");
+    const valor = Number(values.cantidad);
+    const delta = modo === "conteo" ? valor - item.stock_actual : valor;
+    if (!Number.isFinite(valor) || valor < 0) {
+      setError(modo === "conteo" ? "El stock contado debe ser un número igual o mayor que cero." : "La cantidad a agregar debe ser mayor que cero.");
       return;
     }
     if (delta === 0) {
-      setError("El stock contado coincide con el stock actual; no hay nada que ajustar.");
+      setError(modo === "conteo" ? "El stock contado coincide con el stock actual; no hay nada que ajustar." : "La cantidad a agregar debe ser mayor que cero.");
       return;
     }
 
@@ -72,8 +75,12 @@ export function AjustarStockForm({ item, onSuccess }: { item: StockItem; onSucce
 
       <section className="flex flex-col gap-3 border-b border-border/70 pb-4">
         <div>
-          <h2 className="font-heading text-sm font-semibold text-foreground">Conteo físico</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Indica la cantidad real encontrada. El sistema calculará la diferencia.</p>
+          <h2 className="font-heading text-sm font-semibold text-foreground">Actualizar existencias</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Elige si vas a contar todo el stock o a ingresar unidades adicionales.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="button" variant={modo === "conteo" ? "default" : "outline"} onClick={() => setModo("conteo")}>Establecer stock real</Button>
+          <Button type="button" variant={modo === "ingreso" ? "default" : "outline"} onClick={() => setModo("ingreso")}>Agregar stock</Button>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -81,14 +88,14 @@ export function AjustarStockForm({ item, onSuccess }: { item: StockItem; onSucce
             <Input value={item.stock_actual} disabled readOnly />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="stock-contado">Stock contado</Label>
-            <Input id="stock-contado" type="number" step="0.01" min="0" placeholder="Ej. 150" aria-invalid={Boolean(errors.stock_contado)} {...register("stock_contado")} />
-            {errors.stock_contado ? <p className="text-xs text-destructive">{errors.stock_contado.message}</p> : null}
+            <Label htmlFor="stock-cantidad">{modo === "conteo" ? "Stock contado" : "Cantidad a agregar"}</Label>
+            <Input id="stock-cantidad" type="number" step="0.01" min={modo === "conteo" ? "0" : "0.01"} placeholder={modo === "conteo" ? "Ej. 150" : "Ej. 24"} aria-invalid={Boolean(errors.cantidad)} {...register("cantidad")} />
+            {errors.cantidad ? <p className="text-xs text-destructive">{errors.cantidad.message}</p> : null}
           </div>
         </div>
         {diferencia !== null ? (
           <p className={diferencia > 0 ? "text-sm text-emerald-600 dark:text-emerald-400" : diferencia < 0 ? "text-sm text-amber-600 dark:text-amber-400" : "text-sm text-muted-foreground"}>
-            {diferencia > 0 ? `Se sumarán ${diferencia}.` : diferencia < 0 ? `Se descontarán ${Math.abs(diferencia)}.` : "No habrá cambios."}
+            {diferencia > 0 ? `Se sumarán ${diferencia}; el nuevo stock será ${item.stock_actual + diferencia}.` : diferencia < 0 ? `Se descontarán ${Math.abs(diferencia)}; el nuevo stock será ${item.stock_actual + diferencia}.` : "No habrá cambios."}
           </p>
         ) : null}
       </section>
