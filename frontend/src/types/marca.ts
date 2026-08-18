@@ -3,6 +3,7 @@ export interface Marca {
   nombre: string;
   estado: string;
   productos_count?: number;
+  proveedores?: Array<{ id: number; nombre: string }>;
   created_at: string;
   updated_at: string;
 }
@@ -19,6 +20,7 @@ export interface MarcasQueryParams {
  * habilitar/deshabilitar are the real dedicated actions for that. */
 export interface MarcaPayload {
   nombre?: string;
+  proveedor_ids?: number[];
 }
 
 /** Matches MarcaController::productos — the subset of ProductoResource shown in the

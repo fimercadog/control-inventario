@@ -101,6 +101,7 @@ export function MarcaViewDialog({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Productos asociados" value={String(marca.productos_count ?? 0)} />
+                <Field label="Proveedores" value={marca.proveedores?.map((proveedor) => proveedor.nombre).join(", ") || "Sin proveedores asociados"} />
                 <Field label="Creado" value={formatDateTime(marca.created_at)} />
                 <Field label="Actualizado" value={formatDateTime(marca.updated_at)} />
               </div>
