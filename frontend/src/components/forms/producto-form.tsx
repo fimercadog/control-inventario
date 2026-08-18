@@ -206,6 +206,11 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         </Alert>
       ) : null}
 
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div>
+          <h2 className="font-heading text-sm font-semibold text-foreground">Información del producto</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Identificación, marca y categoría.</p>
+        </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="producto-nombre">Nombre</Label>
         <Input
@@ -311,7 +316,13 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
           />
         </div>
       </div>
+      </section>
 
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div>
+          <h2 className="font-heading text-sm font-semibold text-foreground">Unidad y presentación</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Define cómo se cuenta y qué contiene cada producto.</p>
+        </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="producto-unidad">Unidad de medida</Label>
         <Controller
@@ -394,7 +405,13 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
           <p className="text-xs text-muted-foreground">Presentación actual: {producto.presentacion}. Puedes dejarla así o estructurarla arriba.</p>
         ) : null}
       </div>
+      </section>
 
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div>
+          <h2 className="font-heading text-sm font-semibold text-foreground">Detalles y control</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Descripción, precios y niveles de stock.</p>
+        </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="producto-descripcion">Descripción</Label>
         <Textarea id="producto-descripcion" placeholder="Opcional" {...register("descripcion")} />
@@ -441,6 +458,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
           después de crearlo.
         </p>
       ) : null}
+      </section>
 
       <Button type="submit" disabled={status === "submitting"} className="w-full">
         {status === "submitting" ? <Loader2 className="size-4 animate-spin" /> : null}
