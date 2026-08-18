@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { CheckCircle2, CloudOff, RefreshCw, Trash2, TriangleAlert, Wifi } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -59,7 +60,7 @@ export default function ContingenciaPage() {
 
   return <div className="mx-auto flex max-w-4xl flex-col gap-6">
     <div><h1 className="text-2xl font-semibold">Modo Contingencia</h1><p className="text-sm text-muted-foreground">Las operaciones se guardan localmente y solo se envían cuando tú las sincronices.</p></div>
-    {!activo ? <Alert><AlertDescription>El Modo Contingencia no está activo.</AlertDescription></Alert> : null}
+    {!activo ? <Alert><AlertDescription className="flex flex-wrap items-center justify-between gap-3">El Modo Contingencia no está activo.<Button size="sm" nativeButton={false} render={<Link href="/dashboard" />}>Ir al Dashboard</Button></AlertDescription></Alert> : null}
     <div className="flex items-center gap-2 text-sm font-medium">{online ? <Wifi className="size-4 text-emerald-600" /> : <CloudOff className="size-4 text-amber-600" />}{online ? "Conectado" : "Sin conexión"}<span className="font-normal text-muted-foreground">— este indicador no sincroniza automáticamente.</span></div>
     {activo ? <Card><CardHeader><CardTitle>Crear producto offline</CardTitle><CardDescription>Solo texto. El stock inicial seguirá siendo 0; categorías, marcas y unidades se pueden completar posteriormente.</CardDescription></CardHeader><CardContent>
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={enqueue}>

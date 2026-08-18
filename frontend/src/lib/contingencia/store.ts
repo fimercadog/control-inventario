@@ -24,15 +24,24 @@ export interface EstadoContingencia {
 }
 
 const EMPTY: EstadoContingencia = { activo: false, operaciones: [] };
+let cachedStoredValue: string | null | undefined;
+let cachedState: EstadoContingencia = EMPTY;
 
 function read(): EstadoContingencia {
   if (typeof window === "undefined") return EMPTY;
+
+  const storedValue = window.localStorage.getItem(KEY);
+  if (storedValue === cachedStoredValue) return cachedState;
+
+  cachedStoredValue = storedValue;
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(KEY) ?? "null") as EstadoContingencia | null;
-    return parsed && Array.isArray(parsed.operaciones) ? parsed : EMPTY;
+    const parsed = JSON.parse(storedValue ?? "null") as EstadoContingencia | null;
+    cachedState = parsed && Array.isArray(parsed.operaciones) ? parsed : EMPTY;
   } catch {
-    return EMPTY;
+    cachedState = EMPTY;
   }
+
+  return cachedState;
 }
 
 function write(state: EstadoContingencia) {
