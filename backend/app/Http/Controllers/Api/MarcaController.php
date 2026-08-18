@@ -14,6 +14,7 @@ use App\Models\Marca;
 use App\Services\Audit\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * RC1 (docs/03_FUNCTIONAL_SPEC/Brands.md). Mismo patrón exacto que
@@ -38,7 +39,9 @@ class MarcaController extends Controller
     {
         $this->authorize('viewAny', Marca::class);
 
-        $query = $this->paraEmpresaActual(Marca::query())->withCount('productos');
+        $query = $this->paraEmpresaActual(Marca::query())
+            ->with(['proveedores:id,nombre'])
+            ->withCount('productos');
 
         if ($busqueda = $request->query('busqueda')) {
             $query->where('nombre', 'like', "%{$busqueda}%");
@@ -63,14 +66,20 @@ class MarcaController extends Controller
     {
         $this->authorize('create', Marca::class);
 
-        $marca = Marca::create([
-            ...$request->validated(),
-            'estado' => $request->validated()['estado'] ?? 'activo',
-        ]);
+        $datos = $request->validated();
+        $proveedorIds = $datos['proveedor_ids'] ?? [];
+        unset($datos['proveedor_ids']);
+
+        $marca = DB::transaction(function () use ($datos, $proveedorIds): Marca {
+            $marca = Marca::create([...$datos, 'estado' => $datos['estado'] ?? 'activo']);
+            $marca->proveedores()->sync($proveedorIds);
+
+            return $marca;
+        });
 
         $this->registrarAuditoria($request, $marca, 'marcas.crear', $marca->only(['nombre']));
 
-        return ApiResponse::success(new MarcaResource($marca), 'Marca creada correctamente', 201);
+        return ApiResponse::success(new MarcaResource($marca->load('proveedores:id,nombre')), 'Marca creada correctamente', 201);
     }
 
     public function show(int $marca): JsonResponse
@@ -78,7 +87,7 @@ class MarcaController extends Controller
         $marca = $this->resolverParaEmpresaActual(Marca::class, $marca);
         $this->authorize('view', $marca);
 
-        return ApiResponse::success(new MarcaResource($marca->loadCount('productos')));
+        return ApiResponse::success(new MarcaResource($marca->loadCount('productos')->load('proveedores:id,nombre')));
     }
 
     public function update(UpdateMarcaRequest $request, int $marca): JsonResponse
@@ -86,11 +95,20 @@ class MarcaController extends Controller
         $marca = $this->resolverParaEmpresaActual(Marca::class, $marca);
         $this->authorize('update', $marca);
 
-        $marca->update($request->validated());
+        $datos = $request->validated();
+        $proveedorIds = $datos['proveedor_ids'] ?? null;
+        unset($datos['proveedor_ids']);
+
+        DB::transaction(function () use ($marca, $datos, $proveedorIds): void {
+            $marca->update($datos);
+            if ($proveedorIds !== null) {
+                $marca->proveedores()->sync($proveedorIds);
+            }
+        });
 
         $this->registrarAuditoria($request, $marca, 'marcas.editar', $marca->only(['nombre', 'estado']));
 
-        return ApiResponse::success(new MarcaResource($marca), 'Marca actualizada correctamente');
+        return ApiResponse::success(new MarcaResource($marca->load('proveedores:id,nombre')), 'Marca actualizada correctamente');
     }
 
     /**

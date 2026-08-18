@@ -20,6 +20,9 @@ class MarcaResource extends JsonResource
                 isset($this->productos_count),
                 fn () => (int) $this->productos_count
             ),
+            'proveedores' => $this->whenLoaded('proveedores', fn () => $this->proveedores
+                ->map(fn ($proveedor) => ['id' => $proveedor->id, 'nombre' => $proveedor->nombre])
+                ->values()),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Empresa;
 use App\Models\Marca;
+use App\Models\Proveedor;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -66,6 +67,36 @@ class MarcaControllerTest extends TestCase
             ->assertJsonPath('data.estado', 'activo');
 
         $this->assertDatabaseHas('marcas', ['nombre' => 'Purina', 'empresa_id' => $this->empresaA->id]);
+    }
+
+    public function test_a_brand_can_be_created_and_updated_with_its_suppliers(): void
+    {
+        $proveedorA = Proveedor::factory()->create(['empresa_id' => $this->empresaA->id]);
+        $proveedorB = Proveedor::factory()->create(['empresa_id' => $this->empresaA->id]);
+
+        $marcaId = $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/marcas', ['nombre' => 'Marca con proveedores', 'proveedor_ids' => [$proveedorA->id]])
+            ->assertCreated()
+            ->assertJsonPath('data.proveedores.0.id', $proveedorA->id)
+            ->json('data.id');
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/marcas/{$marcaId}", ['proveedor_ids' => [$proveedorB->id]])
+            ->assertOk()
+            ->assertJsonPath('data.proveedores.0.id', $proveedorB->id);
+
+        $this->assertDatabaseMissing('marca_proveedor', ['marca_id' => $marcaId, 'proveedor_id' => $proveedorA->id]);
+        $this->assertDatabaseHas('marca_proveedor', ['marca_id' => $marcaId, 'proveedor_id' => $proveedorB->id, 'empresa_id' => $this->empresaA->id]);
+    }
+
+    public function test_a_brand_cannot_be_associated_with_another_company_supplier(): void
+    {
+        $proveedorB = Proveedor::factory()->create(['empresa_id' => $this->empresaB->id]);
+
+        $this->actingAs($this->userA, 'api')
+            ->patchJson("/api/v1/marcas/{$this->marcaA->id}", ['proveedor_ids' => [$proveedorB->id]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('proveedor_ids.0');
     }
 
     /** `nombre` es el único campo obligatorio (`StoreMarcaRequest`) — encontrado sin cobertura auditando el módulo. */

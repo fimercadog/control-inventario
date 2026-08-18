@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Marca;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * `estado` (Controlled) removido de las reglas 2026-08-10 (auditoría de
@@ -25,6 +26,12 @@ class UpdateMarcaRequest extends FormRequest
     {
         return [
             'nombre' => ['sometimes', 'string', 'max:255'],
+            'proveedor_ids' => ['sometimes', 'array'],
+            'proveedor_ids.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('proveedores', 'id')->where('empresa_id', $this->user()?->empresa_id),
+            ],
         ];
     }
 }
