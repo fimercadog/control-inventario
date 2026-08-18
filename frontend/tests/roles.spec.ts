@@ -1,8 +1,66 @@
 import fs from "node:fs";
-import { test, expect, type Page, type Locator } from "@playwright/test";
-import { login } from "./helpers";
+import { test, expect, type Page, type Locator, type APIRequestContext } from "@playwright/test";
+import { login, DEMO_EMAIL, DEMO_PASSWORD } from "./helpers";
 
 const QA_PASSWORD = "Qa-Rbac-2026!";
+
+/**
+ * Pagination tests need >10 active roles to reach a second page. RoleSeeder
+ * only creates 5 real roles per empresa (roles are curated business data,
+ * not high-volume like Categorías/Proveedores) — there is no ambient seed
+ * to rely on. Creates its own fixture roles via the real API and
+ * deactivates them afterward (roles have no hard-delete endpoint by
+ * design), so the suite doesn't reintroduce the kind of unbounded
+ * test-created role buildup that was just cleaned out of the database.
+ */
+/**
+ * Idempotent by design: `desactivar` never frees the (empresa_id, name,
+ * guard_name) unique constraint (it's a status flag, not a delete, and
+ * roles have no hard-delete endpoint) — a plain create-then-deactivate
+ * fixture would collide with its own leftovers on every run after the
+ * first. Reuses-and-reactivates an existing fixture role by name instead
+ * of creating a duplicate, so repeated runs stay at exactly `count` rows.
+ */
+async function createPaginationFixtureRoles(
+  request: APIRequestContext,
+  count: number
+): Promise<{ ids: number[]; token: string }> {
+  const loginRes = await request.post("/api/v1/auth/login", {
+    data: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+  });
+  const { access_token: token } = (await loginRes.json()).data;
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const existingRes = await request.get("/api/v1/roles", {
+    headers,
+    params: { busqueda: "Rol de prueba (paginación)", estado: "todos", per_page: 100 },
+  });
+  const existingByName = new Map<string, number>(
+    ((await existingRes.json()).data.items as Array<{ id: number; name: string }>).map((r) => [r.name, r.id])
+  );
+
+  const ids: number[] = [];
+  for (let i = 1; i <= count; i++) {
+    const name = `Rol de prueba (paginación) ${i}`;
+    const existingId = existingByName.get(name);
+    if (existingId) {
+      await request.post(`/api/v1/roles/${existingId}/activar`, { headers });
+      ids.push(existingId);
+    } else {
+      const res = await request.post("/api/v1/roles", { headers, data: { name } });
+      ids.push((await res.json()).data.id);
+    }
+  }
+  return { ids, token };
+}
+
+async function deactivatePaginationFixtureRoles(request: APIRequestContext, token: string, ids: number[]): Promise<void> {
+  for (const id of ids) {
+    await request.post(`/api/v1/roles/${id}/desactivar`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+}
 
 /** Waits for the list's initial fetch to settle before a test starts interacting with it. */
 async function waitForRolesLoaded(page: Page) {
@@ -58,21 +116,43 @@ test.describe("Roles list", () => {
     await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
   });
 
-  test("changes page size and resets to page 1", async ({ page }) => {
-    await page.getByLabel("Filas por página").click();
-    await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("row")).toHaveCount(11); // header + 10 data rows
-  });
+  test.describe("with enough roles for a second page", () => {
+    // Both tests below create fixture roles under the same fixed names —
+    // running them in parallel workers races two concurrent creates
+    // against the same unique (empresa_id, name, guard_name) constraint.
+    test.describe.configure({ mode: "serial" });
 
-  test("navigates to the next page", async ({ page }) => {
-    await page.getByLabel("Filas por página").click();
-    await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
-    await page.getByLabel("Página siguiente").click();
-    await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
-    const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
-    await expect(firstCell).toHaveText("11");
+    let fixture: { ids: number[]; token: string };
+
+    test.beforeEach(async ({ request, page }) => {
+      // RoleSeeder only creates 5 real roles per empresa — unlike
+      // Categorías/Proveedores there's no ambient seed volume to page
+      // through, so this creates its own and tears them down below.
+      fixture = await createPaginationFixtureRoles(request, 7);
+      await page.reload();
+      await waitForRolesLoaded(page);
+    });
+
+    test.afterEach(async ({ request }) => {
+      await deactivatePaginationFixtureRoles(request, fixture.token, fixture.ids);
+    });
+
+    test("changes page size and resets to page 1", async ({ page }) => {
+      await page.getByLabel("Filas por página").click();
+      await page.getByRole("option", { name: "10", exact: true }).click();
+      await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole("row")).toHaveCount(11); // header + 10 data rows
+    });
+
+    test("navigates to the next page", async ({ page }) => {
+      await page.getByLabel("Filas por página").click();
+      await page.getByRole("option", { name: "10", exact: true }).click();
+      await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+      await page.getByLabel("Página siguiente").click();
+      await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
+      const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
+      await expect(firstCell).toHaveText("11");
+    });
   });
 
   test("Ver opens a modal with the role's real details, not a page navigation", async ({ page }) => {
