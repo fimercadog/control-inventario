@@ -49,6 +49,24 @@ class AuthenticationTest extends TestCase
         $this->assertSame(1, AuthSession::where('user_id', $user->id)->count());
     }
 
+    public function test_login_with_remember_me_creates_a_persistent_session(): void
+    {
+        $user = User::factory()->create([
+            'empresa_id' => $this->empresa->id,
+            'password' => 'contrasena-correcta',
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'contrasena-correcta',
+            'remember_me' => true,
+        ]);
+
+        $response->assertOk()->assertCookie('refresh_token');
+        $this->assertDatabaseHas('auth_sessions', ['user_id' => $user->id, 'remember_me' => true]);
+        $this->assertGreaterThan(time(), $response->headers->getCookies()[0]->getExpiresTime());
+    }
+
     public function test_login_fails_with_the_wrong_password_and_never_reveals_which_field_was_wrong(): void
     {
         User::factory()->create([

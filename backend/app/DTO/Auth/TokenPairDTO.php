@@ -13,6 +13,7 @@ final readonly class TokenPairDTO
         public string $accessToken,
         public int $accessTokenExpiresInSeconds,
         public string $refreshToken,
+        public bool $rememberMe,
     ) {
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\DTO\Auth\AuthResultDTO;
+use App\DTO\Auth\TokenPairDTO;
 use App\Exceptions\Auth\InvalidRefreshTokenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
@@ -88,7 +89,7 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
             'expires_in' => $result->tokens->accessTokenExpiresInSeconds,
             'user' => $data,
-        ])->withCookie($this->cookieDeSesion($result->tokens->refreshToken));
+        ])->withCookie($this->cookieDeSesion($result->tokens));
     }
 
     /** Mismo criterio que App\Http\Middleware\IdentifyEmpresa, aplicado a mano. */
@@ -99,12 +100,16 @@ class AuthController extends Controller
         );
     }
 
-    private function cookieDeSesion(string $rawRefreshToken): Cookie
+    private function cookieDeSesion(TokenPairDTO $tokens): Cookie
     {
         return cookie(
             name: config('auth_sessions.cookie_name'),
-            value: $rawRefreshToken,
-            minutes: config('auth_sessions.refresh_ttl_remember_days') * 24 * 60,
+            value: $tokens->refreshToken,
+            // Sin "Recordar" la cookie termina al cerrar el navegador. La sesión del
+            // servidor conserva además su TTL normal de seguridad (7 días por defecto).
+            minutes: $tokens->rememberMe
+                ? config('auth_sessions.refresh_ttl_remember_days') * 24 * 60
+                : 0,
             path: '/',
             domain: null,
             secure: config('auth_sessions.cookie_secure'),

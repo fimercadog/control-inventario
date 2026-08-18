@@ -73,6 +73,7 @@ class RefreshTokenService implements RefreshTokenServiceInterface
             accessToken: $accessToken,
             accessTokenExpiresInSeconds: (int) config('jwt.ttl') * 60,
             refreshToken: $rawToken,
+            rememberMe: $rememberMe,
         );
     }
 

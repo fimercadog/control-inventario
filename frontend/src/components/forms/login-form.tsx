@@ -3,19 +3,21 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { login } from "@/store/slices/session-slice";
 
 const loginSchema = z.object({
   email: z.string().min(1, "El correo es obligatorio.").email("Ingresa un correo válido."),
   password: z.string().min(1, "La contraseña es obligatoria."),
+  remember_me: z.boolean(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -30,11 +32,12 @@ export function LoginForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", remember_me: false },
   });
 
   async function onSubmit(values: LoginFormValues) {
@@ -102,6 +105,23 @@ export function LoginForm() {
             {errors.password.message}
           </p>
         ) : null}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Controller
+          control={control}
+          name="remember_me"
+          render={({ field }) => (
+            <Checkbox
+              id="remember-me"
+              checked={field.value}
+              onCheckedChange={(checked) => field.onChange(checked === true)}
+            />
+          )}
+        />
+        <Label htmlFor="remember-me" className="text-sm font-normal text-muted-foreground">
+          Recordar mi sesión en este equipo
+        </Label>
       </div>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
