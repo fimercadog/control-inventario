@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   // `php artisan serve` (the Laravel dev server) handles one request at a time;
   // higher worker counts here just queue behind it and produce flaky timeouts.
-  workers: 4,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: "html",
   use: {

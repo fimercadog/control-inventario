@@ -972,3 +972,28 @@ Registrar cualquier imposibilidad real en:
 frontend/incidentes/
 
 pero NO detener el resto del Work Order.
+
+## 32. CIERRE OBLIGATORIO — REGRESIÓN PLAYWRIGHT COMPLETA
+
+Al finalizar TODO el desarrollo, antes de declarar el proyecto como terminado,
+se deben ejecutar pruebas Playwright de regresión para TODOS los módulos y
+funcionalidades reales del frontend.
+
+La validación final debe cubrir, como mínimo:
+
+- autenticación, cierre de sesión y recuperación de contraseña;
+- dashboard;
+- categorías, marcas, unidades de medida, proveedores y clientes;
+- roles, permisos, usuarios e invitaciones;
+- productos, asociaciones producto-proveedor, stock y movimientos;
+- Captura IA en todos los flujos disponibles;
+- reportes, exportaciones, historial y reportes programados;
+- auditoría, perfil y configuración;
+- Modo Contingencia completo;
+- RBAC, aislamiento multiempresa, responsive desktop/tablet/móvil;
+- estados de carga, errores, formularios, selects, navegación y errores de consola.
+
+Las pruebas deben usar el backend real y las cuentas/fixtures reales disponibles.
+No se debe declarar el desarrollo finalizado si la suite Playwright completa no
+ha sido ejecutada, sus fallos investigados y los resultados documentados en
+`frontend/avances/06-qa-final.md`.
