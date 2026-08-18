@@ -375,7 +375,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-muted/25 p-3">
+      <div className="flex flex-col gap-4 rounded-xl border border-border/80 bg-card p-4 shadow-[0_6px_18px_rgb(15_23_42/0.06)] dark:shadow-[0_6px_18px_rgb(0_0_0/0.16)]">
         <div>
           <Label htmlFor="producto-presentacion-cantidad">Presentación</Label>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -395,7 +395,9 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger id="producto-presentacion-contenido">
-                    <SelectValue placeholder="Selecciona una unidad" />
+                    <SelectValue placeholder="Selecciona una unidad">
+                      {(value: string) => UNIDADES_DE_CONTENIDO.find((unidad) => unidad.value === value)?.label ?? "Selecciona una unidad"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {UNIDADES_DE_CONTENIDO.map((unidad) => (
