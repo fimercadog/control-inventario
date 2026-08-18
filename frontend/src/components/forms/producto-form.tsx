@@ -30,6 +30,39 @@ import type { UnidadMedida } from "@/types/unidad-medida";
 
 const NUEVA = "__nueva__";
 
+const UNIDADES_DE_CONTENIDO = [
+  { value: "unidades", label: "Unidades" },
+  { value: "kg", label: "Kilogramos (kg)" },
+  { value: "g", label: "Gramos (g)" },
+  { value: "L", label: "Litros (L)" },
+  { value: "ml", label: "Mililitros (ml)" },
+  { value: "docenas", label: "Docenas" },
+  { value: "pares", label: "Pares" },
+];
+
+const CONTENIDO_SUGERIDO_POR_UNIDAD: Record<string, string> = {
+  bolsa: "kg",
+  caja: "unidades",
+  botella: "L",
+  paquete: "unidades",
+  docena: "unidades",
+  par: "unidades",
+};
+
+function separarPresentacion(presentacion: string | null | undefined) {
+  const original = presentacion?.trim() ?? "";
+  const match = original.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(unidades?|uds?|kg|g|l|ml|docenas?|pares?)\.?$/i);
+
+  if (!match) return { cantidad: "", contenido: "", original };
+
+  const contenido = match[2].toLowerCase();
+  return {
+    cantidad: match[1].replace(",", "."),
+    contenido: contenido === "ud" || contenido === "uds" || contenido === "unidad" ? "unidades" : contenido === "l" ? "L" : contenido,
+    original,
+  };
+}
+
 const productoFormSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio."),
   codigo: z.string(),
@@ -40,7 +73,9 @@ const productoFormSchema = z.object({
   unidad_medida_id: z.string(),
   unidad_medida_nuevo: z.string(),
   descripcion: z.string(),
-  presentacion: z.string(),
+  presentacion_cantidad: z.string(),
+  presentacion_contenido: z.string(),
+  presentacion_original: z.string(),
   costo: z.string(),
   precio: z.string(),
   stock_minimo: z.string(),
@@ -70,6 +105,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [unidades, setUnidades] = useState<UnidadMedida[]>([]);
+  const presentacionInicial = separarPresentacion(producto?.presentacion);
 
   useEffect(() => {
     fetchMarcas({ estado: "activo", per_page: 100 }).then((d) => setMarcas(d.items)).catch(() => {});
@@ -82,6 +118,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProductoFormValues>({
     resolver: zodResolver(productoFormSchema),
@@ -95,7 +132,9 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
       unidad_medida_id: producto?.unidad_medida_id ? String(producto.unidad_medida_id) : "",
       unidad_medida_nuevo: "",
       descripcion: producto?.descripcion ?? "",
-      presentacion: producto?.presentacion ?? "",
+      presentacion_cantidad: presentacionInicial.cantidad,
+      presentacion_contenido: presentacionInicial.contenido,
+      presentacion_original: presentacionInicial.original,
       costo: producto ? String(producto.costo) : "",
       precio: producto ? String(producto.precio) : "",
       stock_minimo: producto ? String(producto.stock_minimo) : "",
@@ -105,8 +144,25 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
 
   const marcaId = watch("marca_id");
   const unidadId = watch("unidad_medida_id");
+  const presentacionCantidad = watch("presentacion_cantidad");
+  const presentacionContenido = watch("presentacion_contenido");
+  const unidadSeleccionada = unidades.find((unidad) => String(unidad.id) === unidadId);
+  const contenidoSugerido = unidadSeleccionada
+    ? CONTENIDO_SUGERIDO_POR_UNIDAD[unidadSeleccionada.nombre.toLowerCase()]
+    : undefined;
+
+  useEffect(() => {
+    if (contenidoSugerido && !presentacionContenido) {
+      setValue("presentacion_contenido", contenidoSugerido);
+    }
+  }, [contenidoSugerido, presentacionContenido, setValue]);
 
   async function onSubmit(values: ProductoFormValues) {
+    if (Boolean(values.presentacion_cantidad) !== Boolean(values.presentacion_contenido)) {
+      setError("Completa la cantidad y la unidad de contenido de la presentación.");
+      return;
+    }
+
     setStatus("submitting");
     setError(null);
     try {
@@ -118,7 +174,9 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         unidad_medida_id: values.unidad_medida_id && values.unidad_medida_id !== NUEVA ? Number(values.unidad_medida_id) : undefined,
         unidad_medida_nuevo: values.unidad_medida_id === NUEVA && values.unidad_medida_nuevo ? values.unidad_medida_nuevo : undefined,
         descripcion: values.descripcion || null,
-        presentacion: values.presentacion || null,
+        presentacion: values.presentacion_cantidad
+          ? `${values.presentacion_cantidad} ${values.presentacion_contenido}`
+          : values.presentacion_original || null,
         costo: values.costo ? Number(values.costo) : undefined,
         precio: values.precio ? Number(values.precio) : undefined,
         stock_minimo: values.stock_minimo ? Number(values.stock_minimo) : undefined,
@@ -295,9 +353,46 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="producto-presentacion">Presentación</Label>
-        <Input id="producto-presentacion" placeholder="Ej. Bolsa 15kg" {...register("presentacion")} />
+      <div className="flex flex-col gap-3 rounded-xl border border-border/80 bg-muted/25 p-3">
+        <div>
+          <Label htmlFor="producto-presentacion-cantidad">Presentación</Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Indica cuánto contiene cada {unidadSeleccionada?.nombre.toLowerCase() ?? "unidad de venta"}.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="producto-presentacion-cantidad" className="text-xs text-muted-foreground">Cantidad por presentación</Label>
+            <Input id="producto-presentacion-cantidad" type="number" min="0" step="0.01" placeholder="Ej. 15" {...register("presentacion_cantidad")} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="producto-presentacion-contenido" className="text-xs text-muted-foreground">Contenido</Label>
+            <Controller
+              control={control}
+              name="presentacion_contenido"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="producto-presentacion-contenido">
+                    <SelectValue placeholder="Selecciona una unidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIDADES_DE_CONTENIDO.map((unidad) => (
+                      <SelectItem key={unidad.value} value={unidad.value}>{unidad.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        </div>
+        {presentacionCantidad && presentacionContenido ? (
+          <p className="text-xs font-medium text-primary">
+            Cada {unidadSeleccionada?.nombre.toLowerCase() ?? "unidad"} contiene {presentacionCantidad} {presentacionContenido}.
+          </p>
+        ) : null}
+        {!presentacionCantidad && producto?.presentacion ? (
+          <p className="text-xs text-muted-foreground">Presentación actual: {producto.presentacion}. Puedes dejarla así o estructurarla arriba.</p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
