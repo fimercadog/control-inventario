@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import { useLegacyTable as useReactTable, type LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import type { RowData } from "@tanstack/table-core";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -66,6 +68,20 @@ export function DataTable<TData extends RowData>({
 
   const rows = table.getRowModel().rows;
   const startNumber = (page - 1) * pageSize + 1;
+  const endNumber = Math.min(page * pageSize, totalRows);
+  const safeTotalPages = Math.max(totalPages, 1);
+  const [pageInput, setPageInput] = useState(String(page));
+
+  useEffect(() => setPageInput(String(page)), [page]);
+
+  function goToTypedPage() {
+    const requested = Number(pageInput);
+    if (!Number.isInteger(requested)) {
+      setPageInput(String(page));
+      return;
+    }
+    onPageChange(Math.min(Math.max(requested, 1), safeTotalPages));
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -138,11 +154,11 @@ export function DataTable<TData extends RowData>({
       <div className="flex flex-col-reverse items-center justify-between gap-3 sm:flex-row">
         <p className="text-sm text-muted-foreground">
           {totalRows > 0
-            ? `${totalRows} resultado${totalRows === 1 ? "" : "s"} · página ${page} de ${Math.max(totalPages, 1)}`
+            ? `Mostrando ${startNumber}–${endNumber} de ${totalRows} resultado${totalRows === 1 ? "" : "s"}`
             : null}
         </p>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-end">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filas por página</span>
             <Select
@@ -167,11 +183,38 @@ export function DataTable<TData extends RowData>({
               variant="outline"
               size="icon"
               disabled={page <= 1 || isLoading}
+              onClick={() => onPageChange(1)}
+              aria-label="Primera página"
+            >
+              <ChevronsLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page <= 1 || isLoading}
               onClick={() => onPageChange(page - 1)}
               aria-label="Página anterior"
             >
               <ChevronLeft className="size-4" />
             </Button>
+            <label className="flex items-center gap-1 px-1 text-sm text-muted-foreground">
+              <span className="sr-only">Ir a página</span>
+              <Input
+                type="number"
+                min="1"
+                max={safeTotalPages}
+                value={pageInput}
+                onChange={(event) => setPageInput(event.target.value)}
+                onBlur={goToTypedPage}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                }}
+                disabled={isLoading}
+                className="h-8 w-14 px-2 text-center"
+                aria-label="Ir a página"
+              />
+              <span>de {safeTotalPages}</span>
+            </label>
             <Button
               variant="outline"
               size="icon"
@@ -180,6 +223,15 @@ export function DataTable<TData extends RowData>({
               aria-label="Página siguiente"
             >
               <ChevronRight className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={page >= totalPages || isLoading}
+              onClick={() => onPageChange(safeTotalPages)}
+              aria-label="Última página"
+            >
+              <ChevronsRight className="size-4" />
             </Button>
           </div>
         </div>
