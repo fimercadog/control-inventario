@@ -13,10 +13,10 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
           <button
             type="button"
             className={iconOnly
-              ? "flex h-8 items-center gap-0.5 rounded-lg px-1.5 text-amber-600 transition-colors hover:bg-amber-500/12 hover:text-amber-700 dark:text-amber-300 dark:hover:bg-amber-400/10"
+              ? "flex h-8 items-center gap-0.5 rounded-full px-1.5 text-warning transition-colors hover:bg-warning-container/60 hover:text-warning-container-foreground"
               : compact
-              ? "flex w-full items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300"
-              : "flex w-full items-center justify-between rounded-xl border border-indigo-300/20 bg-indigo-400/10 px-3 py-2.5 text-left text-indigo-100 transition-colors hover:bg-indigo-400/16"}
+              ? "flex w-full items-center justify-between rounded-lg border border-warning/30 bg-warning-container/50 px-3 py-2 text-left text-warning-container-foreground transition-colors hover:bg-warning-container/70"
+              : "flex w-full items-center justify-between rounded-xl border border-sidebar-accent bg-sidebar-accent/40 px-3 py-2.5 text-left text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70"}
             aria-label="Ver información de la versión beta"
           />
         }
@@ -26,7 +26,7 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
           {iconOnly ? null : <>
           <span className="flex min-w-0 flex-col">
             <span className="text-xs font-semibold">Versión beta</span>
-            {!compact ? <span className="truncate text-[11px] text-indigo-200/70">Conoce las novedades</span> : null}
+            {!compact ? <span className="truncate text-[11px] text-sidebar-foreground/60">Conoce las novedades</span> : null}
           </span>
           </>}
         </span>

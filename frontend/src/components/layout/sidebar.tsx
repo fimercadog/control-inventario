@@ -4,12 +4,12 @@ import { BetaNotice } from "@/components/layout/beta-notice";
 
 export function Sidebar() {
   return (
-    <aside className="z-10 hidden w-68 shrink-0 flex-col border-r border-[#30334e] bg-[#1a1c2e] p-4 text-slate-100 shadow-[8px_0_28px_rgb(26_28_46/0.1)] dark:border-[#303030] dark:bg-[#111111] dark:shadow-[8px_0_28px_rgb(0_0_0/0.2)] [&_nav_a:not([aria-current=page])]:text-slate-300 [&_nav_a:not([aria-current=page]):hover]:bg-white/8 [&_nav_a:not([aria-current=page]):hover]:text-white [&_nav_span]:text-slate-400 md:flex">
-      <div className="mb-4 flex items-center gap-3 px-2">
-        <div className="grid size-9 place-items-center rounded-xl bg-indigo-500 text-sm font-bold text-white shadow-[0_5px_12px_rgb(99_102_241/0.35)]">F</div>
+    <aside className="z-10 hidden w-68 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 text-sidebar-foreground shadow-[8px_0_28px_rgb(0_0_0/0.12)] md:flex">
+      <div className="mb-5 flex items-center gap-3 px-2">
+        <div className="grid size-9 place-items-center rounded-xl bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground shadow-[0_5px_12px_rgb(0_0_0/0.25)]">F</div>
         <div>
-          <div className="text-lg font-bold tracking-tight text-white">FidelOS</div>
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-indigo-300">CRM + INVENTARIO</div>
+          <div className="text-lg font-bold tracking-tight text-sidebar-foreground">FidelOS</div>
+          <div className="text-[10px] font-semibold tracking-[0.18em] text-sidebar-foreground/60">CRM + INVENTARIO</div>
         </div>
       </div>
       <div className="mb-4"><BetaNotice /></div>

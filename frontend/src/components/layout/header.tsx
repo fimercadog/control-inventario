@@ -44,15 +44,15 @@ export function Header() {
   const pageName = pathname === "/dashboard" ? "Dashboard" : pathname.split("/").filter(Boolean).at(-1)?.replaceAll("-", " ") ?? "";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/85 px-4 shadow-[0_1px_0_rgb(15_23_42/0.02),0_5px_18px_rgb(15_23_42/0.035)] backdrop-blur-xl dark:shadow-[0_5px_18px_rgb(0_0_0/0.15)] md:px-8">
+    <header className="flex h-16 items-center justify-between border-b border-border bg-surface-container-low px-4 md:px-8">
       <div className="flex items-center gap-2 md:hidden">
         <Sheet>
           <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menú" />}>
             <Menu className="size-5" />
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-4">
+          <SheetContent side="left" className="w-64 border-sidebar-border bg-sidebar p-4 text-sidebar-foreground">
             <SheetHeader className="p-0 pb-4">
-              <SheetTitle>FidelOS</SheetTitle>
+              <SheetTitle className="text-sidebar-foreground">FidelOS</SheetTitle>
             </SheetHeader>
             <div className="mb-5"><ContingenciaControls /></div>
             <SidebarNav />

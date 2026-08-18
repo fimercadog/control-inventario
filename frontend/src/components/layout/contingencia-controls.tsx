@@ -17,10 +17,19 @@ export function ContingenciaControls() {
   if (!can(permissions, "productos.crear") && !can(permissions, "productos.editar")) return null;
 
   if (activo) {
-    return <Button nativeButton={false} render={<Link href="/contingencia" />} variant="destructive" className="w-full justify-start"><TriangleAlert />Contingencia activa</Button>;
+    return (
+      <Button
+        nativeButton={false}
+        render={<Link href="/contingencia" />}
+        variant="destructive"
+        className="w-full justify-start border border-destructive/40 bg-destructive-container text-destructive-container-foreground hover:bg-destructive-container/80"
+      >
+        <TriangleAlert />Contingencia activa
+      </Button>
+    );
   }
   return <>
-    <Button variant="outline" className="w-full justify-start border-amber-500/60 text-amber-700 hover:bg-amber-50 dark:text-amber-400" onClick={() => setOpen(true)}><TriangleAlert />Modo Contingencia</Button>
+    <Button variant="outline" className="w-full justify-start border-sidebar-warning/50 text-sidebar-warning hover:bg-sidebar-warning/15 hover:text-sidebar-warning" onClick={() => setOpen(true)}><TriangleAlert />Modo Contingencia</Button>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader><DialogTitle>Activar Modo Contingencia</DialogTitle><DialogDescription>El Modo Contingencia permite continuar trabajando con Productos cuando la conexión con el servidor no está disponible o es inestable. Mientras permanezca activo, las operaciones normales de escritura del resto del sistema estarán bloqueadas.</DialogDescription></DialogHeader>

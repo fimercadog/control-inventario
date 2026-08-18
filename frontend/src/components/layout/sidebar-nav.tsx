@@ -33,7 +33,7 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
       {sections.map((section, index) => (
         <div key={section.group ?? `ungrouped-${index}`} className="flex flex-col gap-1">
           {section.group ? (
-            <span className="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
+            <span className="px-3 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
               {section.group}
             </span>
           ) : null}
@@ -47,10 +47,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                 )}
               >
                 <Icon className="size-4" />
