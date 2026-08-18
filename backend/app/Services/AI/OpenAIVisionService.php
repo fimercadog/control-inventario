@@ -6,6 +6,7 @@ use App\Contracts\AI\VisionAnalyzerInterface;
 use App\DTO\AI\StructuredExtractionDTO;
 use App\Exceptions\AIProviderException;
 use App\Services\AI\Support\CaptureJsonSchema;
+use App\Services\AI\Support\OpenAIResponseParser;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -58,7 +59,7 @@ class OpenAIVisionService implements VisionAnalyzerInterface
             throw new AIProviderException("OpenAI Vision respondió con error: {$response->status()}");
         }
 
-        $decoded = json_decode($response->json('output_text') ?? '', true);
+        $decoded = json_decode(OpenAIResponseParser::extractOutputText($response->json() ?? []) ?? '', true);
 
         if (! is_array($decoded)) {
             throw new AIProviderException('OpenAI Vision no devolvió un JSON válido según el esquema esperado.');
