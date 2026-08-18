@@ -41,7 +41,7 @@ export function Header() {
   const initials = user?.name ? initialsFor(user.name) : "?";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 md:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/85 px-4 backdrop-blur md:px-8">
       <div className="flex items-center gap-2 md:hidden">
         <Sheet>
           <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menú" />}>
