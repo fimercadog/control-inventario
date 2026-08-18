@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePermission } from "@/hooks/use-permission";
 import { capturarPorFoto, capturarPorVoz, capturarPorFotoVoz, fetchCapturasIA } from "@/lib/api/captura-ia";
 import { extractApiErrorMessage } from "@/lib/api/errors";
@@ -46,6 +46,7 @@ export default function CapturaIAPage() {
   const [imagen, setImagen] = useState<File | null>(null);
   const [audio, setAudio] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "analizando">("idle");
+  const [mostrarAvisoPreparacion, setMostrarAvisoPreparacion] = useState(CAPTURA_IA_EN_PREPARACION);
   const [error, setError] = useState<string | null>(null);
   const [recientes, setRecientes] = useState<CapturaIAEntry[] | null>(null);
   const imagenInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +124,12 @@ export default function CapturaIAPage() {
 
   return (
     <>
-      <Dialog open={CAPTURA_IA_EN_PREPARACION || status === "analizando"} onOpenChange={() => {}}>
+      <Dialog
+        open={status === "analizando" || mostrarAvisoPreparacion}
+        onOpenChange={(open) => {
+          if (status !== "analizando") setMostrarAvisoPreparacion(open);
+        }}
+      >
         <DialogContent showCloseButton={false} className="gap-5 p-6 text-center sm:max-w-sm">
           <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/12 text-primary shadow-[0_8px_22px_rgb(79_70_229/0.16)]">
             {CAPTURA_IA_EN_PREPARACION ? <Sparkles className="size-7" aria-hidden="true" /> : <Loader2 className="size-7 animate-spin" aria-hidden="true" />}
@@ -141,6 +147,9 @@ export default function CapturaIAPage() {
               ? "Modo de solo visualización: por ahora no se puede activar ninguna acción en esta sección."
               : "La interfaz permanece bloqueada para evitar envíos duplicados. Los audios largos pueden tardar unos minutos."}
           </div>
+          {CAPTURA_IA_EN_PREPARACION && status !== "analizando" ? (
+            <DialogClose render={<Button className="w-full" />}>Entendido, ver interfaz</DialogClose>
+          ) : null}
         </DialogContent>
       </Dialog>
 
