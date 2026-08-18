@@ -93,9 +93,9 @@ export function ProveedorViewDialog({
               <div className="flex items-center justify-between">
                 <span className="text-xl font-semibold text-foreground">{proveedor.nombre}</span>
                 {proveedor.estado === "activo" ? (
-                  <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+                  <Badge variant="success">Activo</Badge>
                 ) : (
-                  <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+                  <Badge variant="outline">Inactivo</Badge>
                 )}
               </div>
 
@@ -129,12 +129,7 @@ export function ProveedorViewDialog({
                   ) : null}
                   {(proveedor.estado === "activo" ? canDisable : canEdit) ? (
                     <Button
-                      variant={proveedor.estado === "activo" ? "destructive" : "outline"}
-                      className={
-                        proveedor.estado === "activo"
-                          ? undefined
-                          : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                      }
+                      variant={proveedor.estado === "activo" ? "destructive" : "success"}
                       size="sm"
                       disabled={togglingId === proveedor.id}
                       onClick={() => handleToggle(proveedor)}
@@ -182,13 +177,9 @@ export function ProveedorViewDialog({
                         </p>
                       </div>
                       {asociacion.estado === "activo" ? (
-                        <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">
-                          Activo
-                        </Badge>
+                        <Badge variant="success">Activo</Badge>
                       ) : (
-                        <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">
-                          Inactivo
-                        </Badge>
+                        <Badge variant="outline">Inactivo</Badge>
                       )}
                     </li>
                   ))}

@@ -53,7 +53,7 @@ export function buildProductoColumns({
         const p = row.original;
         const bajo = p.stock_actual <= p.stock_minimo;
         return (
-          <span className={bajo ? "font-semibold text-amber-500" : "text-foreground"}>
+          <span className={bajo ? "font-semibold text-warning" : "text-foreground"}>
             {p.stock_actual}
           </span>
         );
@@ -64,9 +64,9 @@ export function buildProductoColumns({
       header: "Estado",
       cell: ({ row }) =>
         row.original.estado === "activo" ? (
-          <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+          <Badge variant="success">Activo</Badge>
         ) : (
-          <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+          <Badge variant="outline">Inactivo</Badge>
         ),
     },
   ];
@@ -82,9 +82,8 @@ export function buildProductoColumns({
         const canToggleThisWay = isActive ? canDisable : canEdit;
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" size="sm" disabled={isToggling} />}>
+            <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" disabled={isToggling} aria-label="Acciones" />}>
               {isToggling ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
-              Acciones
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem render={<Link href={`/productos/${producto.id}`} />}>Ver ficha</DropdownMenuItem>

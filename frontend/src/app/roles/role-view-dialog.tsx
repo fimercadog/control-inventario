@@ -93,9 +93,9 @@ export function RoleViewDialog({
               <div className="flex items-center justify-between">
                 <span className="text-xl font-semibold text-foreground">{role.name}</span>
                 {role.estado === "activo" ? (
-                  <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+                  <Badge variant="success">Activo</Badge>
                 ) : (
-                  <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+                  <Badge variant="outline">Inactivo</Badge>
                 )}
               </div>
 
@@ -128,12 +128,7 @@ export function RoleViewDialog({
                     Editar
                   </Button>
                   <Button
-                    variant={role.estado === "activo" ? "destructive" : "outline"}
-                    className={
-                      role.estado === "activo"
-                        ? undefined
-                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                    }
+                    variant={role.estado === "activo" ? "destructive" : "success"}
                     size="sm"
                     disabled={togglingId === role.id}
                     onClick={() => handleToggle(role)}
@@ -168,13 +163,9 @@ export function RoleViewDialog({
                         <p className="text-xs text-muted-foreground">{usuario.email}</p>
                       </div>
                       {usuario.is_active ? (
-                        <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">
-                          Activo
-                        </Badge>
+                        <Badge variant="success">Activo</Badge>
                       ) : (
-                        <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">
-                          Inactivo
-                        </Badge>
+                        <Badge variant="outline">Inactivo</Badge>
                       )}
                     </li>
                   ))}

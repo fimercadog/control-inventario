@@ -77,14 +77,6 @@ export function ResultadoBadge({ resultado }: { resultado: string | null }) {
   if (!resultado) return <span className="text-muted-foreground">—</span>;
   const ok = resultado === "exito" || resultado === "success";
   return (
-    <Badge
-      className={
-        ok
-          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
-          : "border-red-500/40 bg-red-500/15 text-red-400"
-      }
-    >
-      {resultado}
-    </Badge>
+    <Badge variant={ok ? "success" : "destructive"}>{resultado}</Badge>
   );
 }

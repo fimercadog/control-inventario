@@ -93,9 +93,9 @@ export function CategoriaViewDialog({
               <div className="flex items-center justify-between">
                 <span className="text-xl font-semibold text-foreground">{categoria.nombre}</span>
                 {categoria.estado === "activo" ? (
-                  <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+                  <Badge variant="success">Activo</Badge>
                 ) : (
-                  <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+                  <Badge variant="outline">Inactivo</Badge>
                 )}
               </div>
 
@@ -118,12 +118,7 @@ export function CategoriaViewDialog({
                   ) : null}
                   {(categoria.estado === "activo" ? canDisable : canEdit) ? (
                     <Button
-                      variant={categoria.estado === "activo" ? "destructive" : "outline"}
-                      className={
-                        categoria.estado === "activo"
-                          ? undefined
-                          : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                      }
+                      variant={categoria.estado === "activo" ? "destructive" : "success"}
                       size="sm"
                       disabled={togglingId === categoria.id}
                       onClick={() => handleToggle(categoria)}
@@ -162,13 +157,9 @@ export function CategoriaViewDialog({
                         </p>
                       </div>
                       {producto.estado === "activo" ? (
-                        <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">
-                          Activo
-                        </Badge>
+                        <Badge variant="success">Activo</Badge>
                       ) : (
-                        <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">
-                          Inactivo
-                        </Badge>
+                        <Badge variant="outline">Inactivo</Badge>
                       )}
                     </li>
                   ))}

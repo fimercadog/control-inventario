@@ -115,13 +115,7 @@ function MovimientoDetailForm({
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <span className="text-xl font-semibold text-foreground">{TIPO_LABEL[movimiento.tipo] ?? movimiento.tipo}</span>
-        <Badge
-          className={
-            movimiento.delta >= 0
-              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
-              : "border-red-500/40 bg-red-500/15 text-red-400"
-          }
-        >
+        <Badge variant={movimiento.delta >= 0 ? "success" : "destructive"}>
           {movimiento.delta >= 0 ? "+" : ""}
           {movimiento.delta}
         </Badge>

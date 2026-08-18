@@ -94,7 +94,7 @@ export function AjustarStockForm({ item, onSuccess }: { item: StockItem; onSucce
           </div>
         </div>
         {diferencia !== null ? (
-          <p className={diferencia > 0 ? "text-sm text-emerald-600 dark:text-emerald-400" : diferencia < 0 ? "text-sm text-amber-600 dark:text-amber-400" : "text-sm text-muted-foreground"}>
+          <p className={diferencia > 0 ? "text-sm text-success" : diferencia < 0 ? "text-sm text-warning" : "text-sm text-muted-foreground"}>
             {diferencia > 0 ? `Se sumarán ${diferencia}; el nuevo stock será ${item.stock_actual + diferencia}.` : diferencia < 0 ? `Se descontarán ${Math.abs(diferencia)}; el nuevo stock será ${item.stock_actual + diferencia}.` : "No habrá cambios."}
           </p>
         ) : null}

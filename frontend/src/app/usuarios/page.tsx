@@ -230,7 +230,7 @@ export default function UsuariosPage() {
             <Dialog>
               <DialogTrigger
                 render={
-                  <Button className="bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400" />
+                  <Button />
                 }
               >
                 <Plus className="size-4" />
@@ -410,12 +410,7 @@ export default function UsuariosPage() {
                     Editar avatar
                   </Button>
                   <Button
-                    variant={viewingUsuario.is_active ? "destructive" : "outline"}
-                    className={
-                      viewingUsuario.is_active
-                        ? undefined
-                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                    }
+                    variant={viewingUsuario.is_active ? "destructive" : "success"}
                     size="sm"
                     disabled={togglingId === viewingUsuario.id}
                     onClick={() => handleToggleActivo(viewingUsuario)}

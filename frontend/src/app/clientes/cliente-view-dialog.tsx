@@ -58,9 +58,9 @@ export function ClienteViewDialog({
             <div className="flex items-center justify-between">
               <span className="text-xl font-semibold text-foreground">{cliente.nombre}</span>
               {cliente.estado === "activo" ? (
-                <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+                <Badge variant="success">Activo</Badge>
               ) : (
-                <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+                <Badge variant="outline">Inactivo</Badge>
               )}
             </div>
 
@@ -91,12 +91,7 @@ export function ClienteViewDialog({
                 ) : null}
                 {(cliente.estado === "activo" ? canDisable : canEdit) ? (
                   <Button
-                    variant={cliente.estado === "activo" ? "destructive" : "outline"}
-                    className={
-                      cliente.estado === "activo"
-                        ? undefined
-                        : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                    }
+                    variant={cliente.estado === "activo" ? "destructive" : "success"}
                     size="sm"
                     disabled={togglingId === cliente.id}
                     onClick={() => handleToggle(cliente)}

@@ -107,9 +107,9 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{producto.nombre}</h1>
             {producto.estado === "activo" ? (
-              <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+              <Badge variant="success">Activo</Badge>
             ) : (
-              <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+              <Badge variant="outline">Inactivo</Badge>
             )}
           </div>
           {producto.codigo ? <p className="text-sm text-muted-foreground">Código: {producto.codigo}</p> : null}
@@ -145,12 +145,7 @@ export default function ProductoFichaPage({ params }: { params: Promise<{ id: st
           ) : null}
           {!contingenciaActiva && (producto.estado === "activo" ? canDisable : canEdit) ? (
             <Button
-              variant={producto.estado === "activo" ? "destructive" : "outline"}
-              className={
-                producto.estado === "activo"
-                  ? undefined
-                  : "border-emerald-500/40 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-              }
+              variant={producto.estado === "activo" ? "destructive" : "success"}
               disabled={toggleStatus === "toggling"}
               onClick={handleToggle}
             >
@@ -209,7 +204,7 @@ function DetalleTab({ producto }: { producto: Producto }) {
         <Field
           label="Stock actual"
           value={String(producto.stock_actual)}
-          className={stockBajo ? "font-semibold text-amber-500" : undefined}
+          className={stockBajo ? "font-semibold text-warning" : undefined}
         />
         <Field label="Stock mínimo" value={String(producto.stock_minimo)} />
         <Field label="Stock máximo" value={producto.stock_maximo != null ? String(producto.stock_maximo) : "—"} />
@@ -421,7 +416,7 @@ function ProveedoresTab({
                 <p className="text-sm font-medium text-foreground">
                   {a.proveedor_nombre}
                   {a.es_principal ? (
-                    <Badge className="ml-2 border-indigo-500/40 bg-indigo-500/15 text-indigo-400">Principal</Badge>
+                    <Badge variant="secondary" className="ml-2">Principal</Badge>
                   ) : null}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -442,7 +437,7 @@ function ProveedoresTab({
                   Deshabilitar
                 </Button>
               ) : (
-                <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">
+                <Badge variant={a.estado === "activo" ? "success" : "outline"}>
                   {a.estado === "activo" ? "Activo" : "Inactivo"}
                 </Badge>
               )}

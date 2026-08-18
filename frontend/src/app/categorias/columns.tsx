@@ -50,9 +50,9 @@ export function buildCategoriaColumns({
       header: "Estado",
       cell: ({ row }) =>
         row.original.estado === "activo" ? (
-          <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+          <Badge variant="success">Activo</Badge>
         ) : (
-          <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+          <Badge variant="outline">Inactivo</Badge>
         ),
     },
     {
@@ -73,9 +73,8 @@ export function buildCategoriaColumns({
         const canToggleThisWay = isActive ? canDisable : canEdit;
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" size="sm" disabled={isToggling} />}>
+            <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" disabled={isToggling} aria-label="Acciones" />}>
               {isToggling ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
-              Acciones
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onView(categoria)}>

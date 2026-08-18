@@ -211,7 +211,7 @@ export default function RolesPage() {
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger
               render={
-                <Button className="bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400" />
+                <Button />
               }
             >
               <Plus className="size-4" />

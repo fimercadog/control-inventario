@@ -137,9 +137,7 @@ export function ProgramadosTab({ catalogo, canManage }: { catalogo: ReporteCatal
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">
-                  Sin ejecuciones (motor no implementado)
-                </Badge>
+                <Badge variant="outline">Sin ejecuciones (motor no implementado)</Badge>
                 {canManage ? (
                   <Button
                     variant="destructive"

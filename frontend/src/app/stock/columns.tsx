@@ -53,10 +53,10 @@ export function buildStockColumns({
         const { stock_actual: actual, stock_minimo: minimo, bajo_minimo: requiereReposicion } = row.original;
         const minimoAlcanzado = actual === minimo;
         return (
-          <span className={requiereReposicion ? "font-semibold text-amber-500" : "text-foreground"}>
+          <span className={requiereReposicion ? "font-semibold text-warning" : "text-foreground"}>
             {actual}
             {requiereReposicion ? (
-              <Badge className="ml-2 border-amber-500/40 bg-amber-500/15 text-amber-400">
+              <Badge variant="warning" className="ml-2">
                 {minimoAlcanzado ? "Mínimo alcanzado" : "Bajo mínimo"}
               </Badge>
             ) : null}
@@ -75,11 +75,11 @@ export function buildStockColumns({
       header: "Estado",
       cell: ({ row }) =>
         row.original.inhabilitado_por_stock ? (
-          <Badge className="border-amber-500/40 bg-amber-500/15 text-amber-400">Agotado</Badge>
+          <Badge variant="warning">Agotado</Badge>
         ) : row.original.estado === "activo" ? (
-          <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
+          <Badge variant="success">Activo</Badge>
         ) : (
-          <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>
+          <Badge variant="outline">Inactivo</Badge>
         ),
     },
   ];
@@ -94,9 +94,8 @@ export function buildStockColumns({
       const canToggleThisWay = isActive ? canDisable : canEdit;
       return (
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" size="sm" disabled={isToggling} />}>
+          <DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" disabled={isToggling} aria-label="Acciones" />}>
             {isToggling ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
-            Acciones
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem render={<Link href={`/productos/${item.id}`} />}>

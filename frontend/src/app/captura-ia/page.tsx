@@ -23,12 +23,12 @@ const MAX_AUDIO_BYTES = 20480 * 1024; // matches StoreVozRequest: file, max:2048
 // de IA. Cambiar esta bandera a false habilita el flujo ya implementado.
 const CAPTURA_IA_EN_PREPARACION = true;
 
-const ESTADO_BADGE: Record<string, string> = {
-  aplicado: "border-emerald-500/40 bg-emerald-500/15 text-emerald-400",
-  pendiente_revision: "border-amber-500/40 bg-amber-500/15 text-amber-400",
-  parcial: "border-amber-500/40 bg-amber-500/15 text-amber-400",
-  descartado: "border-slate-400/40 bg-slate-400/15 text-slate-300",
-  procesando: "border-slate-400/40 bg-slate-400/15 text-slate-300",
+const ESTADO_BADGE: Record<string, "success" | "warning" | "outline"> = {
+  aplicado: "success",
+  pendiente_revision: "warning",
+  parcial: "warning",
+  descartado: "outline",
+  procesando: "outline",
 };
 const ESTADO_LABEL: Record<string, string> = {
   aplicado: "Aplicado",
@@ -261,7 +261,7 @@ export default function CapturaIAPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(captura.created_at)}</p>
                   </div>
-                  <Badge className={ESTADO_BADGE[captura.estado]}>{ESTADO_LABEL[captura.estado]}</Badge>
+                  <Badge variant={ESTADO_BADGE[captura.estado]}>{ESTADO_LABEL[captura.estado]}</Badge>
                 </Link>
               </li>
             ))}

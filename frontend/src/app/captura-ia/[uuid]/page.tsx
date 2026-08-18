@@ -161,7 +161,7 @@ export default function CapturaIADetallePage({ params }: { params: Promise<{ uui
                   <p className="text-sm font-medium text-foreground">
                     {detalle.name}
                     {detalle.es_producto_nuevo ? (
-                      <Badge className="ml-2 border-indigo-500/40 bg-indigo-500/15 text-indigo-400">Producto nuevo</Badge>
+                      <Badge variant="secondary" className="ml-2">Producto nuevo</Badge>
                     ) : null}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -172,12 +172,12 @@ export default function CapturaIADetallePage({ params }: { params: Promise<{ uui
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge
-                    className={
+                    variant={
                       detalle.estado === "aplicado"
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
+                        ? "success"
                         : detalle.estado === "descartado"
-                          ? "border-slate-400/40 bg-slate-400/15 text-slate-300"
-                          : "border-amber-500/40 bg-amber-500/15 text-amber-400"
+                          ? "outline"
+                          : "warning"
                     }
                   >
                     {ESTADO_LABEL[detalle.estado] ?? detalle.estado}

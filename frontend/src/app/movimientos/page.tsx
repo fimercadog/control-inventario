@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Search } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Loader2, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +27,15 @@ import type { PaginationMeta } from "@/types/api";
 const DEFAULT_PAGE_SIZE = 100; // matches MovimientoController::index's real default
 
 const TIPO_LABEL: Record<string, string> = { entrada: "Entrada", salida: "Salida", ajuste: "Ajuste" };
-const TIPO_BADGE: Record<string, string> = {
-  entrada: "border-emerald-500/40 bg-emerald-500/15 text-emerald-400",
-  salida: "border-red-500/40 bg-red-500/15 text-red-400",
-  ajuste: "border-amber-500/40 bg-amber-500/15 text-amber-400",
+const TIPO_BADGE: Record<string, "success" | "destructive" | "warning"> = {
+  entrada: "success",
+  salida: "destructive",
+  ajuste: "warning",
+};
+const TIPO_ICON: Record<string, typeof ArrowDownLeft> = {
+  entrada: ArrowDownLeft,
+  salida: ArrowUpRight,
+  ajuste: SlidersHorizontal,
 };
 
 interface QueryState {
@@ -148,7 +153,7 @@ export default function MovimientosPage() {
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger
               render={
-                <Button className="bg-indigo-600 text-white hover:bg-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-400" />
+                <Button />
               }
             >
               <Plus className="size-4" />
@@ -210,7 +215,13 @@ export default function MovimientosPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className={TIPO_BADGE[m.tipo]}>{TIPO_LABEL[m.tipo] ?? m.tipo}</Badge>
+                    <Badge variant={TIPO_BADGE[m.tipo]}>
+                      {(() => {
+                        const Icon = TIPO_ICON[m.tipo];
+                        return Icon ? <Icon className="size-3" /> : null;
+                      })()}
+                      {TIPO_LABEL[m.tipo] ?? m.tipo}
+                    </Badge>
                     <span className="font-medium text-foreground">{m.producto ?? "—"}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">{formatDateTime(m.created_at)}</span>
