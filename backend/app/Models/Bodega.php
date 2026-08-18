@@ -11,9 +11,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Fundacion estructural de multi-bodega (punto 8, docs/diagrama-bd.md).
  * Toda empresa migrada tiene una bodega "Principal" (es_principal=true)
- * creada por 2026_08_18_092000_create_bodegas_and_stock_por_bodega.php
- * — InventoryService todavia no escribe por bodega, sigue usando
- * productos.stock_actual como unica fuente de verdad operativa.
+ * creada por 2026_08_18_092000_create_bodegas_and_stock_por_bodega.php.
+ * InventoryService actualiza tanto el saldo de esta bodega como el total
+ * consolidado de productos.stock_actual.
  */
 class Bodega extends Model
 {

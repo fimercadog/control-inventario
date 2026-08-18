@@ -14,10 +14,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * para que BelongsToEmpresa siga fijando empresa_id.
  *
  * Poblado por backfill al crearse (una fila por producto contra la
- * bodega "Principal" de su empresa, copiando productos.stock_actual).
- * Ningun camino de escritura de la app lo actualiza todavia: es la base
- * para una fase futura que reescriba InventoryService para operar por
- * bodega, no la fuente de verdad actual.
+ * bodega "Principal" de su empresa, copiando productos.stock_actual) y
+ * actualizado por InventoryService en cada movimiento posterior.
  */
 class ProductoBodega extends Pivot
 {

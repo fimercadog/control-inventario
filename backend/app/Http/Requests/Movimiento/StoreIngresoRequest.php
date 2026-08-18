@@ -29,6 +29,7 @@ class StoreIngresoRequest extends FormRequest
     {
         return [
             'cantidad' => ['required', 'numeric', 'min:0.01'],
+            'bodega_id' => ['sometimes', 'nullable', 'integer', 'exists:bodegas,id'],
             'costo' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'proveedor_id' => ['sometimes', 'nullable', 'integer', 'exists:proveedores,id'],
             'proveedor_nuevo' => ['sometimes', 'nullable', 'string', 'max:255'],

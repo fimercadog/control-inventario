@@ -1,12 +1,15 @@
 <?php
 
 use App\Http\Controllers\Api\AuditLogController;
+use App\Http\Controllers\Api\BodegaController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ContingenciaProductoController;
+use App\Http\Controllers\Api\ContingenciaActividadController;
 use App\Http\Controllers\Api\ClienteController;
+use App\Http\Controllers\Api\CrmController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\MarcaController;
@@ -130,6 +133,28 @@ Route::prefix('v1/clientes')->name('clientes.')->middleware(['auth:api', 'empres
     Route::post('{cliente}/habilitar', [ClienteController::class, 'enable'])->name('enable');
 });
 
+// CRM comercial. La autorización fina se incorpora mediante los permisos
+// sembrados; el aislamiento se mantiene explícito con FiltersByEmpresa en el
+// controller, igual que en los módulos existentes.
+Route::prefix('v1')->middleware(['auth:api', 'empresa'])->group(function () {
+    Route::get('contactos', [CrmController::class, 'contactos'])->middleware('permission:contactos.ver');
+    Route::post('contactos', [CrmController::class, 'crearContacto'])->middleware('permission:contactos.crear');
+    Route::patch('contactos/{contacto}', [CrmController::class, 'actualizarContacto'])->middleware('permission:contactos.editar')->whereNumber('contacto');
+    Route::post('contactos/{contacto}/convertir', [CrmController::class, 'convertirContacto'])->middleware('permission:contactos.convertir')->whereNumber('contacto');
+    Route::get('etapas-oportunidad', [CrmController::class, 'etapas'])->middleware('permission:oportunidades.ver');
+    Route::post('etapas-oportunidad', [CrmController::class, 'crearEtapa'])->middleware('permission:oportunidades.gestionar');
+    Route::get('oportunidades', [CrmController::class, 'oportunidades'])->middleware('permission:oportunidades.ver');
+    Route::post('oportunidades', [CrmController::class, 'crearOportunidad'])->middleware('permission:oportunidades.crear');
+    Route::post('oportunidades/{oportunidad}/cambiar-etapa', [CrmController::class, 'cambiarEtapa'])->middleware('permission:oportunidades.editar')->whereNumber('oportunidad');
+    Route::get('actividades', [CrmController::class, 'actividades'])->middleware('permission:actividades.ver');
+    Route::post('actividades', [CrmController::class, 'crearActividad'])->middleware('permission:actividades.crear');
+    Route::post('actividades/{actividad}/completar', [CrmController::class, 'completarActividad'])->middleware('permission:actividades.completar')->whereNumber('actividad');
+    Route::get('automatizaciones', [CrmController::class, 'automatizaciones'])->middleware('permission:automatizaciones.ver');
+    Route::post('automatizaciones', [CrmController::class, 'crearAutomatizacion'])->middleware('permission:automatizaciones.gestionar');
+    Route::get('notificaciones', [CrmController::class, 'notificaciones']);
+    Route::post('notificaciones/{notificacion}/leer', [CrmController::class, 'leerNotificacion'])->whereNumber('notificacion');
+});
+
 // RC1 Fase 1 (docs/03_FUNCTIONAL_SPEC/Categories.md). Borrado siempre
 // lógico — mismo patrón exacto que Proveedores.
 Route::prefix('v1/categorias')->name('categorias.')->middleware(['auth:api', 'empresa'])->group(function () {
@@ -187,6 +212,14 @@ Route::prefix('v1/stock')->name('stock.')->middleware(['auth:api', 'empresa'])->
     Route::post('{producto}/habilitar', [StockController::class, 'enable'])->name('enable');
 });
 
+// Inventario por bodega: el catálogo y sus saldos se consultan con el
+// permiso de lectura de stock; crear ubicaciones requiere gestionarlo.
+Route::prefix('v1/bodegas')->name('bodegas.')->middleware(['auth:api', 'empresa'])->group(function () {
+    Route::get('/', [BodegaController::class, 'index'])->middleware('permission:stock.ver')->name('index');
+    Route::post('/', [BodegaController::class, 'store'])->middleware('permission:stock.gestionar')->name('store');
+    Route::get('{bodega}/productos', [BodegaController::class, 'productos'])->middleware('permission:stock.ver')->whereNumber('bodega')->name('productos');
+});
+
 // RC1 Fase 3 (docs/03_FUNCTIONAL_SPEC/Movements.md). Módulo global —
 // distinto de GET /productos/{producto}/movimientos (historial acotado a
 // un solo producto, sin cambios). Un movimiento nunca se elimina ni se
@@ -206,6 +239,13 @@ Route::prefix('v1/movimientos')->name('movimientos.')->middleware(['auth:api', '
 Route::prefix('v1/contingencia/productos')->name('contingencia.productos.')->middleware(['auth:api', 'empresa'])->group(function () {
     Route::post('sincronizar', [ContingenciaProductoController::class, 'sincronizar'])->name('sincronizar');
 });
+
+// CRM en contingencia: sólo creación manual de actividades. No incluye
+// oportunidades, etapas ni automatizaciones porque esas transiciones pueden
+// entrar en conflicto con cambios comerciales realizados en línea.
+Route::post('v1/contingencia/actividades/sincronizar', [ContingenciaActividadController::class, 'sincronizar'])
+    ->middleware(['auth:api', 'empresa', 'permission:actividades.crear'])
+    ->name('contingencia.actividades.sincronizar');
 
 // RC1 Fase 4 (docs/03_FUNCTIONAL_SPEC/Users.md), ampliado 2026-08-03 y
 // 2026-08-04 (ADR-015, PATCH + avatar). Listar/Ver/Editar/Activar/

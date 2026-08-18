@@ -85,6 +85,7 @@ class DatabaseSeeder extends Seeder
         $proveedores = (new ProveedorSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['proveedores'] * $escala)));
         $this->asociarMarcasConProveedores($empresa, $marcas, $proveedores);
         (new ClienteSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['clientes'] * $escala)));
+        (new CrmSeeder())->crear($empresa);
         $paresCreados = (new ProductoProveedorSeeder())->crear($empresa);
         $this->command?->info("  producto_proveedor: {$paresCreados} pares creados");
 

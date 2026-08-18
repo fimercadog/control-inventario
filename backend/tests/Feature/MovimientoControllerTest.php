@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\CapturaIA;
 use App\Models\CapturaIADetalle;
+use App\Models\Bodega;
 use App\Models\Empresa;
 use App\Models\Producto;
+use App\Models\ProductoBodega;
 use App\Models\Proveedor;
 use App\Models\Role;
 use App\Models\UnidadMedida;
@@ -95,6 +97,57 @@ class MovimientoControllerTest extends TestCase
             ->assertJsonPath('data.delta', fn ($v) => (float) $v === 50.0);
 
         $this->assertEquals(50, $this->productoA->fresh()->stock_actual);
+    }
+
+    public function test_a_movement_updates_the_selected_warehouse_and_the_consolidated_stock(): void
+    {
+        $principal = Bodega::create([
+            'empresa_id' => $this->empresaA->id,
+            'nombre' => 'Principal',
+            'es_principal' => true,
+        ]);
+        $secundaria = Bodega::create([
+            'empresa_id' => $this->empresaA->id,
+            'nombre' => 'Sucursal Norte',
+        ]);
+        $this->productoA->forceFill(['stock_actual' => 45])->save();
+        ProductoBodega::create([
+            'empresa_id' => $this->empresaA->id,
+            'producto_id' => $this->productoA->id,
+            'bodega_id' => $principal->id,
+            'stock_actual' => 40,
+        ]);
+        ProductoBodega::create([
+            'empresa_id' => $this->empresaA->id,
+            'producto_id' => $this->productoA->id,
+            'bodega_id' => $secundaria->id,
+            'stock_actual' => 5,
+        ]);
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', [
+                'producto_id' => $this->productoA->id,
+                'bodega_id' => $secundaria->id,
+                'tipo' => 'salida',
+                'cantidad' => 3,
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.bodega_id', $secundaria->id)
+            ->assertJsonPath('data.bodega', 'Sucursal Norte')
+            ->assertJsonPath('data.stock_anterior', fn ($valor) => (float) $valor === 5.0)
+            ->assertJsonPath('data.stock_nuevo', fn ($valor) => (float) $valor === 2.0);
+
+        $this->assertSame(42.0, (float) $this->productoA->fresh()->stock_actual);
+        $this->assertDatabaseHas('producto_bodega', [
+            'producto_id' => $this->productoA->id,
+            'bodega_id' => $secundaria->id,
+            'stock_actual' => 2,
+        ]);
+        $this->assertDatabaseHas('producto_bodega', [
+            'producto_id' => $this->productoA->id,
+            'bodega_id' => $principal->id,
+            'stock_actual' => 40,
+        ]);
     }
 
     public function test_registering_a_movement_writes_a_real_audit_log_entry(): void

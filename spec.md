@@ -1,264 +1,152 @@
-# FidelOS — Plan de construcción desde cero
+# FidelOS CRM — Especificación de producto y construcción
 
-## 1. Punto de partida y objetivo
+## 1. Objetivo
 
-Este documento asume que **backend y frontend comienzan en cero**: no hay API, base de datos, páginas, autenticación ni datos cargados. Es la guía ordenada para construir FidelOS hasta su primera versión beta funcional.
+FidelOS será un CRM web multiempresa en español para centralizar relaciones con clientes, oportunidades, actividades y ventas. El inventario existente pasa a ser un módulo conectado al proceso comercial: sirve para consultar disponibilidad y registrar movimientos, pero no define el producto.
 
-FidelOS será un sistema web multiempresa de control de inventario en español. Permitirá administrar catálogos y productos, registrar movimientos trazables, consultar stock, controlar usuarios/roles y preparar una futura captura de inventario por foto o audio.
+La beta debe permitir a un equipo comercial captar y calificar prospectos, convertirlos en clientes, gestionar un embudo de ventas, programar y completar seguimientos, automatizar tareas y consultar resultados. Todos los datos estarán aislados por empresa, serán auditables y respetarán permisos por rol.
 
-### Resultado de la beta
+## 2. Alcance funcional de la beta
 
-- Usuarios autenticados y aislados por empresa.
-- Inventario que no permite stock negativo y conserva sus movimientos.
-- Dashboard, catálogos, productos, stock, movimientos, terceros, usuarios, roles, auditoría y reportes básicos.
-- Temas claro y oscuro, interfaz consistente y aviso de versión beta.
-- Captura IA visible, pero bloqueada hasta contar con proveedor/API.
+### CRM comercial
 
-## 2. Decisiones técnicas iniciales
+- **Contactos y empresas cliente:** prospectos, clientes, contactos, etiquetas, origen, responsable, datos de contacto y notas.
+- **Embudo de oportunidades:** etapas configurables, valor, probabilidad, fecha estimada de cierre, responsable, productos/servicios y razón de pérdida.
+- **Actividades:** llamadas, correos, reuniones, tareas y notas; estados pendiente, completada, vencida y cancelada; recordatorios y asignación.
+- **Automatización:** reglas activadas por eventos del CRM que crean actividades, asignan responsables, actualizan etapas o envían notificaciones dentro de la aplicación. Deben ejecutarse en cola, ser idempotentes, tener historial y no duplicar resultados.
+- **Dashboard:** cartera, oportunidades por etapa, valor ponderado, conversión, actividades pendientes/vencidas y rendimiento por responsable.
+- **Reportes:** embudo, actividad comercial, conversión, clientes, inventario y movimientos, con filtros, exportación y permisos.
+
+### Inventario conectado
+
+Se conserva el catálogo, productos, proveedores, stock y movimientos actuales. En oportunidades y ventas se pueden consultar productos y su disponibilidad. El stock sólo cambia a través de `InventoryService`; una oportunidad no afecta existencias hasta que se confirme explícitamente una venta o despacho.
+
+### Contingencia CRM limitada
+
+El modo de contingencia conserva la operación offline existente de productos y añade sólo el registro **manual** de actividades CRM. Una actividad offline queda en la cola local y se sincroniza explícitamente, una por una, con idempotencia y auditoría. Al sincronizar, el usuario actual queda como creador y responsable.
+
+No se permite offline crear o editar oportunidades, cambiar etapas, reasignar responsables, ejecutar automatizaciones, convertir contactos ni alterar inventario. Estas acciones quedan bloqueadas para evitar conflictos comerciales y duplicados.
+
+### Fuera de alcance de la beta
+
+- Envío real de correo, WhatsApp o SMS sin una integración configurada.
+- Facturación electrónica, pagos y contabilidad.
+- Captura IA productiva sin proveedor, credenciales, límites de archivos y pruebas de seguridad. La interfaz puede permanecer visible pero bloqueada.
+
+## 3. Arquitectura
 
 | Capa | Decisión |
 | --- | --- |
-| Backend | Laravel 12, PHP 8.2+, API REST bajo `/api/v1` |
-| Autorización | JWT/Sanctum según configuración, Spatie Permission y Policies |
-| Datos | SQLite en desarrollo; MySQL o PostgreSQL en producción |
-| Frontend | Next.js 16, React 19, TypeScript estricto |
-| Interfaz | Tailwind CSS, Base UI, iconos Lucide |
-| Formularios | React Hook Form + Zod |
-| Estado | Redux Toolkit para sesión/estado global; TanStack Query para consultas remotas |
-| Pruebas | PHPUnit/Pest para backend y Playwright para flujos críticos de frontend |
+| Backend | Laravel 12, PHP 8.2+, API REST `/api/v1` |
+| Datos | SQLite en desarrollo; MySQL/PostgreSQL en producción |
+| Autorización | JWT, Spatie Permission, Policies y alcance obligatorio por `empresa_id` |
+| Procesamiento | Laravel queues para automatizaciones, recordatorios e importaciones |
+| Frontend | Next.js 16, React 19, TypeScript estricto y App Router |
+| UI | Tailwind CSS, Base UI, Lucide, React Hook Form y Zod |
+| Estado | Redux Toolkit (sesión/UI) y cliente de consultas remotas |
+| Calidad | PHPUnit para reglas/API y Playwright para flujos críticos |
 
-Estructura objetivo:
+La API usa respuestas JSON consistentes y errores normalizados. Las migraciones son la fuente de verdad del esquema. No se versionan secretos, tokens, datos locales ni archivos cargados.
+
+## 4. Modelo de datos
+
+Todas las entidades operativas contienen `empresa_id`. Las consultas y escrituras se limitan por la empresa de la sesión incluso si se manipulan IDs en una petición.
+
+| Dominio | Entidades principales |
+| --- | --- |
+| Organización | empresas, usuarios, perfiles, invitaciones, roles, permisos |
+| CRM | clientes, contactos, etiquetas, cliente_etiqueta, oportunidades, etapas_oportunidad, oportunidad_productos, actividades, notas, fuentes_lead |
+| Automatización | reglas_automatizacion, ejecuciones_automatizacion, notificaciones |
+| Inventario | categorías, marcas, unidades, proveedores, productos, producto_proveedor, movimientos, lotes opcionales |
+| Control | audit_logs, trabajos de captura IA, contingencia y reportes programados |
+
+Reglas de integridad:
+
+1. Un contacto pertenece a un cliente o puede existir como prospecto no convertido; convertirlo crea o vincula un cliente sin perder historial.
+2. Toda oportunidad tiene cliente, etapa, responsable y monto no negativo. Sus cambios de etapa se guardan en auditoría.
+3. Una actividad tiene responsable, fecha/hora y estado. Al completarse conserva quién y cuándo la completó.
+4. Las reglas automáticas se identifican por evento, filtros y acciones. Cada ejecución guarda una clave de idempotencia, resultado y error si existe.
+5. Los productos y movimientos preservan las reglas de stock existentes: no negativo, movimientos inmutables y trazabilidad completa.
+
+## 5. Roles y permisos
+
+Roles iniciales: Administrador, Gerente comercial, Vendedor, Bodeguero, Auxiliar y Consulta.
+
+Los permisos son explícitos por recurso y acción: ver, crear, editar, asignar, completar, convertir, deshabilitar, exportar, ajustar inventario y administrar automatizaciones. Un Vendedor sólo accede a los registros que posee o le fueron asignados, salvo un permiso de visión global. Los controles de interfaz complementan, nunca sustituyen, las políticas de API.
+
+## 6. API de la beta
+
+Además de autenticación, perfil, usuarios, roles, auditoría, catálogo e inventario existentes, exponer:
 
 ```text
-control-inventario/
-├── backend/                  # Laravel: API, migraciones, seeders y pruebas
-├── frontend/                 # Next.js: páginas, componentes y pruebas E2E
-├── spec.md                   # Este plan de construcción
-└── README.md                 # Arranque local y comandos habituales
+GET|POST        /clientes
+GET|PUT|DELETE  /clientes/{id}
+GET|POST        /contactos
+GET|PUT|DELETE  /contactos/{id}
+POST            /contactos/{id}/convertir
+
+GET|POST        /etapas-oportunidad
+GET|PUT|DELETE  /etapas-oportunidad/{id}
+GET|POST        /oportunidades
+GET|PUT         /oportunidades/{id}
+POST            /oportunidades/{id}/cambiar-etapa
+POST            /oportunidades/{id}/marcar-ganada
+POST            /oportunidades/{id}/marcar-perdida
+
+GET|POST        /actividades
+GET|PUT|DELETE  /actividades/{id}
+POST            /actividades/{id}/completar
+
+GET|POST        /automatizaciones
+GET|PUT|DELETE  /automatizaciones/{id}
+GET             /automatizaciones/{id}/ejecuciones
+GET             /notificaciones
+POST            /notificaciones/{id}/leer
+
+GET             /dashboard
+GET             /reportes/{clave}
+POST            /contingencia/actividades/sincronizar
 ```
 
-Nunca versionar `.env`, secretos, tokens, archivos cargados ni bases SQLite con información local.
+Los listados aceptan búsqueda, filtros, orden y paginación. Las eliminaciones que afecten trazabilidad son deshabilitaciones lógicas.
 
-## 3. Fase 0 — Preparar los dos proyectos vacíos
+## 7. Automatizaciones
 
-### Backend
+Implementar primero estas reglas configurables y activables:
 
-1. Crear proyecto Laravel en `backend/`.
-2. Configurar `.env` con SQLite local, correo de desarrollo y `FRONTEND_URL`.
-3. Instalar autenticación JWT/Sanctum y Spatie Permission.
-4. Crear prefijo de rutas `/api/v1` y respuestas JSON consistentes.
-5. Configurar CORS para el frontend local.
-6. Añadir pruebas base y una base de datos aislada para testing.
-
-### Frontend
-
-1. Crear proyecto Next.js en `frontend/` con TypeScript, App Router y Tailwind.
-2. Definir `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1` para desarrollo.
-3. Instalar cliente HTTP, Redux Toolkit, TanStack Query, React Hook Form, Zod, Base UI y Lucide.
-4. Crear la estructura `app/`, `components/`, `features/`, `hooks/`, `lib/` y `types/`.
-5. Crear un proveedor de sesión y un cliente API que maneje token, renovación y errores 401/403.
-
-### Criterio de cierre
-
-La API responde a una ruta de salud y el frontend puede consultar dicha ruta. Ambos proyectos compilan sin errores.
-
-## 4. Fase 1 — Base de datos y aislamiento por empresa
-
-Crear migraciones, modelos, factorías, seeders y políticas para:
-
-| Grupo | Entidades |
+| Evento | Acción de la regla |
 | --- | --- |
-| Organización | empresas, usuarios, perfiles, invitaciones |
-| Acceso | roles, permisos, relación usuario–rol |
-| Catálogos | categorías, marcas, unidades de medida, proveedores, clientes |
-| Relaciones | marca_proveedor, producto_proveedor |
-| Inventario | productos, movimientos de inventario, lotes si se requieren |
-| Control | auditorías, trabajos/procesamientos de captura IA, cola de contingencia si se persiste en servidor |
+| Contacto creado | asignar responsable y crear tarea de primer contacto |
+| Oportunidad creada | crear seguimiento con vencimiento configurable |
+| Cambio de etapa | crear actividad, notificar al responsable o reasignar |
+| Oportunidad sin actividad reciente | crear recordatorio de seguimiento |
+| Oportunidad ganada | notificar y preparar venta/despacho sin tocar stock automáticamente |
 
-Reglas obligatorias desde el inicio:
+Un comando programado detecta tareas vencidas y oportunidades sin seguimiento; su ejecución debe ser segura al repetirse. Si la cola está caída, la interfaz muestra el estado real y permite reintentar trabajos autorizados.
 
-- Las entidades operativas tienen `empresa_id`.
-- Toda consulta y escritura se restringe a la empresa de la sesión.
-- Las migraciones son la fuente de verdad del esquema.
-- Cada nuevo campo requiere migración, validación, recurso API, prueba y actualización del cliente que lo consuma.
-- Seeders crean datos realistas y legibles; nunca exponen nombres `E2E`, cadenas aleatorias o datos de test al usuario.
+## 8. Frontend
 
-### Datos iniciales
+Rutas principales:
 
-Crear una empresa demo, un administrador de desarrollo documentado sólo en el README/local y catálogos coherentes: alimentos, bebidas, limpieza, unidades (unidad, kg, g, L, ml, caja, bolsa, docena), marcas y proveedores con relaciones plausibles.
-
-## 5. Fase 2 — Autenticación, perfiles y permisos
-
-### Backend
-
-Implementar:
-
-- `POST /auth/login`, incluyendo `remember`.
-- `POST /auth/refresh` y `POST /auth/logout`.
-- `GET /auth/me`.
-- Recuperación/actualización de perfil según el alcance de la beta.
-- Roles iniciales: Administrador, Bodeguero, Auxiliar y Consulta.
-- Permisos explícitos para ver, crear, editar, deshabilitar y ajustar inventario.
-
-### Frontend
-
-Implementar:
-
-- Página `/login`, validación, mensajes de error y casilla **Recordar usuario**.
-- Protección de rutas privadas y redirección segura.
-- Bootstrap de sesión al recargar la aplicación.
-- Cabecera con perfil, rol y cierre de sesión.
-
-### Criterio de cierre
-
-Un administrador puede iniciar/cerrar sesión, la sesión recordada persiste según su configuración y un usuario sin permiso no puede ejecutar acciones ni leer datos de otra empresa.
-
-## 6. Fase 3 — Catálogos y productos
-
-Construir API y páginas para Categorías, Marcas, Unidades de medida, Proveedores, Clientes y Productos.
-
-### Producto
-
-Campos: nombre, código interno, código de barras, categoría, marca, unidad de medida, presentación, descripción, costo, precio, stock mínimo, stock máximo y estado.
-
-La presentación complementa la unidad. Debe permitir expresar, por ejemplo, “bolsa de 15 kg”, “caja de 24 unidades” o “botella de 1 L”; el formulario debe separar cantidad por presentación y contenido/unidad cuando aporte claridad.
-
-### Relaciones
-
-- Una marca puede tener varios proveedores.
-- Un producto puede tener varios proveedores y uno puede identificarse como principal.
-- La lista de marcas muestra sus proveedores de forma legible.
-- Los modales de creación/edición de catálogos mantienen el mismo patrón visual, con bordes, profundidad, secciones y espacio suficiente.
-
-### Endpoints orientativos
-
-```text
-GET|POST        /categorias, /marcas, /unidades-medida, /proveedores, /clientes
-GET|PUT|DELETE  /{recurso}/{id}
-GET|POST        /productos
-GET|PUT         /productos/{id}
-POST            /productos/{id}/habilitar
-POST            /productos/{id}/deshabilitar
-```
-
-## 7. Fase 4 — Núcleo de inventario y trazabilidad
-
-Crear un servicio de dominio, por ejemplo `InventoryService`, como **único** punto autorizado para alterar el stock. Los controladores no modifican cantidades directamente.
-
-### Movimientos
-
-Tipos base:
-
-- Ingreso
-- Salida
-- Ajuste por conteo físico
-- Ajuste por ingreso adicional
-
-Todo movimiento conserva producto, cantidad positiva, tipo, fecha, usuario, empresa y observación cuando aplique. Los ingresos admiten proveedor, costo unitario, documento/factura, lote y vencimiento.
-
-### Reglas obligatorias
-
-1. No existe edición directa de `stock_actual`.
-2. Una salida o ajuste no puede dejar stock negativo.
-3. En Stock existen dos acciones manuales:
-   - **Conteo físico:** fija el total contado y crea el diferencial como ajuste.
-   - **Agregar stock:** suma unidades y crea un movimiento de ajuste.
-4. Un ajuste exige observación de al menos tres caracteres.
-5. El stock actual es de sólo lectura al editar producto; allí sólo se cambian umbrales.
-6. Stock igual a cero inhabilita automáticamente el producto si estaba activo y fue agotado por el sistema.
-7. Un ingreso o ajuste positivo reactiva sólo al producto inhabilitado automáticamente; una inhabilitación manual se respeta.
-8. Stock menor o igual al mínimo muestra **Mínimo alcanzado**; por debajo se identifica como stock bajo.
-9. Productos agotados e inactivos permanecen visibles en Stock y Movimientos para preservar trazabilidad.
-10. Los movimientos confirmados son inmutables; corregir significa crear un movimiento compensatorio.
-
-### Criterio de cierre
-
-Las existencias, dashboard, historial, auditoría y alertas reflejan exactamente los movimientos realizados. Se prueban ingreso, salida, ambos tipos de ajuste, stock cero, reactivación y rechazo de stock negativo.
-
-## 8. Fase 5 — Pantallas operativas
-
-Crear estas rutas y sus acciones permitidas:
-
-| Área | Rutas/pantallas |
+| Área | Rutas |
 | --- | --- |
-| Inicio | Dashboard con métricas, movimientos recientes, acciones rápidas y stock bajo |
-| Inventario | Productos, Categorías, Marcas, Unidades de medida, Stock y Movimientos |
-| Terceros | Proveedores y Clientes |
-| Administración | Usuarios, Roles y Auditoría |
-| Utilidad | Reportes, Perfil, Configuración y Contingencia |
+| Inicio | `/dashboard` |
+| CRM | `/clientes`, `/contactos`, `/oportunidades`, `/actividades`, `/automatizaciones` |
+| Inventario | `/productos`, `/stock`, `/movimientos`, catálogos y proveedores |
+| Administración | `/usuarios`, `/roles`, `/auditoria`, `/configuracion` |
+| Utilidad | `/reportes`, `/perfil`, `/contingencia`, `/captura-ia` |
 
-El dashboard debe mostrar: saludo, productos totales, stock/valor total según definición contable, stock bajo, entradas y salidas de hoy, movimientos recientes, acceso a Captura IA, acciones rápidas y productos con alerta.
+El tablero prioriza el trabajo diario: tareas vencidas y de hoy, oportunidades propias, valor del embudo, conversiones y alertas de inventario. La vista de oportunidad muestra cronología unificada de cambios, actividades y notas, productos asociados y acciones permitidas.
 
-Las tablas incluyen encabezados visualmente distintos, filtros, carga, vacío, errores, estados, acciones accesibles y paginación con rango, primer/último y salto a página.
+Las tablas incluyen carga, vacío, error, filtros, paginación, accesibilidad por teclado y acciones condicionadas por permisos. La interfaz debe mantener los temas claro/oscuro actuales, contraste suficiente y mensajes que indiquen con precisión si una automatización se ejecutó, quedó pendiente o falló.
 
-## 9. Fase 6 — Diseño, temas y accesibilidad
+## 9. Calidad, seguridad y datos iniciales
 
-### Identidad
+- Probar aislamiento por empresa, permisos, conversión, actividades, transición de etapas, idempotencia de automatizaciones e invariantes de inventario.
+- Añadir pruebas E2E para inicio de sesión, crear contacto, convertirlo, crear y avanzar oportunidad, completar actividad y validar una automatización.
+- Auditar actor, empresa, recurso, acción, resultado y metadatos relevantes, sin guardar secretos.
+- Sembrar una empresa demo y datos coherentes: clientes, contactos, etapas, oportunidades, tareas próximas y productos. Las credenciales locales se documentan sólo en README o `.env.example` sin contraseñas reales de producción.
 
-- Tema claro: fondo `#F8F9FF`, superficies blancas y acción primaria índigo `#4F46E5`.
-- Tema oscuro: gris carbón/negro suave, no azul saturado; acentos índigo/violeta moderados.
-- Éxito `#10B981`, alerta `#F59E0B`, error/contingencia `#EF4444`.
-- Fuente sans-serif moderna y legible, como Hanken Grotesk.
+## 10. Definición de terminado
 
-### Componentes base
-
-Construir primero `Button`, `Input`, `Select`, `Textarea`, `Dialog`, `Table`, `Badge`, `Card`, `Tooltip`, estados vacíos y paginación. Los componentes deben definir foco, teclado, estados deshabilitados y contraste antes de construir cada módulo.
-
-La interfaz usa tarjetas con radio aproximado de 8 px, bordes sutiles, elevación moderada y espaciado consistente. El sidebar contiene identidad FidelOS, navegación por grupos, Modo Contingencia y aviso de versión beta sobrio; el encabezado ofrece el mismo aviso junto al perfil. Configuración permite alternar y persistir tema claro/oscuro.
-
-No deben existir errores de hidratación, bucles por `useSyncExternalStore` ni componentes enlace tratados incorrectamente como botones nativos.
-
-## 10. Fase 7 — Contingencia
-
-Diseñar este modo independiente de Captura IA.
-
-- Indicar estado de conexión, pendientes, alcance y sincronización manual.
-- En beta permitir offline sólo acciones explícitamente soportadas; nunca aparentar que una acción bloqueada se guardó.
-- Procesar pendientes uno por uno y en orden, con idempotencia y resolución de conflictos.
-- La navegación debe continuar disponible aunque esté activo el modo contingencia.
-
-## 11. Fase 8 — Captura IA (preparación y futuro)
-
-### Beta sin API
-
-Construir la pantalla para conocer el flujo, pero dejarla en modo sólo visualización. Al entrar se abre el modal **“Captura IA está en preparación”**; al cerrarlo se puede recorrer la interfaz, pero carga, selección de modo, análisis y confirmación permanecen deshabilitados. No se simula procesamiento ni se guarda inventario.
-
-### Cuando exista proveedor de IA
-
-La meta es aceptar fotos y audios de aproximadamente 40 a 60 minutos, con múltiples productos en un solo archivo.
-
-1. Guardar archivo y crear trabajo asíncrono.
-2. Transcribir audio o extraer datos de imagen mediante el proveedor configurado.
-3. Normalizar productos, cantidades, unidades, marcas y proveedores contra los catálogos de la empresa.
-4. Mostrar propuesta revisable, nivel de confianza y conflictos.
-5. Confirmar todos los movimientos en una transacción atómica, idempotente y auditada.
-6. Informar progreso, reintentos y errores sin bloquear la interfaz.
-
-La integración requiere variables de entorno, límites de archivo, almacenamiento, cola de trabajos, protección de costos y pruebas con archivos largos antes de habilitar botones al público.
-
-## 12. Fase 9 — Auditoría, reportes y calidad
-
-- Registrar en auditoría actor, empresa, acción, entidad, fecha, resultado y metadatos pertinentes.
-- Añadir filtros y paginación a auditoría, evitando exponer datos de prueba.
-- Crear reportes básicos de stock, movimientos y alertas con permisos.
-- Cubrir reglas de inventario y autorización con pruebas backend.
-- Cubrir login, creación de productos, movimiento, ajuste y bloqueo de IA con Playwright.
-- Antes de cada entrega ejecutar pruebas relevantes de Laravel, `npm run build` en frontend y revisar consola del navegador.
-
-## 13. Orden de commits y entregas
-
-Mantener commits pequeños, separando backend y frontend cuando sea razonable:
-
-1. `chore`: estructura, configuración y herramientas.
-2. `feat(auth)`: migraciones, API, sesión y pantallas de acceso.
-3. `feat(catalogos)`: una entidad o relación por entrega.
-4. `feat(inventario)`: servicio, migraciones, endpoints y pruebas antes de pantalla.
-5. `feat(ui)`: componentes y vistas operativas.
-6. `feat(contingencia)` y `feat(captura)`: funciones aisladas.
-7. `test` y `docs`: cobertura, manuales y especificación.
-
-Cada entrega se verifica, se confirma con mensaje descriptivo y se sube a la rama remota acordada.
-
-## 14. Definición de terminado de la beta
-
-La beta está lista cuando un administrador puede iniciar sesión, administrar datos de su empresa, registrar movimientos sin stock negativo, ajustar el inventario con trazabilidad, recibir alertas de mínimo/cero, consultar dashboard e historial, gestionar acceso por roles y usar una interfaz consistente en ambos temas. Captura IA queda explícitamente bloqueada hasta completar su integración real.
+La beta estará terminada cuando un administrador pueda configurar usuarios, permisos, etapas y automatizaciones; un vendedor pueda captar y convertir prospectos, gestionar sus oportunidades y cumplir sus actividades; el sistema cree y muestre seguimientos automáticos sin duplicarlos; el dashboard y reportes reflejen los datos; e inventario continúe trazable y aislado por empresa. Antes de entregar se ejecutan las pruebas relevantes de Laravel, la compilación del frontend y las pruebas E2E críticas.

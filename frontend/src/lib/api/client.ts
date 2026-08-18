@@ -22,7 +22,7 @@ apiClient.interceptors.request.use((config) => {
   const active = JSON.parse(window.localStorage.getItem("fidelos-contingencia") ?? "{}").activo === true;
   // Authentication must remain available so a user can enter or restore a session even
   // if this browser previously enabled contingency mode. Business writes stay blocked.
-  const isAllowedDuringContingency = config.url?.includes("/contingencia/productos/sincronizar") || config.url?.includes("/auth/");
+  const isAllowedDuringContingency = config.url?.includes("/contingencia/productos/sincronizar") || config.url?.includes("/contingencia/actividades/sincronizar") || config.url?.includes("/auth/");
   if (active && isWrite && !isAllowedDuringContingency) {
     return Promise.reject(new Error("Modo Contingencia activo: las escrituras normales están bloqueadas."));
   }

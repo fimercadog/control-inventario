@@ -34,6 +34,8 @@ class MovimientoResource extends JsonResource
             'id' => $this->id,
             'tipo' => $this->tipo,
             'producto_id' => $this->producto_id,
+            'bodega_id' => $this->bodega_id,
+            'bodega' => $this->whenLoaded('bodega', fn () => $this->bodega?->nombre),
             'producto' => $this->whenLoaded('producto', fn () => $this->producto?->nombre),
             'producto_codigo' => $this->whenLoaded('producto', fn () => $this->producto?->codigo),
             'unidad_medida' => $this->whenLoaded('producto', fn () => $this->producto?->unidadMedida?->abreviatura),

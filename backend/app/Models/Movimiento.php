@@ -19,6 +19,7 @@ class Movimiento extends Model
     protected $fillable = [
         'empresa_id',
         'producto_id',
+        'bodega_id',
         'usuario_id',
         'tipo',
         'documento',
@@ -57,7 +58,7 @@ class Movimiento extends Model
         return $this->belongsTo(Producto::class);
     }
 
-    /** Punto 8 (docs/diagrama-bd.md). Backfill a la bodega "Principal" en movimientos existentes; InventoryService aun no la escribe en movimientos nuevos. */
+    /** Bodega en la que ocurrió el movimiento; los registros históricos fueron asignados a "Principal". */
     public function bodega(): BelongsTo
     {
         return $this->belongsTo(Bodega::class);

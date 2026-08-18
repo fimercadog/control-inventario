@@ -10,4 +10,11 @@ export interface DashboardSummary {
   salidas_hoy: number;
   movimientos_recientes: Movimiento[];
   productos_con_stock_bajo: Producto[];
+  crm: {
+    contactos: number;
+    oportunidades_abiertas: number;
+    valor_pipeline: number;
+    actividades_pendientes: number;
+    actividades_vencidas: number;
+  };
 }

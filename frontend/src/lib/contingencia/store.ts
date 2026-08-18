@@ -7,6 +7,7 @@ const CHANGE = "fidelos-contingencia-change";
 
 export interface OperacionContingencia {
   id: string;
+  modulo?: "producto";
   tipo: "crear" | "actualizar";
   productoId?: number;
   productoNombre: string;
@@ -18,9 +19,21 @@ export interface OperacionContingencia {
   error?: string;
 }
 
+export interface OperacionActividadContingencia {
+  id: string;
+  modulo: "actividad";
+  actividadNombre: string;
+  payload: { tipo: "llamada" | "correo" | "reunion" | "tarea" | "nota"; asunto: string; descripcion?: string; programada_para?: string };
+  creadaEn: string;
+  estado: "pendiente" | "conflicto" | "error";
+  error?: string;
+}
+
+export type OperacionPendienteContingencia = OperacionContingencia | OperacionActividadContingencia;
+
 export interface EstadoContingencia {
   activo: boolean;
-  operaciones: OperacionContingencia[];
+  operaciones: OperacionPendienteContingencia[];
 }
 
 const EMPTY: EstadoContingencia = { activo: false, operaciones: [] };
@@ -79,9 +92,15 @@ export function agregarOperacion(operacion: Omit<OperacionContingencia, "id" | "
   });
 }
 
-export function actualizarOperacion(id: string, changes: Partial<OperacionContingencia>) {
+export function agregarActividadContingencia(operacion: Omit<OperacionActividadContingencia, "id" | "creadaEn" | "estado" | "modulo">) {
   const state = read();
-  write({ ...state, operaciones: state.operaciones.map((op) => (op.id === id ? { ...op, ...changes } : op)) });
+  const id = crypto.randomUUID();
+  write({ ...state, operaciones: [...state.operaciones, { ...operacion, id, modulo: "actividad", creadaEn: new Date().toISOString(), estado: "pendiente" }] });
+}
+
+export function actualizarOperacion(id: string, changes: Partial<OperacionContingencia> | Partial<OperacionActividadContingencia>) {
+  const state = read();
+  write({ ...state, operaciones: state.operaciones.map((op) => (op.id === id ? { ...op, ...changes } as OperacionPendienteContingencia : op)) });
 }
 
 export function eliminarOperacion(id: string) {

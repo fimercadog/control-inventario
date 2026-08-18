@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\FiltersByEmpresa;
 use App\Http\Resources\Movimiento\MovimientoResource;
 use App\Http\Resources\Producto\ProductoResource;
 use App\Http\Support\ApiResponse;
 use App\Repositories\ReporteRepository;
+use App\Models\Actividad;
+use App\Models\Oportunidad;
+use App\Models\Contacto;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -22,6 +26,7 @@ use Illuminate\Http\JsonResponse;
  */
 class DashboardController extends Controller
 {
+    use FiltersByEmpresa;
     public function __construct(
         private readonly ReporteRepository $reportes,
     ) {}
@@ -31,6 +36,8 @@ class DashboardController extends Controller
         $hoy = now()->toDateString();
         $inventario = $this->reportes->resumenInventario();
         $movimientosHoy = $this->reportes->resumenMovimientos($hoy, $hoy);
+        $actividades = $this->paraEmpresaActual(Actividad::query());
+        $oportunidades = $this->paraEmpresaActual(Oportunidad::query());
 
         return ApiResponse::success([
             'total_productos' => $inventario['total_productos'],
@@ -40,6 +47,13 @@ class DashboardController extends Controller
             'salidas_hoy' => $movimientosHoy['salidas']['total'],
             'movimientos_recientes' => MovimientoResource::collection($this->reportes->movimientosRecientes(6))->resolve(),
             'productos_con_stock_bajo' => ProductoResource::collection($this->reportes->productosConStockBajo())->resolve(),
+            'crm' => [
+                'contactos' => $this->paraEmpresaActual(Contacto::query())->count(),
+                'oportunidades_abiertas' => (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at')->count(),
+                'valor_pipeline' => (float) (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at')->sum('monto'),
+                'actividades_pendientes' => (clone $actividades)->where('estado', 'pendiente')->count(),
+                'actividades_vencidas' => (clone $actividades)->where('estado', 'pendiente')->where('programada_para', '<', now())->count(),
+            ],
         ]);
     }
 }

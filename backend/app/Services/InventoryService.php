@@ -6,8 +6,11 @@ use App\Enums\TipoMovimiento;
 use App\Events\InventoryMovementRegistered;
 use App\Events\StockUpdated;
 use App\Exceptions\StockInsuficienteException;
+use App\Models\Bodega;
 use App\Models\Movimiento;
 use App\Models\Producto;
+use App\Models\ProductoBodega;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -47,11 +50,12 @@ class InventoryService
         ?string $vencimiento = null,
         ?int $proveedorId = null,
         ?int $direccion = null,
+        ?int $bodegaId = null,
     ): Movimiento {
         $cantidad = abs($cantidad);
         $delta = $cantidad * ($direccion ?? $this->direccion($tipo));
 
-        return DB::transaction(function () use ($producto, $tipo, $cantidad, $delta, $documento, $observacion, $usuarioId, $costo, $precio, $proveedor, $lote, $vencimiento, $proveedorId) {
+        return DB::transaction(function () use ($producto, $tipo, $cantidad, $delta, $documento, $observacion, $usuarioId, $costo, $precio, $proveedor, $lote, $vencimiento, $proveedorId, $bodegaId) {
             /** @var Producto $productoBloqueado */
             $productoBloqueado = Producto::query()
                 ->whereKey($producto->getKey())
@@ -61,11 +65,48 @@ class InventoryService
             $stockAnterior = (float) $productoBloqueado->stock_actual;
             $stockNuevo = $stockAnterior + $delta;
 
+            $bodega = $this->resolverBodega($productoBloqueado->empresa_id, $bodegaId);
+            $saldoBodega = ProductoBodega::query()
+                ->where('empresa_id', $productoBloqueado->empresa_id)
+                ->where('producto_id', $productoBloqueado->id)
+                ->where('bodega_id', $bodega->id)
+                ->lockForUpdate()
+                ->first();
+
+            // Protege datos de pruebas y productos creados antes de que se
+            // active multi-bodega: si aún no tienen saldo distribuido, el
+            // saldo histórico pertenece a la bodega Principal.
+            if ($saldoBodega === null) {
+                $sinSaldosDistribuidos = ! ProductoBodega::query()
+                    ->where('producto_id', $productoBloqueado->id)
+                    ->exists();
+
+                $saldoBodega = ProductoBodega::create([
+                    'empresa_id' => $productoBloqueado->empresa_id,
+                    'producto_id' => $productoBloqueado->id,
+                    'bodega_id' => $bodega->id,
+                    'stock_actual' => $sinSaldosDistribuidos && $bodega->es_principal ? $stockAnterior : 0,
+                ]);
+            }
+
+            $stockBodegaAnterior = (float) $saldoBodega->stock_actual;
+            $stockBodegaNuevo = $stockBodegaAnterior + $delta;
+
             if ($stockNuevo < 0) {
                 throw new StockInsuficienteException(sprintf(
                     'Stock insuficiente para el producto #%d. Disponible: %s. Solicitado: %s.',
                     $productoBloqueado->id,
                     number_format($stockAnterior, 2),
+                    number_format($cantidad, 2),
+                ));
+            }
+
+            if ($stockBodegaNuevo < 0) {
+                throw new StockInsuficienteException(sprintf(
+                    'Stock insuficiente en la bodega %s para el producto #%d. Disponible: %s. Solicitado: %s.',
+                    $bodega->nombre,
+                    $productoBloqueado->id,
+                    number_format($stockBodegaAnterior, 2),
                     number_format($cantidad, 2),
                 ));
             }
@@ -86,16 +127,23 @@ class InventoryService
                 $productoBloqueado->inhabilitado_por_stock = false;
             }
             $productoBloqueado->save();
+            $saldoBodega->stock_actual = $stockBodegaNuevo;
+            $saldoBodega->save();
 
             $movimiento = Movimiento::create([
                 'empresa_id' => $productoBloqueado->empresa_id,
                 'producto_id' => $productoBloqueado->id,
+                'bodega_id' => $bodega->id,
                 'usuario_id' => $usuarioId,
                 'tipo' => $tipo->value,
                 'documento' => $documento,
                 'cantidad' => $cantidad,
-                'stock_anterior' => $stockAnterior,
-                'stock_nuevo' => $stockNuevo,
+                // El ledger conserva el saldo del ámbito donde ocurrió el
+                // movimiento (la bodega); el producto mantiene el total
+                // consolidado para compatibilidad con los consumidores ya
+                // existentes de productos.stock_actual.
+                'stock_anterior' => $stockBodegaAnterior,
+                'stock_nuevo' => $stockBodegaNuevo,
                 'costo' => $costo,
                 'precio' => $precio,
                 'observacion' => $observacion,
@@ -134,5 +182,37 @@ class InventoryService
             TipoMovimiento::Salida => -1,
             default => 1,
         };
+    }
+
+    private function resolverBodega(int $empresaId, ?int $bodegaId): Bodega
+    {
+        if ($bodegaId !== null) {
+            $bodega = Bodega::query()
+                ->whereKey($bodegaId)
+                ->where('empresa_id', $empresaId)
+                ->lockForUpdate()
+                ->firstOrFail();
+        } else {
+            $bodega = Bodega::query()
+                ->where('empresa_id', $empresaId)
+                ->where('es_principal', true)
+                ->lockForUpdate()
+                ->first();
+
+            if ($bodega === null) {
+                $bodega = Bodega::firstOrCreate(
+                    ['empresa_id' => $empresaId, 'nombre' => 'Principal'],
+                    ['es_principal' => true, 'estado' => 'activo'],
+                );
+            }
+        }
+
+        if ($bodega->estado !== 'activo') {
+            throw ValidationException::withMessages([
+                'bodega_id' => ['La bodega seleccionada está inactiva.'],
+            ]);
+        }
+
+        return $bodega;
     }
 }

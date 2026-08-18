@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Events\ProductCreated;
+use App\Models\Bodega;
 use App\Models\Categoria;
 use App\Models\Marca;
 use App\Models\Producto;
+use App\Models\ProductoBodega;
 use App\Models\UnidadMedida;
 use App\Repositories\ProductRepository;
 use Illuminate\Database\Eloquent\Model;
@@ -49,7 +51,8 @@ class ProductService
      */
     public function crear(array $datos): Producto
     {
-        $producto = Producto::create([
+        return DB::transaction(function () use ($datos) {
+            $producto = Producto::create([
             'empresa_id' => $datos['empresa_id'],
             'categoria_id' => $this->resolverCategoriaId($datos),
             'codigo' => $datos['codigo'] ?? null,
@@ -65,15 +68,31 @@ class ProductService
             'stock_maximo' => $datos['stock_maximo'] ?? null,
             'imagen' => $datos['imagen'] ?? null,
             'estado' => $datos['estado'] ?? 'activo',
-        ]);
+            ]);
+
+            $bodegaPrincipal = Bodega::query()
+                ->where('empresa_id', $producto->empresa_id)
+                ->where('es_principal', true)
+                ->first()
+                ?? Bodega::firstOrCreate(
+                    ['empresa_id' => $producto->empresa_id, 'nombre' => 'Principal'],
+                    ['es_principal' => true, 'estado' => 'activo'],
+                );
+
+            ProductoBodega::firstOrCreate([
+                'empresa_id' => $producto->empresa_id,
+                'producto_id' => $producto->id,
+                'bodega_id' => $bodegaPrincipal->id,
+            ], ['stock_actual' => 0]);
 
         // afterCommit: si esta creación es parte de una transacción más
         // grande (ej. el pipeline completo de Captura IA) y esa transacción
         // termina en rollback, el evento nunca se dispara (sección 74,
         // punto 6 — "después de completar exitosamente").
-        DB::afterCommit(fn () => event(new ProductCreated($producto)));
+            DB::afterCommit(fn () => event(new ProductCreated($producto)));
 
-        return $producto;
+            return $producto;
+        });
     }
 
     /**

@@ -11,6 +11,7 @@ use App\Http\Requests\Movimiento\UpdateMovimientoRequest;
 use App\Http\Resources\Movimiento\MovimientoResource;
 use App\Http\Support\ApiResponse;
 use App\Models\Movimiento;
+use App\Models\Bodega;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Services\Audit\AuditLogger;
@@ -51,10 +52,15 @@ class MovimientoController extends Controller
     {
         $this->authorize('viewAny', Movimiento::class);
 
-        $query = $this->paraEmpresaActual(Movimiento::query())->with(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura']);
+        $query = $this->paraEmpresaActual(Movimiento::query())->with(['producto.unidadMedida', 'bodega', 'usuario', 'capturaDetalle.captura']);
 
         if ($productoId = $request->query('producto_id')) {
             $query->where('producto_id', $productoId);
+        }
+
+        if ($bodegaId = $request->query('bodega_id')) {
+            $bodega = $this->resolverParaEmpresaActual(Bodega::class, (int) $bodegaId);
+            $query->where('bodega_id', $bodega->id);
         }
 
         if ($tipo = $request->query('tipo')) {
@@ -92,7 +98,7 @@ class MovimientoController extends Controller
         $movimiento = $this->resolverParaEmpresaActual(Movimiento::class, $movimiento);
         $this->authorize('view', $movimiento);
 
-        return ApiResponse::success(new MovimientoResource($movimiento->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])));
+        return ApiResponse::success(new MovimientoResource($movimiento->load(['producto.unidadMedida', 'bodega', 'usuario', 'capturaDetalle.captura'])));
     }
 
     /**
@@ -134,6 +140,7 @@ class MovimientoController extends Controller
             vencimiento: $datos['vencimiento'] ?? null,
             proveedorId: $datos['proveedor_id'] ?? null,
             direccion: $direccion,
+            bodegaId: isset($datos['bodega_id']) ? (int) $datos['bodega_id'] : null,
         );
 
         $this->auditoria->registrarAccionManual(
@@ -143,13 +150,13 @@ class MovimientoController extends Controller
             accion: "movimientos.registrar_{$tipo->value}",
             auditableType: Movimiento::class,
             auditableId: $movimiento->id,
-            valoresNuevos: $movimiento->only(['producto_id', 'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo']),
+            valoresNuevos: $movimiento->only(['producto_id', 'bodega_id', 'tipo', 'cantidad', 'stock_anterior', 'stock_nuevo']),
             ip: $request->ip(),
             userAgent: $request->userAgent(),
         );
 
         return ApiResponse::success(
-            new MovimientoResource($movimiento->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])),
+            new MovimientoResource($movimiento->load(['producto.unidadMedida', 'bodega', 'usuario', 'capturaDetalle.captura'])),
             'Movimiento registrado correctamente',
             201
         );
@@ -185,7 +192,7 @@ class MovimientoController extends Controller
         );
 
         return ApiResponse::success(
-            new MovimientoResource($movimiento->load(['producto.unidadMedida', 'usuario', 'capturaDetalle.captura'])),
+            new MovimientoResource($movimiento->load(['producto.unidadMedida', 'bodega', 'usuario', 'capturaDetalle.captura'])),
             'Movimiento actualizado correctamente'
         );
     }

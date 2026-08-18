@@ -28,6 +28,7 @@ class StoreMovimientoRequest extends FormRequest
     {
         return [
             'producto_id' => ['required', 'integer', 'exists:productos,id'],
+            'bodega_id' => ['sometimes', 'nullable', 'integer', 'exists:bodegas,id'],
             'tipo' => ['required', 'string', Rule::in(['entrada', 'salida', 'ajuste'])],
             'cantidad' => ['required', 'numeric', 'min:0.01'],
             'direccion' => ['required_if:tipo,ajuste', 'prohibited_unless:tipo,ajuste', 'string', Rule::in(['incremento', 'decremento'])],

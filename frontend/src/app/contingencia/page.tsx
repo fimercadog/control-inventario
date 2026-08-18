@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { extractApiErrorMessage } from "@/lib/api/errors";
-import { sincronizarOperacionContingencia } from "@/lib/api/contingencia";
-import { actualizarOperacion, agregarOperacion, eliminarOperacion, salirContingencia } from "@/lib/contingencia/store";
+import { sincronizarActividadContingencia, sincronizarOperacionContingencia } from "@/lib/api/contingencia";
+import { actualizarOperacion, agregarActividadContingencia, agregarOperacion, eliminarOperacion, salirContingencia } from "@/lib/contingencia/store";
 import { useContingencia } from "@/hooks/use-contingencia";
 import type { CreateProductoPayload } from "@/types/producto";
 
@@ -45,11 +45,21 @@ export default function ContingenciaPage() {
     event.currentTarget.reset();
   }
 
+  function enqueueActivity(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const asunto = text(form, "actividad_asunto");
+    if (!asunto) return;
+    const tipo = text(form, "actividad_tipo") as "llamada" | "correo" | "reunion" | "tarea" | "nota";
+    agregarActividadContingencia({ actividadNombre: asunto, payload: { tipo: tipo || "tarea", asunto, descripcion: text(form, "actividad_descripcion") || undefined, programada_para: text(form, "actividad_programada_para") || undefined } });
+    event.currentTarget.reset();
+  }
+
   async function sync(id: string) {
     const op = operaciones.find((candidate) => candidate.id === id);
     if (!op) return;
     setSyncing(id);
-    try { await sincronizarOperacionContingencia(op); eliminarOperacion(id); }
+    try { if (op.modulo === "actividad") await sincronizarActividadContingencia(op); else await sincronizarOperacionContingencia(op); eliminarOperacion(id); }
     catch (error: unknown) {
       const status = (error as { response?: { status?: number; data?: unknown } }).response?.status;
       actualizarOperacion(id, status === 409
@@ -72,9 +82,18 @@ export default function ContingenciaPage() {
         <Button className="sm:col-span-2" type="submit">Guardar en operaciones pendientes</Button>
       </form>
     </CardContent></Card> : null}
+    {activo ? <Card><CardHeader><CardTitle>Registrar actividad CRM offline</CardTitle><CardDescription>Solo actividades manuales. No modifica oportunidades, etapas, responsables ni automatizaciones.</CardDescription></CardHeader><CardContent>
+      <form className="grid gap-4 sm:grid-cols-2" onSubmit={enqueueActivity}>
+        <div className="sm:col-span-2"><Label htmlFor="cont-actividad-asunto">Asunto</Label><Input id="cont-actividad-asunto" name="actividad_asunto" required /></div>
+        <div><Label htmlFor="cont-actividad-tipo">Tipo</Label><Input id="cont-actividad-tipo" name="actividad_tipo" defaultValue="tarea" placeholder="tarea, llamada, correo, reunión o nota" required /></div>
+        <div><Label htmlFor="cont-actividad-fecha">Fecha programada</Label><Input id="cont-actividad-fecha" name="actividad_programada_para" type="datetime-local" /></div>
+        <div className="sm:col-span-2"><Label htmlFor="cont-actividad-descripcion">Descripción</Label><Textarea id="cont-actividad-descripcion" name="actividad_descripcion" /></div>
+        <Button className="sm:col-span-2" type="submit">Guardar actividad pendiente</Button>
+      </form>
+    </CardContent></Card> : null}
     <Card><CardHeader><CardTitle>Operaciones pendientes</CardTitle><CardDescription>Se procesan individualmente y en el orden en que fueron registradas.</CardDescription></CardHeader><CardContent className="flex flex-col gap-3">
-      {operaciones.length === 0 ? <p className="text-sm text-muted-foreground">No hay operaciones pendientes.</p> : operaciones.map((op) => <div key={op.id} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{op.tipo === "crear" ? "Crear" : "Actualizar"}: {op.productoNombre}</p><p className="text-xs text-muted-foreground">{new Date(op.creadaEn).toLocaleString("es-CO")} · {op.estado}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" disabled={!activo || syncing !== null} onClick={() => sync(op.id)}><RefreshCw className="size-4" />Sincronizar ahora</Button><Button size="sm" variant="ghost" aria-label="Descartar operación" onClick={() => eliminarOperacion(op.id)}><Trash2 className="size-4" /></Button></div></div>
-        {op.error ? <Alert variant="destructive" className="mt-3"><TriangleAlert className="size-4" /><AlertDescription>{op.error}{op.conflicto ? " Conserva la versión local; revisa la versión del servidor antes de decidir." : ""}</AlertDescription></Alert> : null}
+      {operaciones.length === 0 ? <p className="text-sm text-muted-foreground">No hay operaciones pendientes.</p> : operaciones.map((op) => <div key={op.id} className="rounded-lg border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{op.modulo === "actividad" ? `Actividad: ${op.actividadNombre}` : `${op.tipo === "crear" ? "Crear" : "Actualizar"}: ${op.productoNombre}`}</p><p className="text-xs text-muted-foreground">{new Date(op.creadaEn).toLocaleString("es-CO")} · {op.estado}</p></div><div className="flex gap-2"><Button size="sm" variant="outline" disabled={!activo || syncing !== null} onClick={() => sync(op.id)}><RefreshCw className="size-4" />Sincronizar ahora</Button><Button size="sm" variant="ghost" aria-label="Descartar operación" onClick={() => eliminarOperacion(op.id)}><Trash2 className="size-4" /></Button></div></div>
+        {op.error ? <Alert variant="destructive" className="mt-3"><TriangleAlert className="size-4" /><AlertDescription>{op.error}{"conflicto" in op && op.conflicto ? " Conserva la versión local; revisa la versión del servidor antes de decidir." : ""}</AlertDescription></Alert> : null}
       </div>)}
     </CardContent></Card>
     {activo ? <Button variant="outline" className="self-start" onClick={() => setExitOpen(true)}><CheckCircle2 />Salir de Contingencia</Button> : null}

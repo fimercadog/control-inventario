@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Box, Camera, Loader2, Mic, Package, Sparkles, TriangleAlert } from "lucide-react";
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Box, BriefcaseBusiness, Camera, CheckSquare, Loader2, Mic, Package, Sparkles, TriangleAlert, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePermission, useSessionUser } from "@/hooks/use-permission";
@@ -20,6 +20,7 @@ const EMPTY_DASHBOARD: DashboardSummary = {
   salidas_hoy: 0,
   movimientos_recientes: [],
   productos_con_stock_bajo: [],
+  crm: { contactos: 0, oportunidades_abiertas: 0, valor_pipeline: 0, actividades_pendientes: 0, actividades_vencidas: 0 },
 };
 
 function MetricCard({ icon: Icon, label, value, tone }: { icon: typeof Package; label: string; value: number; tone: string }) {
@@ -53,9 +54,11 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto flex w-full max-w-[1160px] flex-col gap-6 pb-4">
       <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div><h1 className="text-2xl font-semibold tracking-tight text-foreground">Hola, {firstName} <span aria-hidden="true">👋</span></h1><p className="mt-1 text-sm text-muted-foreground">Este es el estado de tu inventario hoy.</p></div>
+        <div><h1 className="text-2xl font-semibold tracking-tight text-foreground">Hola, {firstName} <span aria-hidden="true">👋</span></h1><p className="mt-1 text-sm text-muted-foreground">Este es el pulso comercial y operativo de hoy.</p></div>
         {canUseCapture ? <Button className="h-10 rounded-xl px-4" nativeButton={false} render={<Link href="/captura-ia" />}><Sparkles className="size-4" />Nueva captura</Button> : null}
       </section>
+
+      <section><div className="mb-3"><h2 className="font-semibold text-foreground">CRM comercial</h2><p className="text-sm text-muted-foreground">Prioriza oportunidades y seguimientos.</p></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricCard icon={UsersRound} label="Contactos" value={dashboard.crm.contactos} tone="bg-sky-100 text-sky-600" /><MetricCard icon={BriefcaseBusiness} label="Oportunidades abiertas" value={dashboard.crm.oportunidades_abiertas} tone="bg-violet-100 text-violet-600" /><MetricCard icon={CheckSquare} label="Seguimientos pendientes" value={dashboard.crm.actividades_pendientes} tone="bg-amber-100 text-amber-600" /><MetricCard icon={TriangleAlert} label="Seguimientos vencidos" value={dashboard.crm.actividades_vencidas} tone="bg-rose-100 text-rose-600" /></div><p className="mt-3 text-sm text-muted-foreground">Valor actual del embudo: <span className="font-semibold text-foreground">${numberFormat.format(dashboard.crm.valor_pipeline)}</span></p></section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard icon={Package} label="Productos totales" value={dashboard.total_productos} tone="bg-indigo-100 text-indigo-600" />

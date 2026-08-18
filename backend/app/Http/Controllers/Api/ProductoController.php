@@ -202,6 +202,7 @@ class ProductoController extends Controller
             lote: $datos['lote'] ?? null,
             vencimiento: $datos['vencimiento'] ?? null,
             proveedorId: $proveedorId,
+            bodegaId: isset($datos['bodega_id']) ? (int) $datos['bodega_id'] : null,
         );
 
         $this->registrarAuditoria(
@@ -211,7 +212,7 @@ class ProductoController extends Controller
             'movimientos.registrar_ingreso_manual',
             \App\Models\Movimiento::class,
             $movimiento->id,
-            $movimiento->only(['producto_id', 'tipo', 'cantidad', 'stock_nuevo', 'proveedor', 'lote']),
+            $movimiento->only(['producto_id', 'bodega_id', 'tipo', 'cantidad', 'stock_nuevo', 'proveedor', 'lote']),
         );
 
         return ApiResponse::success(
@@ -279,7 +280,7 @@ class ProductoController extends Controller
         $producto = $this->resolverParaEmpresaActual(Producto::class, $producto);
         $this->authorize('view', $producto);
 
-        $movimientos = $producto->movimientos()->latest()->paginate(20);
+        $movimientos = $producto->movimientos()->with('bodega')->latest()->paginate(20);
 
         return ApiResponse::success([
             'items' => MovimientoResource::collection($movimientos)->resolve(),

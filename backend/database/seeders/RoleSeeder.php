@@ -32,6 +32,10 @@ class RoleSeeder extends Seeder
                 'captura-ia.usar', 'captura-ia.revisar', 'captura-ia.confirmar',
                 'usuarios.ver', 'usuarios.editar', 'usuarios.invitar', 'auditoria.ver', 'reportes.ver', 'reportes.gestionar',
                 'clientes.ver', 'clientes.crear', 'clientes.editar', 'clientes.gestionar',
+                'contactos.ver', 'contactos.crear', 'contactos.editar', 'contactos.convertir',
+                'oportunidades.ver', 'oportunidades.crear', 'oportunidades.editar', 'oportunidades.gestionar',
+                'actividades.ver', 'actividades.crear', 'actividades.editar', 'actividades.completar',
+                'automatizaciones.ver', 'automatizaciones.gestionar',
             ],
             'Bodeguero' => [
                 'productos.ver', 'movimientos.ver', 'movimientos.crear',
@@ -40,6 +44,9 @@ class RoleSeeder extends Seeder
             'Vendedor' => [
                 'productos.ver', 'movimientos.ver',
                 'clientes.ver', 'clientes.crear', 'clientes.editar',
+                'contactos.ver', 'contactos.crear', 'contactos.editar', 'contactos.convertir',
+                'oportunidades.ver', 'oportunidades.crear', 'oportunidades.editar',
+                'actividades.ver', 'actividades.crear', 'actividades.editar', 'actividades.completar',
             ],
             'Auxiliar Contable' => [
                 'productos.ver', 'auditoria.ver', 'reportes.ver', 'clientes.ver',

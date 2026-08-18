@@ -3,6 +3,9 @@ import {
   BarChart3,
   Boxes,
   ClipboardList,
+  BriefcaseBusiness,
+  CheckSquare,
+  ContactRound,
   LayoutDashboard,
   Package,
   Repeat,
@@ -28,13 +31,18 @@ export interface NavItem {
    * that actually have a real frontend page belong here — never a placeholder link
    * (memoria: "No placeholder modules, ever").
    */
-  group?: "General" | "Inventario" | "Terceros" | "Administración";
+  group?: "General" | "CRM" | "Inventario" | "Terceros" | "Administración";
 }
 
 export const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, group: "General" },
   { href: "/reportes", label: "Reportes", icon: BarChart3, permission: "reportes.ver", group: "General" },
   { href: "/captura-ia", label: "Captura IA", icon: Sparkles, permission: "captura-ia.usar", group: "General" },
+
+  { href: "/contactos", label: "Contactos", icon: ContactRound, permission: "contactos.ver", group: "CRM" },
+  { href: "/oportunidades", label: "Oportunidades", icon: BriefcaseBusiness, permission: "oportunidades.ver", group: "CRM" },
+  { href: "/actividades", label: "Actividades", icon: CheckSquare, permission: "actividades.ver", group: "CRM" },
+  { href: "/automatizaciones", label: "Automatizaciones", icon: Repeat, permission: "automatizaciones.ver", group: "CRM" },
 
   { href: "/productos", label: "Productos", icon: Package, permission: "productos.ver", group: "Inventario" },
   { href: "/categorias", label: "Categorías", icon: Tag, permission: "categorias.ver", group: "Inventario" },

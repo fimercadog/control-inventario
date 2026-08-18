@@ -57,6 +57,12 @@ class PermissionSeeder extends Seeder
         'clientes.editar',
         'clientes.gestionar',
 
+        // CRM comercial
+        'contactos.ver', 'contactos.crear', 'contactos.editar', 'contactos.convertir',
+        'oportunidades.ver', 'oportunidades.crear', 'oportunidades.editar', 'oportunidades.gestionar',
+        'actividades.ver', 'actividades.crear', 'actividades.editar', 'actividades.completar',
+        'automatizaciones.ver', 'automatizaciones.gestionar',
+
         // Producto ↔ Proveedor (Fase 4.5) — namespace propio, distinto de
         // proveedores.* (es la asociación, no el proveedor en sí).
         'producto-proveedor.ver',

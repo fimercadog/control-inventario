@@ -9,7 +9,7 @@ export function Sidebar() {
         <div className="grid size-9 place-items-center rounded-xl bg-indigo-500 text-sm font-bold text-white shadow-[0_5px_12px_rgb(99_102_241/0.35)]">F</div>
         <div>
           <div className="text-lg font-bold tracking-tight text-white">FidelOS</div>
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-indigo-300">INVENTARIO</div>
+          <div className="text-[10px] font-semibold tracking-[0.18em] text-indigo-300">CRM + INVENTARIO</div>
         </div>
       </div>
       <div className="mb-4"><BetaNotice /></div>

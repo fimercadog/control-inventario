@@ -24,6 +24,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -47,7 +48,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // del usuario ya autenticado por 'auth:api' (ver IdentifyEmpresa).
         // El aislamiento por empresa en sí corre explícito por request, vía
         // `FiltersByEmpresa` en cada Controller/Repository.
-        $middleware->alias(['empresa' => IdentifyEmpresa::class]);
+        $middleware->alias([
+            'empresa' => IdentifyEmpresa::class,
+            'permission' => PermissionMiddleware::class,
+        ]);
 
         // IdentifyEmpresa fija el team id de Spatie y limpia la caché de
         // permisos (`forgetCachedPermissions()`, ver su propio docblock) —
