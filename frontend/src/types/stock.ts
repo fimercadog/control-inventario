@@ -1,7 +1,5 @@
-/** Matches StockResource. `estado` here is `stock_estado` — a flag owned by this module,
- * independent of the product's own `estado` (confirmed: StockController::index hardcodes
- * ->where('estado', 'activo') on the underlying Producto, so a disabled Product never
- * appears here regardless of this stock-level filter). */
+/** Matches StockResource. `estado` is the module's stock flag, while producto_estado
+ * identifies whether the catalogue entry is unavailable (including stock exhaustion). */
 export interface StockItem {
   id: number;
   codigo: string | null;
@@ -14,6 +12,8 @@ export interface StockItem {
   stock_maximo: number | null;
   bajo_minimo: boolean;
   estado: string;
+  producto_estado: string;
+  inhabilitado_por_stock: boolean;
   created_at: string;
   updated_at: string;
 }

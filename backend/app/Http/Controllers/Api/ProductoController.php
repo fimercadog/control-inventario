@@ -233,7 +233,7 @@ class ProductoController extends Controller
         $producto = $this->resolverParaEmpresaActual(Producto::class, $producto);
         $this->authorize('delete', $producto);
 
-        $producto->update(['estado' => 'inactivo']);
+        $producto->update(['estado' => 'inactivo', 'inhabilitado_por_stock' => false]);
 
         $this->registrarAuditoria(
             $request,
@@ -242,7 +242,7 @@ class ProductoController extends Controller
             'productos.deshabilitar',
             Producto::class,
             $producto->id,
-            ['estado' => 'inactivo'],
+            ['estado' => 'inactivo', 'inhabilitado_por_stock' => false],
         );
 
         return ApiResponse::success(
@@ -256,7 +256,7 @@ class ProductoController extends Controller
         $producto = $this->resolverParaEmpresaActual(Producto::class, $producto);
         $this->authorize('update', $producto);
 
-        $producto->update(['estado' => 'activo']);
+        $producto->update(['estado' => 'activo', 'inhabilitado_por_stock' => false]);
 
         $this->registrarAuditoria(
             $request,
@@ -265,7 +265,7 @@ class ProductoController extends Controller
             'productos.habilitar',
             Producto::class,
             $producto->id,
-            ['estado' => 'activo'],
+            ['estado' => 'activo', 'inhabilitado_por_stock' => false],
         );
 
         return ApiResponse::success(

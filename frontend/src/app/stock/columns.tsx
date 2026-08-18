@@ -68,7 +68,9 @@ export function buildStockColumns({
       accessorKey: "estado",
       header: "Estado",
       cell: ({ row }) =>
-        row.original.estado === "activo" ? (
+        row.original.inhabilitado_por_stock ? (
+          <Badge className="border-amber-500/40 bg-amber-500/15 text-amber-400">Agotado</Badge>
+        ) : row.original.estado === "activo" ? (
           <Badge className="border-emerald-500/40 bg-emerald-500/15 text-emerald-400">Activo</Badge>
         ) : (
           <Badge className="border-slate-400/40 bg-slate-400/15 text-slate-300">Inactivo</Badge>

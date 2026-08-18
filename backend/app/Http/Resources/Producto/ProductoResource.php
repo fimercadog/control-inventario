@@ -32,6 +32,7 @@ class ProductoResource extends JsonResource
             'stock_maximo' => $this->stock_maximo !== null ? (float) $this->stock_maximo : null,
             'imagen' => $this->imagen,
             'estado' => $this->estado,
+            'inhabilitado_por_stock' => (bool) $this->inhabilitado_por_stock,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

@@ -32,6 +32,8 @@ class StockResource extends JsonResource
             'stock_maximo' => $this->stock_maximo !== null ? (float) $this->stock_maximo : null,
             'bajo_minimo' => (float) $this->stock_actual < (float) $this->stock_minimo,
             'estado' => $this->stock_estado,
+            'producto_estado' => $this->estado,
+            'inhabilitado_por_stock' => (bool) $this->inhabilitado_por_stock,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

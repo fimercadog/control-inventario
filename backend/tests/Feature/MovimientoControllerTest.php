@@ -167,6 +167,25 @@ class MovimientoControllerTest extends TestCase
             ->assertJsonPath('data.stock_nuevo', fn ($v) => (float) $v === 0.0);
 
         $this->assertEquals(0, $this->productoA->fresh()->stock_actual);
+        $this->assertSame('inactivo', $this->productoA->fresh()->estado);
+        $this->assertTrue($this->productoA->fresh()->inhabilitado_por_stock);
+    }
+
+    public function test_replenishing_an_automatically_disabled_product_reactivates_it(): void
+    {
+        $this->productoA->forceFill(['stock_actual' => 5])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'salida', 'cantidad' => 5])
+            ->assertCreated();
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', ['producto_id' => $this->productoA->id, 'tipo' => 'entrada', 'cantidad' => 12])
+            ->assertCreated();
+
+        $producto = $this->productoA->fresh();
+        $this->assertSame('activo', $producto->estado);
+        $this->assertFalse($producto->inhabilitado_por_stock);
+        $this->assertSame(12.0, (float) $producto->stock_actual);
     }
 
     /**

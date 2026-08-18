@@ -38,6 +38,7 @@ class Producto extends Model
         'stock_maximo',
         'imagen',
         'estado',
+        'inhabilitado_por_stock',
         'stock_estado',
     ];
 
@@ -49,6 +50,7 @@ class Producto extends Model
             'stock_actual' => 'decimal:2',
             'stock_minimo' => 'decimal:2',
             'stock_maximo' => 'decimal:2',
+            'inhabilitado_por_stock' => 'boolean',
         ];
     }
 

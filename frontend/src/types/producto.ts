@@ -18,6 +18,7 @@ export interface Producto {
   stock_maximo: number | null;
   imagen: string | null;
   estado: string;
+  inhabilitado_por_stock: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -60,9 +60,12 @@ class StockController extends Controller
     {
         $this->authorizeStock('viewAny');
 
+        // Incluye agotados automáticos aunque su catálogo quede inactivo:
+        // Stock es justamente el lugar desde el que se registrará la
+        // reposición que los reactiva. Los inactivos manuales también se
+        // conservan visibles aquí para auditoría y control de existencias.
         $query = $this->paraEmpresaActual(Producto::query())
-            ->with(['categoria', 'marca', 'unidadMedida'])
-            ->where('estado', 'activo');
+            ->with(['categoria', 'marca', 'unidadMedida']);
 
         if ($busqueda = $request->query('busqueda')) {
             $query->where(function ($q) use ($busqueda) {

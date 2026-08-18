@@ -71,6 +71,20 @@ class InventoryService
             }
 
             $productoBloqueado->stock_actual = $stockNuevo;
+
+            // Un producto agotado deja de estar disponible en las interfaces
+            // que solo muestran catálogo activo. La marca adicional evita
+            // reactivar por accidente un producto que fue inhabilitado
+            // manualmente por un administrador. Una entrada, foto, audio o
+            // ajuste positivo repone y reactiva únicamente los agotados por
+            // stock.
+            if ($stockNuevo === 0.0 && $productoBloqueado->estado === 'activo') {
+                $productoBloqueado->estado = 'inactivo';
+                $productoBloqueado->inhabilitado_por_stock = true;
+            } elseif ($stockNuevo > 0.0 && $productoBloqueado->inhabilitado_por_stock) {
+                $productoBloqueado->estado = 'activo';
+                $productoBloqueado->inhabilitado_por_stock = false;
+            }
             $productoBloqueado->save();
 
             $movimiento = Movimiento::create([
