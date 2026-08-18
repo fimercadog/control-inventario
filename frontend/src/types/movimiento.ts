@@ -5,6 +5,10 @@ export interface Movimiento {
   id: number;
   tipo: TipoMovimiento;
   producto_id: number;
+  /** Metadato de lectura del backend. La UI sigue operando implícitamente en Principal. */
+  bodega_id?: number | null;
+  /** Nombre de la bodega si el endpoint cargó la relación; no se presenta aún. */
+  bodega?: string | null;
   producto: string | null;
   producto_codigo: string | null;
   unidad_medida: string | null;
@@ -36,7 +40,9 @@ export interface MovimientosQueryParams {
 
 /** Matches StoreMovimientoRequest. `direccion` only applies to (and is required for) tipo
  * "ajuste" — prohibited otherwise (confirmed against the real Request's
- * required_if/prohibited_unless rules). `proveedor_id` only allowed for tipo "entrada". */
+ * required_if/prohibited_unless rules). `proveedor_id` only allowed for tipo "entrada".
+ * `bodega_id` is intentionally omitted: the backend resolves the Principal warehouse and
+ * multi-warehouse UI is a future phase. */
 export interface CreateMovimientoPayload {
   producto_id: number;
   tipo: TipoMovimiento;

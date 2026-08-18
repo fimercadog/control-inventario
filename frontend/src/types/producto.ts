@@ -76,6 +76,9 @@ export interface ProductoMovimiento {
   id: number;
   tipo: string;
   producto_id: number;
+  /** Metadatos opcionales de MovimientoResource; no se muestran en esta fase. */
+  bodega_id?: number | null;
+  bodega?: string | null;
   producto: string | null;
   producto_codigo: string | null;
   unidad_medida: string | null;
@@ -96,7 +99,8 @@ export interface ProductoMovimiento {
 }
 
 /** Matches StoreIngresoRequest ("Registrar ingreso" desde la Ficha). proveedor_id/proveedor_nuevo
- * mutually exclusive, same quick-create pattern as marca/unidad_medida. */
+ * mutually exclusive, same quick-create pattern as marca/unidad_medida. `bodega_id` remains
+ * intentionally absent so the backend resolves Principal without exposing warehouse UI. */
 export interface RegistrarIngresoPayload {
   cantidad: number;
   costo?: number | null;
