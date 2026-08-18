@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import { useLegacyTable as useReactTable, type LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import type { RowData } from "@tanstack/table-core";
@@ -71,8 +71,15 @@ export function DataTable<TData extends RowData>({
   const endNumber = Math.min(page * pageSize, totalRows);
   const safeTotalPages = Math.max(totalPages, 1);
   const [pageInput, setPageInput] = useState(String(page));
+  const [syncedPage, setSyncedPage] = useState(page);
 
-  useEffect(() => setPageInput(String(page)), [page]);
+  // Reset the editable page input whenever `page` changes externally (prev/next,
+  // filters resetting to page 1, etc). Adjusting state during render — not in an
+  // effect — per https://react.dev/learn/you-might-not-need-an-effect#adjusting-state-when-a-prop-changes.
+  if (page !== syncedPage) {
+    setSyncedPage(page);
+    setPageInput(String(page));
+  }
 
   function goToTypedPage() {
     const requested = Number(pageInput);
