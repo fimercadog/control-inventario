@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 /** A persistent, app-wide explanation of the product's beta status. */
-export function BetaNotice({ compact = false }: { compact?: boolean }) {
+export function BetaNotice({ compact = false, iconOnly = false }: { compact?: boolean; iconOnly?: boolean }) {
   return (
     <Dialog>
       <DialogTrigger
         render={
           <button
             type="button"
-            className={compact
+            className={iconOnly
+              ? "flex h-8 items-center gap-0.5 rounded-lg px-1.5 text-amber-600 transition-colors hover:bg-amber-500/12 hover:text-amber-700 dark:text-amber-300 dark:hover:bg-amber-400/10"
+              : compact
               ? "flex w-full items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300"
               : "flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-amber-200 transition-colors hover:bg-white/10"}
             aria-label="Ver información de la versión beta"
@@ -21,12 +23,14 @@ export function BetaNotice({ compact = false }: { compact?: boolean }) {
       >
         <span className="flex min-w-0 items-center gap-2">
           <CircleAlert className="size-4 shrink-0" />
+          {iconOnly ? null : <>
           <span className="flex min-w-0 flex-col">
             <span className="text-xs font-semibold">Versión beta</span>
             {!compact ? <span className="truncate text-[11px] text-slate-400">Conoce las novedades</span> : null}
           </span>
+          </>}
         </span>
-        <ChevronDown className="size-4 shrink-0 opacity-80" />
+        <ChevronDown className={iconOnly ? "size-3.5 shrink-0 opacity-75" : "size-4 shrink-0 opacity-80"} />
       </DialogTrigger>
 
       <DialogContent className="gap-5 p-0 sm:max-w-md" showCloseButton={false}>

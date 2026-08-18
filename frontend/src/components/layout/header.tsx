@@ -56,7 +56,6 @@ export function Header() {
             </SheetHeader>
             <div className="mb-5"><ContingenciaControls /></div>
             <SidebarNav />
-            <div className="mt-5 border-t pt-4"><BetaNotice compact /></div>
           </SheetContent>
         </Sheet>
       </div>
@@ -68,6 +67,8 @@ export function Header() {
         <span className="truncate font-medium text-foreground">{pageName}</span>
       </div>
 
+      <div className="flex items-center gap-1">
+      <BetaNotice iconOnly />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -108,6 +109,7 @@ export function Header() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 }
