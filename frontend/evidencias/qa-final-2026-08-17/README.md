@@ -31,6 +31,25 @@ emitir salida, artefactos ni reporte HTML. El árbol de procesos de Playwright s
 detuvo de forma controlada; los servidores de aplicación en 3000 y 8000
 permanecieron disponibles. Ver `INC-QA-001`.
 
+## Ejecución 3 — por bloques, aprobada
+
+La misma suite se ejecutó por archivo, siempre con `--workers=1`. Esto evitó
+la interferencia de la orquestación conjunta y produjo un resultado final
+verificable de **131/131 PASS**:
+
+| Archivo | Resultado |
+| --- | --- |
+| `tests/auth.spec.ts` | 16/16 PASS |
+| `tests/categorias.spec.ts` | 25/25 PASS |
+| `tests/roles.spec.ts` | 24/24 PASS |
+| `tests/proveedores.spec.ts` | 27/27 PASS |
+| `tests/usuarios.spec.ts` | 23/23 PASS |
+| `tests/fase6-qa-final.spec.ts` | 8/8 PASS |
+| `tests/captura-ia.spec.ts` | 8/8 PASS |
+
+Los comandos y duraciones se registran en
+[ejecucion-por-bloques.md](ejecucion-por-bloques.md).
+
 ## Calidad estática
 
 - TypeScript: `npx tsc --noEmit` correcto antes de la ejecución.

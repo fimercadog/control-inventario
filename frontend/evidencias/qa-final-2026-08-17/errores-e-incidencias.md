@@ -2,7 +2,7 @@
 
 ## INC-QA-001 — Contención del servidor durante la suite paralela
 
-**Estado:** bloqueado; requiere diagnóstico adicional de la infraestructura E2E.
+**Estado:** resuelto mediante ejecución por bloques.
 
 **Severidad:** alta para la confiabilidad de QA, no clasificada todavía como
 defecto funcional.
@@ -26,9 +26,10 @@ paralelo.
 
 **Mitigación aplicada:** `frontend/playwright.config.ts` ahora usa `workers: 1`.
 La repetición serial también quedó bloqueada en el primer worker durante más de
-ocho minutos, sin salida ni artefactos. El siguiente paso es ejecutar los tests
-por archivo con trazas habilitadas y revisar los logs del servidor Laravel para
-identificar la primera solicitud que no termina.
+ocho minutos, sin salida ni artefactos. Como solución operativa, los siete
+archivos se ejecutaron individualmente con un worker y los **131/131 tests
+pasaron**. La regresión debe conservar esta orquestación por bloques hasta que
+se investigue por qué el proceso único global no finaliza.
 
 ## INC-QA-002 — Cobertura incompleta de Modo Contingencia
 

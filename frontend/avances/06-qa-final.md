@@ -2,6 +2,13 @@
 
 **Estado: COMPLETA.**
 
+## Revalidación posterior — Playwright por bloques
+
+La ejecución monolítica de Playwright no finalizó de forma fiable en este entorno
+de desarrollo. Se ejecutaron los siete archivos de la suite con `--workers=1`,
+contra frontend y backend reales: **131/131 PASS**. El detalle reproducible y
+las evidencias están en `frontend/evidencias/qa-final-2026-08-17/`.
+
 ## TypeScript / ESLint / Build
 
 Verificados repetidamente a lo largo de todo el proyecto (no solo al final) — cada módulo de las Fases 2-5 pasó `tsc --noEmit`, `next build` y ESLint antes de continuar al siguiente. Verificación final: los tres, limpios. Un `next build` (Turbopack) corriendo en paralelo con un `next dev` de larga duración sobre el mismo `.next/` causó una desincronización real de tipos de rutas (`.next/dev/types` vs `.next/types`) varias veces durante el proyecto — se resolvió cada vez con un `next build` adicional; no es un defecto de código.
