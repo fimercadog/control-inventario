@@ -78,11 +78,12 @@ class DatabaseSeeder extends Seeder
         (new UserSeeder())->crear($empresa, $roles, max(1, $usuariosNuevos));
 
         (new CategoriaSeeder())->crear($empresa, (int) round(self::VOLUMEN_BASE['categorias'] * $escala));
-        (new MarcaSeeder())->crear($empresa, (int) round(self::VOLUMEN_BASE['marcas'] * $escala));
+        $marcas = (new MarcaSeeder())->crear($empresa, (int) round(self::VOLUMEN_BASE['marcas'] * $escala));
         (new UnidadMedidaSeeder())->crear($empresa, (int) round(self::VOLUMEN_BASE['unidades'] * $escala));
 
         (new ProductoSeeder())->crear($empresa, max(10, (int) round(self::VOLUMEN_BASE['productos'] * $escala)));
-        (new ProveedorSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['proveedores'] * $escala)));
+        $proveedores = (new ProveedorSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['proveedores'] * $escala)));
+        $this->asociarMarcasConProveedores($empresa, $marcas, $proveedores);
         (new ClienteSeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['clientes'] * $escala)));
         $paresCreados = (new ProductoProveedorSeeder())->crear($empresa);
         $this->command?->info("  producto_proveedor: {$paresCreados} pares creados");
@@ -95,5 +96,16 @@ class DatabaseSeeder extends Seeder
 
         (new CapturaIASeeder())->crear($empresa, max(5, (int) round(self::VOLUMEN_BASE['capturas_ia'] * $escala)));
         (new AuditLogSeeder())->crear($empresa, max(50, (int) round(self::VOLUMEN_BASE['auditoria'] * $escala)));
+    }
+
+    /** @param \Illuminate\Support\Collection<int, \App\Models\Marca> $marcas @param \Illuminate\Support\Collection<int, \App\Models\Proveedor> $proveedores */
+    private function asociarMarcasConProveedores(Empresa $empresa, \Illuminate\Support\Collection $marcas, \Illuminate\Support\Collection $proveedores): void
+    {
+        $marcas->take(7)->each(function ($marca, int $indice) use ($empresa, $proveedores): void {
+            $proveedor = $proveedores->get($indice);
+            if ($proveedor !== null) {
+                $marca->proveedores()->syncWithoutDetaching([$proveedor->id => ['empresa_id' => $empresa->id]]);
+            }
+        });
     }
 }
