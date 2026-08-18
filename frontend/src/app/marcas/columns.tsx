@@ -56,6 +56,18 @@ export function buildMarcaColumns({
         ),
     },
     {
+      id: "proveedores",
+      header: "Proveedores",
+      cell: ({ row }) => {
+        const proveedores = row.original.proveedores ?? [];
+        return proveedores.length > 0 ? (
+          <span className="block max-w-56 truncate text-muted-foreground" title={proveedores.map((proveedor) => proveedor.nombre).join(", ")}>
+            {proveedores.map((proveedor) => proveedor.nombre).join(", ")}
+          </span>
+        ) : <span className="text-muted-foreground">Sin proveedor</span>;
+      },
+    },
+    {
       accessorKey: "productos_count",
       header: "Productos",
       cell: ({ row }) => <span className="text-muted-foreground">{row.original.productos_count ?? 0}</span>,
