@@ -83,7 +83,9 @@ class StockController extends Controller
         }
 
         if ($request->boolean('bajo_minimo')) {
-            $query->whereColumn('stock_actual', '<', 'stock_minimo');
+            // El umbral de seguridad se alcanza también en igualdad: 5 de
+            // 5 ya requiere reposición, no solo 4 de 5.
+            $query->whereColumn('stock_actual', '<=', 'stock_minimo');
         }
 
         $productos = $query->orderBy('nombre')->paginate($this->perPageDeRequest($request, 100));

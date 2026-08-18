@@ -120,6 +120,18 @@ class StockControllerTest extends TestCase
             ->assertJsonPath('data.items.0.bajo_minimo', true);
     }
 
+    public function test_stock_at_its_exact_minimum_is_flagged_for_replenishment(): void
+    {
+        $this->productoA->forceFill(['stock_actual' => 5])->save();
+
+        $this->actingAs($this->userA, 'api')
+            ->getJson('/api/v1/stock?bajo_minimo=1')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1)
+            ->assertJsonPath('data.items.0.codigo', 'TEST-001')
+            ->assertJsonPath('data.items.0.bajo_minimo', true);
+    }
+
     public function test_updating_thresholds_persists_and_writes_audit(): void
     {
         $this->actingAs($this->userA, 'api')

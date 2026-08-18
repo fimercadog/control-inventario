@@ -49,14 +49,20 @@ export function buildStockColumns({
     {
       accessorKey: "stock_actual",
       header: "Stock actual",
-      cell: ({ row }) => (
-        <span className={row.original.bajo_minimo ? "font-semibold text-amber-500" : "text-foreground"}>
-          {row.original.stock_actual}
-          {row.original.bajo_minimo ? (
-            <Badge className="ml-2 border-amber-500/40 bg-amber-500/15 text-amber-400">Bajo mínimo</Badge>
-          ) : null}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const { stock_actual: actual, stock_minimo: minimo, bajo_minimo: requiereReposicion } = row.original;
+        const minimoAlcanzado = actual === minimo;
+        return (
+          <span className={requiereReposicion ? "font-semibold text-amber-500" : "text-foreground"}>
+            {actual}
+            {requiereReposicion ? (
+              <Badge className="ml-2 border-amber-500/40 bg-amber-500/15 text-amber-400">
+                {minimoAlcanzado ? "Mínimo alcanzado" : "Bajo mínimo"}
+              </Badge>
+            ) : null}
+          </span>
+        );
+      },
     },
     { accessorKey: "stock_minimo", header: "Mínimo" },
     {
