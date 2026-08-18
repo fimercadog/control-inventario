@@ -41,6 +41,7 @@ const UNIDADES_DE_CONTENIDO = [
 ];
 
 const CONTENIDO_SUGERIDO_POR_UNIDAD: Record<string, string> = {
+  unidad: "unidades",
   bolsa: "kg",
   caja: "unidades",
   botella: "L",
@@ -53,7 +54,11 @@ function separarPresentacion(presentacion: string | null | undefined) {
   const original = presentacion?.trim() ?? "";
   const match = original.match(/(?:^|\s)(\d+(?:[.,]\d+)?)\s*(unidades?|uds?|kg|g|l|ml|docenas?|pares?)\.?$/i);
 
-  if (!match) return { cantidad: "", contenido: "", original };
+  if (!match) {
+    return /^\d+(?:[.,]\d+)?$/.test(original)
+      ? { cantidad: original.replace(",", "."), contenido: "", original }
+      : { cantidad: "", contenido: "", original };
+  }
 
   const contenido = match[2].toLowerCase();
   return {
@@ -61,6 +66,12 @@ function separarPresentacion(presentacion: string | null | undefined) {
     contenido: contenido === "ud" || contenido === "uds" || contenido === "unidad" ? "unidades" : contenido === "l" ? "L" : contenido,
     original,
   };
+}
+
+function contenidoConCantidad(cantidad: string, contenido: string) {
+  if (Number(cantidad) !== 1) return contenido;
+
+  return { unidades: "unidad", docenas: "docena", pares: "par" }[contenido] ?? contenido;
 }
 
 const productoFormSchema = z.object({
@@ -175,7 +186,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         unidad_medida_nuevo: values.unidad_medida_id === NUEVA && values.unidad_medida_nuevo ? values.unidad_medida_nuevo : undefined,
         descripcion: values.descripcion || null,
         presentacion: values.presentacion_cantidad
-          ? `${values.presentacion_cantidad} ${values.presentacion_contenido}`
+          ? `${values.presentacion_cantidad} ${contenidoConCantidad(values.presentacion_cantidad, values.presentacion_contenido)}`
           : values.presentacion_original || null,
         costo: values.costo ? Number(values.costo) : undefined,
         precio: values.precio ? Number(values.precio) : undefined,
@@ -398,7 +409,7 @@ export function ProductoForm({ producto, onSuccess, onQueue }: {
         </div>
         {presentacionCantidad && presentacionContenido ? (
           <p className="text-xs font-medium text-primary">
-            Cada {unidadSeleccionada?.nombre.toLowerCase() ?? "unidad"} contiene {presentacionCantidad} {presentacionContenido}.
+            Cada {unidadSeleccionada?.nombre.toLowerCase() ?? "unidad"} contiene {presentacionCantidad} {contenidoConCantidad(presentacionCantidad, presentacionContenido)}.
           </p>
         ) : null}
         {!presentacionCantidad && producto?.presentacion ? (
