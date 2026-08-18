@@ -82,7 +82,7 @@ export default function ConfiguracionPage() {
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-medium text-foreground">Modo oscuro</p>
-              <p className="text-sm text-muted-foreground">Usa una interfaz azul-violeta profunda para una visualización más cómoda.</p>
+              <p className="text-sm text-muted-foreground">Usa una interfaz gris carbón con acentos violeta para una visualización más cómoda.</p>
             </div>
             <Button variant="outline" onClick={toggleDarkTheme} disabled={savingTheme} className="w-fit">
               {savingTheme ? <Loader2 className="size-4 animate-spin" /> : darkThemeEnabled ? <Sun className="size-4" /> : <Moon className="size-4" />}

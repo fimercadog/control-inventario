@@ -43,7 +43,7 @@ export function Header() {
   const pageName = pathname === "/dashboard" ? "Dashboard" : pathname.split("/").filter(Boolean).at(-1)?.replaceAll("-", " ") ?? "";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/85 px-4 backdrop-blur md:px-8">
+    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/85 px-4 shadow-[0_1px_0_rgb(15_23_42/0.02),0_5px_18px_rgb(15_23_42/0.035)] backdrop-blur-xl dark:shadow-[0_5px_18px_rgb(0_0_0/0.15)] md:px-8">
       <div className="flex items-center gap-2 md:hidden">
         <Sheet>
           <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menú" />}>
@@ -71,7 +71,7 @@ export function Header() {
           render={
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted"
             />
           }
         >
