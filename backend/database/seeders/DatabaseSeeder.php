@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
     private const VOLUMEN_BASE = [
         'categorias' => 20,
         'marcas' => 30,
-        'unidades' => 10,
+        'unidades' => 11,
         'productos' => 500,
         'proveedores' => 100,
         'clientes' => 150,

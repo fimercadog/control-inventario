@@ -23,6 +23,7 @@ class UnidadMedidaSeeder extends Seeder
         ['nombre' => 'Paquete', 'abreviatura' => 'paq'],
         ['nombre' => 'Docena', 'abreviatura' => 'doc'],
         ['nombre' => 'Par', 'abreviatura' => 'par'],
+        ['nombre' => 'Botella', 'abreviatura' => 'bot'],
     ];
 
     public function crear(Empresa $empresa, int $cantidad): Collection
