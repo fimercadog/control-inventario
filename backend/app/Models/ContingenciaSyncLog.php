@@ -39,4 +39,9 @@ class ContingenciaSyncLog extends Model
     {
         return $this->belongsTo(Producto::class);
     }
+
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
 }
