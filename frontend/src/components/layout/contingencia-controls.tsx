@@ -17,7 +17,7 @@ export function ContingenciaControls() {
   if (!can(permissions, "productos.crear") && !can(permissions, "productos.editar")) return null;
 
   if (activo) {
-    return <Button render={<Link href="/contingencia" />} variant="destructive" className="w-full justify-start"><TriangleAlert />Contingencia activa</Button>;
+    return <Button nativeButton={false} render={<Link href="/contingencia" />} variant="destructive" className="w-full justify-start"><TriangleAlert />Contingencia activa</Button>;
   }
   return <>
     <Button variant="outline" className="w-full justify-start border-amber-500/60 text-amber-700 hover:bg-amber-50 dark:text-amber-400" onClick={() => setOpen(true)}><TriangleAlert />Modo Contingencia</Button>
