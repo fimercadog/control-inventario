@@ -1,5 +1,6 @@
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { ContingenciaControls } from "@/components/layout/contingencia-controls";
+import { BetaNotice } from "@/components/layout/beta-notice";
 
 export function Sidebar() {
   return (
@@ -10,6 +11,7 @@ export function Sidebar() {
       </div>
       <div className="mb-5"><ContingenciaControls /></div>
       <div className="min-h-0 flex-1 overflow-y-auto"><SidebarNav /></div>
+      <div className="mt-4 border-t border-white/10 pt-4"><BetaNotice /></div>
     </aside>
   );
 }
