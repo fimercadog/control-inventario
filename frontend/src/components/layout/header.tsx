@@ -23,6 +23,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { ContingenciaControls } from "@/components/layout/contingencia-controls";
+import { BetaNotice } from "@/components/layout/beta-notice";
 import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
@@ -55,6 +56,7 @@ export function Header() {
             </SheetHeader>
             <div className="mb-5"><ContingenciaControls /></div>
             <SidebarNav />
+            <div className="mt-5 border-t pt-4"><BetaNotice compact /></div>
           </SheetContent>
         </Sheet>
       </div>
