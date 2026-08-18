@@ -73,10 +73,22 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
+// `resultado` viene de dos fuentes (AuditLogger::registrarAccionManual /
+// ::registrarCapturaIA): "exitoso" para acciones manuales, o el estado real
+// de CapturaIA (aplicado/parcial/pendiente_revision/descartado/procesando)
+// para auditoría de captura IA. No es un simple booleano éxito/fallo.
+const RESULTADO_VARIANT: Record<string, "success" | "warning" | "outline"> = {
+  exitoso: "success",
+  aplicado: "success",
+  parcial: "warning",
+  pendiente_revision: "warning",
+  descartado: "outline",
+  procesando: "outline",
+};
+
 export function ResultadoBadge({ resultado }: { resultado: string | null }) {
   if (!resultado) return <span className="text-muted-foreground">—</span>;
-  const ok = resultado === "exito" || resultado === "success";
   return (
-    <Badge variant={ok ? "success" : "destructive"}>{resultado}</Badge>
+    <Badge variant={RESULTADO_VARIANT[resultado] ?? "destructive"}>{resultado}</Badge>
   );
 }
