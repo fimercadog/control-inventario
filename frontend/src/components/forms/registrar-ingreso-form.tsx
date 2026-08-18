@@ -141,8 +141,8 @@ export function RegistrarIngresoForm({
           name="proveedor_id"
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="ingreso-proveedor">
-                <SelectValue placeholder="Usar el proveedor principal del producto (si existe)">
+              <SelectTrigger id="ingreso-proveedor" className="w-full min-w-0">
+                <SelectValue className="min-w-0" placeholder="Usar el proveedor principal del producto (si existe)">
                   {(value: string) =>
                     value === NUEVO
                       ? "+ Crear proveedor nuevo…"
