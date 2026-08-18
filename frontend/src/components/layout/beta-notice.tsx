@@ -16,7 +16,7 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
               ? "flex h-8 items-center gap-0.5 rounded-lg px-1.5 text-amber-600 transition-colors hover:bg-amber-500/12 hover:text-amber-700 dark:text-amber-300 dark:hover:bg-amber-400/10"
               : compact
               ? "flex w-full items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-amber-700 transition-colors hover:bg-amber-500/15 dark:text-amber-300"
-              : "flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-amber-200 transition-colors hover:bg-white/10"}
+              : "flex w-full items-center justify-between rounded-xl border border-indigo-300/20 bg-indigo-400/10 px-3 py-2.5 text-left text-indigo-100 transition-colors hover:bg-indigo-400/16"}
             aria-label="Ver información de la versión beta"
           />
         }
@@ -26,7 +26,7 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
           {iconOnly ? null : <>
           <span className="flex min-w-0 flex-col">
             <span className="text-xs font-semibold">Versión beta</span>
-            {!compact ? <span className="truncate text-[11px] text-slate-400">Conoce las novedades</span> : null}
+            {!compact ? <span className="truncate text-[11px] text-indigo-200/70">Conoce las novedades</span> : null}
           </span>
           </>}
         </span>
