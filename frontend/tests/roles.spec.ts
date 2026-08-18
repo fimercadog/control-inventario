@@ -93,7 +93,7 @@ test.describe("Roles list", () => {
     await expect(firstRow.getByRole("cell").first()).toHaveText("1");
     // Administrador sorts first alphabetically and is real, seeded, permanent data.
     await expect(firstRow.getByText("Administrador")).toBeVisible();
-    await expect(page.getByText(/resultados? · página 1 de/)).toBeVisible();
+    await expect(page.getByText(/Mostrando 1–\d+ de \d+ resultados?/)).toBeVisible();
   });
 
   test("typing fewer than 3 characters does not trigger a search", async ({ page }) => {
@@ -113,7 +113,7 @@ test.describe("Roles list", () => {
   test("filters by estado", async ({ page }) => {
     await page.getByLabel("Filtrar por estado").click();
     await page.getByRole("option", { name: "Todos", exact: true }).click();
-    await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Mostrando \d+–\d+ de \d+ resultados?/)).toBeVisible({ timeout: 10000 });
   });
 
   test.describe("with enough roles for a second page", () => {
@@ -140,16 +140,16 @@ test.describe("Roles list", () => {
     test("changes page size and resets to page 1", async ({ page }) => {
       await page.getByLabel("Filas por página").click();
       await page.getByRole("option", { name: "10", exact: true }).click();
-      await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
       await expect(page.getByRole("row")).toHaveCount(11); // header + 10 data rows
     });
 
     test("navigates to the next page", async ({ page }) => {
       await page.getByLabel("Filas por página").click();
       await page.getByRole("option", { name: "10", exact: true }).click();
-      await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
       await page.getByLabel("Página siguiente").click();
-      await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
+      await expect(page.getByLabel("Ir a página")).toHaveValue("2", { timeout: 10000 });
       const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
       await expect(firstCell).toHaveText("11");
     });
@@ -427,7 +427,7 @@ test.describe("Roles RBAC and multi-tenant isolation", () => {
     // Empresa A carries ~200+ pre-existing "E2E ..." rows (see report) plus its 5 seeded
     // roles; Empresa B only ever had its own 5 seeded roles. None of Empresa A's data
     // (by name or by count) should leak across the tenant boundary.
-    await expect(page.getByText(/5 resultados? · página 1 de 1/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Mostrando 1–5 de 5 resultados?/)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/^E2E /)).toHaveCount(0);
   });
 

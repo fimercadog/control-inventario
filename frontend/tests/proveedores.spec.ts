@@ -21,7 +21,7 @@ test.describe("Proveedores list", () => {
     await expect(page.getByRole("table")).toBeVisible();
     const firstRow = page.getByRole("row").nth(1);
     await expect(firstRow.getByRole("cell").first()).toHaveText("1");
-    await expect(page.getByText(/resultados? · página 1 de/)).toBeVisible();
+    await expect(page.getByText(/Mostrando 1–\d+ de \d+ resultados?/)).toBeVisible();
   });
 
   test("typing fewer than 3 characters does not trigger a search", async ({ page }) => {
@@ -40,16 +40,16 @@ test.describe("Proveedores list", () => {
 
   test("search also matches on NIT, not just nombre", async ({ page }) => {
     // Confirmed against the real backend: ProveedorController::index() searches
-    // nombre/nit/contacto — "935381635-3" is Bahringer LLC's real, unique NIT.
+    // nombre/nit/contacto — "935381635-3" is Distribuidora Pet Colombia's real, unique NIT.
     await page.getByLabel("Buscar proveedores").fill("935381635-3");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    await expect(page.getByRole("row").filter({ hasText: "Bahringer LLC" })).toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" })).toBeVisible();
   });
 
   test("search also matches on contacto, not just nombre", async ({ page }) => {
     await page.getByLabel("Buscar proveedores").fill("Nicola Thompson");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    await expect(page.getByRole("row").filter({ hasText: "Bahringer LLC" })).toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" })).toBeVisible();
   });
 
   test("search does NOT match on email — confirmed unsupported by the real backend", async ({ page }) => {
@@ -62,35 +62,35 @@ test.describe("Proveedores list", () => {
   test("filters by estado", async ({ page }) => {
     await page.getByLabel("Filtrar por estado").click();
     await page.getByRole("option", { name: "Todos", exact: true }).click();
-    await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Mostrando \d+–\d+ de \d+ resultados?/)).toBeVisible({ timeout: 10000 });
   });
 
   test("changes page size and resets to page 1", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     await expect(page.getByRole("row")).toHaveCount(11); // header + 10 data rows
   });
 
   test("navigates to the next page", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     await page.getByLabel("Página siguiente").click();
-    await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("2", { timeout: 10000 });
     const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
     await expect(firstCell).toHaveText("11");
   });
 
   test("Ver opens a modal with the supplier's real details, not a page navigation", async ({ page }) => {
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    const row = page.getByRole("row").filter({ hasText: "Bahringer LLC" });
+    const row = page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" });
     await row.getByRole("button", { name: "Acciones" }).click();
     await page.getByRole("menuitem", { name: "Ver" }).click();
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Bahringer LLC", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("Distribuidora Pet Colombia", { exact: true })).toBeVisible();
     await expect(dialog.getByText("935381635-3")).toBeVisible();
     await expect(dialog.getByText("kub.garret@fahey.org")).toBeVisible();
     await expect(dialog.getByText("Nicola Thompson QA Test")).toBeVisible();
@@ -100,20 +100,20 @@ test.describe("Proveedores list", () => {
   });
 
   test("clicking a supplier's name also opens the Ver modal", async ({ page }) => {
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    await page.getByRole("row").filter({ hasText: "Bahringer LLC" }).getByRole("button").first().click();
-    await expect(page.getByRole("dialog").getByText("Bahringer LLC", { exact: true })).toBeVisible();
+    await page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" }).getByRole("button").first().click();
+    await expect(page.getByRole("dialog").getByText("Distribuidora Pet Colombia", { exact: true })).toBeVisible();
   });
 
   test("Ver modal's Productos tab lists the supplier's real associated products, read-only", async ({ page }) => {
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    await page.getByRole("row").filter({ hasText: "Bahringer LLC" }).getByRole("button").first().click();
+    await page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" }).getByRole("button").first().click();
 
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("tab", { name: "Productos" }).click();
-    // Bahringer LLC has real associated products in the shared demo dataset.
+    // Distribuidora Pet Colombia has real associated products in the shared demo dataset.
     await expect(dialog.getByRole("listitem").first()).toBeVisible({ timeout: 10000 });
     // Read-only: no action buttons anywhere in this tab.
     await expect(dialog.getByRole("button", { name: /Editar|Deshabilitar|Habilitar/ })).toHaveCount(0);
@@ -177,7 +177,7 @@ test.describe("Proveedores list", () => {
 
   test("Editar proveedor shows NIT and email as read-only, and sends only operational fields", async ({ page }) => {
     // Same interception reasoning as the create test, applied to an existing
-    // real supplier (Bahringer LLC) so this test never mutates real shared
+    // real supplier (Distribuidora Pet Colombia) so this test never mutates real shared
     // demo data either.
     let requestBody: unknown;
     await page.route("**/api/v1/proveedores/*", async (route) => {
@@ -190,7 +190,7 @@ test.describe("Proveedores list", () => {
           success: true,
           message: "Proveedor actualizado correctamente",
           data: {
-            id: 1, nombre: "Bahringer LLC", nit: "935381635-3", email: "kub.garret@fahey.org",
+            id: 1, nombre: "Distribuidora Pet Colombia", nit: "935381635-3", email: "kub.garret@fahey.org",
             contacto: "Contacto Editado", telefono: null, direccion: null, ciudad: null, pais: null,
             notas: null, estado: "activo", created_at: "", updated_at: "",
           },
@@ -198,9 +198,9 @@ test.describe("Proveedores list", () => {
       });
     });
 
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
-    await page.getByRole("row").filter({ hasText: "Bahringer LLC" }).getByRole("button", { name: "Acciones" }).click();
+    await page.getByRole("row").filter({ hasText: "Distribuidora Pet Colombia" }).getByRole("button", { name: "Acciones" }).click();
     await page.getByRole("menuitem", { name: "Editar" }).click();
 
     const dialog = page.getByRole("dialog");
@@ -223,7 +223,7 @@ test.describe("Proveedores list", () => {
 
   test("disabling and re-enabling a supplier persists in both directions", async ({ page }) => {
     // Uses "Connelly Inc" — a different, otherwise-unreferenced real supplier
-    // from the one every read-only test above uses (Bahringer LLC).
+    // from the one every read-only test above uses (Distribuidora Pet Colombia).
     // playwright.config.ts sets fullyParallel: true, so a test that mutates a
     // real record and one that reads it can run concurrently; isolating the
     // mutating test onto its own record sidesteps that race entirely
@@ -264,7 +264,7 @@ test.describe("Proveedores list", () => {
     const filePath = await download.path();
     const contenido = fs.readFileSync(filePath, "utf-8");
     expect(contenido).toContain("#,Nombre,NIT,Contacto,Teléfono,Email,Estado");
-    expect(contenido).toContain("Bahringer LLC");
+    expect(contenido).toContain("Distribuidora Pet Colombia");
   });
 
   test("PDF button downloads a real, valid PDF file", async ({ page }) => {
@@ -281,7 +281,7 @@ test.describe("Proveedores list", () => {
   });
 
   test("CSV export respects the current search filter, covering the full filtered set", async ({ page }) => {
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
 
     const [download] = await Promise.all([
@@ -293,11 +293,11 @@ test.describe("Proveedores list", () => {
     const contenido = fs.readFileSync(filePath, "utf-8");
     const filas = contenido.trim().split("\n");
     expect(filas).toHaveLength(2); // header + exactly the one matching supplier
-    expect(contenido).toContain("Bahringer LLC");
+    expect(contenido).toContain("Distribuidora Pet Colombia");
   });
 
   test("exporting does not disturb the list, search, filters, or pagination", async ({ page }) => {
-    await page.getByLabel("Buscar proveedores").fill("Bahringer LLC");
+    await page.getByLabel("Buscar proveedores").fill("Distribuidora Pet Colombia");
     await expect(page.getByRole("row")).toHaveCount(2, { timeout: 10000 });
 
     const [download] = await Promise.all([
@@ -307,7 +307,7 @@ test.describe("Proveedores list", () => {
     await download.path();
 
     await expect(page.getByRole("row")).toHaveCount(2);
-    await expect(page.getByLabel("Buscar proveedores")).toHaveValue("Bahringer LLC");
+    await expect(page.getByLabel("Buscar proveedores")).toHaveValue("Distribuidora Pet Colombia");
   });
 });
 
@@ -345,7 +345,7 @@ test.describe("Proveedores RBAC and multi-tenant isolation", () => {
     await page.getByLabel("Filtrar por estado").click();
     await page.getByRole("option", { name: "Todos", exact: true }).click();
     await page.waitForTimeout(1000);
-    await expect(page.getByText("Bahringer LLC")).toHaveCount(0);
+    await expect(page.getByText("Distribuidora Pet Colombia")).toHaveCount(0);
   });
 
   test("multi-tenant: Empresa B's Administrador exports only Empresa B's suppliers", async ({ page }) => {
@@ -360,7 +360,7 @@ test.describe("Proveedores RBAC and multi-tenant isolation", () => {
 
     const filePath = await download.path();
     const contenido = fs.readFileSync(filePath, "utf-8");
-    expect(contenido).not.toContain("Bahringer LLC");
+    expect(contenido).not.toContain("Distribuidora Pet Colombia");
   });
 
   test("multi-tenant: direct ID access to another company's supplier is blocked at the API", async ({ page }) => {
@@ -381,7 +381,7 @@ test.describe("Proveedores RBAC and multi-tenant isolation", () => {
     await waitForProveedoresLoaded(page);
     expect(authHeader).toBeTruthy();
 
-    // id 83 is Bahringer LLC's real id (Empresa A); qa-rbac-admin-b is Empresa B's Administrador.
+    // id 83 is Distribuidora Pet Colombia's real id (Empresa A); qa-rbac-admin-b is Empresa B's Administrador.
     const response = await page.request.get("/api/v1/proveedores/83", {
       headers: { Authorization: authHeader! },
     });

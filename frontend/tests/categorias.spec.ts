@@ -23,7 +23,7 @@ test.describe("Categorías list", () => {
     await expect(firstRow.getByRole("cell").first()).toHaveText("1");
     // "Accesorios" sorts first alphabetically and is real, seeded, permanent data.
     await expect(firstRow.getByText("Accesorios")).toBeVisible();
-    await expect(page.getByText(/resultados? · página 1 de/)).toBeVisible();
+    await expect(page.getByText(/Mostrando 1–\d+ de \d+ resultados?/)).toBeVisible();
   });
 
   test("typing fewer than 3 characters does not trigger a search", async ({ page }) => {
@@ -54,22 +54,22 @@ test.describe("Categorías list", () => {
   test("filters by estado", async ({ page }) => {
     await page.getByLabel("Filtrar por estado").click();
     await page.getByRole("option", { name: "Todas", exact: true }).click();
-    await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Mostrando \d+–\d+ de \d+ resultados?/)).toBeVisible({ timeout: 10000 });
   });
 
   test("changes page size and resets to page 1", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     await expect(page.getByRole("row")).toHaveCount(11); // header + 10 data rows
   });
 
   test("navigates to the next page", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     await page.getByLabel("Página siguiente").click();
-    await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("2", { timeout: 10000 });
     const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
     await expect(firstCell).toHaveText("11");
   });

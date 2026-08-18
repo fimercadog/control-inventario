@@ -12,6 +12,15 @@ const WAV = path.join(__dirname, "fixtures", "test-audio.wav");
  * Every prior "Captura IA" reference in this suite only checked sidebar
  * link visibility per role — none of it ever opened the page or clicked
  * anything here.
+ *
+ * CAPTURA_IA_EN_PREPARACION (src/app/captura-ia/page.tsx) is currently `true`
+ * — a deliberate preview gate ("mientras se configura el proveedor de IA"),
+ * not a bug. While it's on, every control below "Analizar" (mode toggle,
+ * file inputs, Analizar itself) is disabled by design, so the real-backend
+ * flows this file was written for cannot run yet. Only the "gate actually
+ * disables everything" test can run meaningfully; the rest are skipped with
+ * an explicit reason (not silently — see individual test.skip calls) until
+ * the flag flips. Re-enable them at that point, not before.
  */
 test.describe("Captura IA", () => {
   // Every happy-path test here makes a real OpenAI round trip through
@@ -20,21 +29,23 @@ test.describe("Captura IA", () => {
   // logins/requests behind each other and produces spurious timeouts.
   test.describe.configure({ mode: "serial" });
 
-  test("Analizar is disabled with no file, per mode", async ({ page }) => {
+  test("Analizar and every mode control are disabled while Captura IA is in preparación", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
-    const analizarBtn = page.getByRole("button", { name: "Analizar" });
+    // The "en preparación" dialog opens by default and marks the rest of the page
+    // aria-hidden while open (standard modal a11y behavior) — the underlying controls
+    // exist in the DOM but aren't reachable by role until it's dismissed.
+    await page.getByRole("button", { name: "Entendido, ver interfaz" }).click();
 
-    await expect(analizarBtn).toBeDisabled();
-
-    await page.getByRole("button", { name: "Voz", exact: true }).click();
-    await expect(analizarBtn).toBeDisabled();
-
-    await page.getByRole("button", { name: "Foto + Voz" }).click();
-    await expect(analizarBtn).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Analizar" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Voz", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Foto + Voz" })).toBeDisabled();
   });
 
-  test("switching modes swaps which file input is shown", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true (src/app/captura-ia/page.tsx) — the mode
+  // buttons this test clicks are disabled while the preview gate is on. Re-enable when
+  // the flag flips, not before.
+  test.fixme("switching modes swaps which file input is shown", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
 
@@ -50,7 +61,9 @@ test.describe("Captura IA", () => {
     await expect(page.getByLabel("Seleccionar audio")).toBeVisible();
   });
 
-  test("rejects a non-image file for the Imagen input client-side", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — the file input is disabled while the
+  // preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("rejects a non-image file for the Imagen input client-side", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
     await page.getByLabel("Seleccionar imagen").setInputFiles(WAV);
@@ -58,7 +71,9 @@ test.describe("Captura IA", () => {
     await expect(page.getByRole("button", { name: "Analizar" })).toBeDisabled();
   });
 
-  test("Foto: select image, Analizar submits to the real backend and lands on the result", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — Analizar never submits while the
+  // preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("Foto: select image, Analizar submits to the real backend and lands on the result", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
 
@@ -75,7 +90,9 @@ test.describe("Captura IA", () => {
     await expect(page.getByText("Productos detectados")).toBeVisible();
   });
 
-  test("Voz: select audio, Analizar transcribes and lands on the result", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — the mode toggle and Analizar are
+  // disabled while the preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("Voz: select audio, Analizar transcribes and lands on the result", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
     await page.getByRole("button", { name: "Voz", exact: true }).click();
@@ -89,7 +106,9 @@ test.describe("Captura IA", () => {
     await expect(page.getByText("Transcripción")).toBeVisible();
   });
 
-  test("Foto + Voz: requires both files, then submits both to the real backend", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — the mode toggle and Analizar are
+  // disabled while the preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("Foto + Voz: requires both files, then submits both to the real backend", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
     await page.getByRole("button", { name: "Foto + Voz" }).click();
@@ -106,7 +125,9 @@ test.describe("Captura IA", () => {
     await expect(page.getByRole("heading", { name: "Captura Foto + Voz" })).toBeVisible();
   });
 
-  test("a backend failure surfaces the real error message and re-enables Analizar", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — the file input is disabled while the
+  // preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("a backend failure surfaces the real error message and re-enables Analizar", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
 
@@ -131,7 +152,9 @@ test.describe("Captura IA", () => {
     await expect(page).toHaveURL(/\/captura-ia$/);
   });
 
-  test("confirming a capture updates its estado and the recientes list", async ({ page }) => {
+  // Blocked by CAPTURA_IA_EN_PREPARACION=true — there's no real capture to confirm while
+  // the preview gate is on. Re-enable when the flag flips, not before.
+  test.fixme("confirming a capture updates its estado and the recientes list", async ({ page }) => {
     await login(page);
     await page.goto("/captura-ia");
 

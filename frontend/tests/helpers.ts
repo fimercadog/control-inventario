@@ -10,3 +10,11 @@ export async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASS
   await page.getByRole("button", { name: "Ingresar" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
 }
+
+/**
+ * Header's account trigger shows name/role passively; the email only renders
+ * inside the dropdown's label once opened (Header.tsx DropdownMenuContent).
+ */
+export async function openUserMenu(page: Page) {
+  await page.getByRole("button", { name: /Administrador$/ }).click();
+}

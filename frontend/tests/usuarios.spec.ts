@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { login, DEMO_EMAIL } from "./helpers";
+import { login, openUserMenu, DEMO_EMAIL } from "./helpers";
 
 const TEST_AVATAR_PATH = path.join(__dirname, "fixtures", "test-avatar.png");
 
@@ -35,7 +35,7 @@ test.describe("Usuarios list", () => {
     await expect(page.getByRole("table")).toBeVisible();
     const firstRow = page.getByRole("row").nth(1);
     await expect(firstRow.getByRole("cell").first()).toHaveText("1");
-    await expect(page.getByText(/resultados? · página 1 de/)).toBeVisible();
+    await expect(page.getByText(/Mostrando 1–\d+ de \d+ resultados?/)).toBeVisible();
   });
 
   test("typing fewer than 3 characters does not trigger a search", async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe("Usuarios list", () => {
   test("changes page size and resets to page 1", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     const rows = page.getByRole("row");
     // header row + up to 10 data rows
     await expect(rows).toHaveCount(11);
@@ -65,9 +65,9 @@ test.describe("Usuarios list", () => {
   test("navigates to the next page", async ({ page }) => {
     await page.getByLabel("Filas por página").click();
     await page.getByRole("option", { name: "10", exact: true }).click();
-    await expect(page.getByText(/· página 1 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("1", { timeout: 10000 });
     await page.getByLabel("Página siguiente").click();
-    await expect(page.getByText(/· página 2 de/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Ir a página")).toHaveValue("2", { timeout: 10000 });
     const firstCell = page.getByRole("row").nth(1).getByRole("cell").first();
     await expect(firstCell).toHaveText("11");
   });
@@ -75,7 +75,7 @@ test.describe("Usuarios list", () => {
   test("filters by estado", async ({ page }) => {
     await page.getByLabel("Filtrar por estado").click();
     await page.getByRole("option", { name: "Todos", exact: true }).click();
-    await expect(page.getByText(/resultados? · página/)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Mostrando \d+–\d+ de \d+ resultados?/)).toBeVisible({ timeout: 10000 });
   });
 
   test("Ver opens a modal with the user's details, not a page navigation", async ({ page }) => {
@@ -338,9 +338,12 @@ test.describe("Usuarios list", () => {
 test.describe("Dashboard", () => {
   test("shows real session data and a quick link to Usuarios", async ({ page }) => {
     await login(page);
-    const main = page.getByRole("main");
-    await expect(main.getByText(DEMO_EMAIL)).toBeVisible();
-    await expect(main.getByText("Administrador")).toBeVisible();
+    // Session identity renders in the persistent Header, not inside <main> — role shows
+    // passively on the trigger button; email only renders once the dropdown is opened.
+    await expect(page.getByText("Administrador")).toBeVisible();
+    await openUserMenu(page);
+    await expect(page.getByText(DEMO_EMAIL)).toBeVisible();
+    await page.keyboard.press("Escape");
     await page.getByRole("link", { name: "Usuarios" }).first().click();
     await expect(page).toHaveURL(/\/usuarios/);
   });

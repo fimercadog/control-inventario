@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, DEMO_EMAIL } from "./helpers";
+import { login, openUserMenu, DEMO_EMAIL } from "./helpers";
 
 test.describe("Login", () => {
   test("shows client-side validation for an empty submit", async ({ page }) => {
@@ -37,7 +37,11 @@ test.describe("Login", () => {
 
   test("logs in with valid credentials and reaches the dashboard", async ({ page }) => {
     await login(page);
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    // Dashboard's real <h1> is the personalized "Hola, {name}" greeting, not literally
+    // "Dashboard" — that word only ever appears as the header breadcrumb (a <span>, not
+    // a heading). Checking for a real level-1 heading confirms the page actually rendered.
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await openUserMenu(page);
     await expect(page.getByText(DEMO_EMAIL)).toBeVisible();
   });
 
@@ -45,7 +49,7 @@ test.describe("Login", () => {
     await login(page);
     await page.reload();
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("redirects an already-authenticated user away from /login", async ({ page }) => {
