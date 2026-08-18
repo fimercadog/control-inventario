@@ -103,17 +103,17 @@ export function RegistrarIngresoForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex w-full min-w-0 flex-col gap-4">
       {error ? (
         <Alert variant="destructive" role="alert">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : null}
 
-      <section className="flex flex-col gap-3 border-b border-border/70 pb-4">
+      <section className="flex min-w-0 flex-col gap-3 border-b border-border/70 pb-4">
         <div><h2 className="font-heading text-sm font-semibold text-foreground">Detalle del ingreso</h2><p className="mt-1 text-xs text-muted-foreground">La cantidad se sumará al stock actual.</p></div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="ingreso-cantidad">Cantidad</Label>
           <Input
             id="ingreso-cantidad"
@@ -125,14 +125,14 @@ export function RegistrarIngresoForm({
           />
           {errors.cantidad ? <p className="text-sm text-destructive">{errors.cantidad.message}</p> : null}
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="ingreso-costo">Costo unitario</Label>
           <Input id="ingreso-costo" type="number" step="0.01" min="0" placeholder="Opcional" {...register("costo")} />
         </div>
       </div>
       </section>
 
-      <section className="flex flex-col gap-3 border-b border-border/70 pb-4">
+      <section className="flex min-w-0 flex-col gap-3 border-b border-border/70 pb-4">
         <div><h2 className="font-heading text-sm font-semibold text-foreground">Origen y trazabilidad</h2><p className="mt-1 text-xs text-muted-foreground">Proveedor, factura, lote y vencimiento son opcionales.</p></div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="ingreso-proveedor">Proveedor</Label>
@@ -177,12 +177,12 @@ export function RegistrarIngresoForm({
         <Input id="ingreso-documento" placeholder="Opcional" {...register("documento")} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="ingreso-lote">Lote</Label>
           <Input id="ingreso-lote" placeholder="Opcional" {...register("lote")} />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="ingreso-vencimiento">Vencimiento</Label>
           <Input id="ingreso-vencimiento" type="date" {...register("vencimiento")} />
         </div>
