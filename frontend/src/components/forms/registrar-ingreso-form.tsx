@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, PackagePlus, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,6 +110,11 @@ export function RegistrarIngresoForm({
         </Alert>
       ) : null}
 
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><PackagePlus className="size-4" /></span>
+          <div><h2 className="font-heading text-sm font-semibold text-foreground">Detalle del ingreso</h2><p className="mt-1 text-xs text-muted-foreground">La cantidad se sumará al stock actual del producto.</p></div>
+        </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="ingreso-cantidad">Cantidad</Label>
@@ -128,7 +133,13 @@ export function RegistrarIngresoForm({
           <Input id="ingreso-costo" type="number" step="0.01" min="0" placeholder="Opcional" {...register("costo")} />
         </div>
       </div>
+      </section>
 
+      <section className="flex flex-col gap-4 rounded-2xl border border-border/80 bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"><ReceiptText className="size-4" /></span>
+          <div><h2 className="font-heading text-sm font-semibold text-foreground">Origen y trazabilidad</h2><p className="mt-1 text-xs text-muted-foreground">Proveedor, factura, lote y vencimiento son opcionales.</p></div>
+        </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="ingreso-proveedor">Proveedor</Label>
         <Controller
@@ -182,8 +193,9 @@ export function RegistrarIngresoForm({
           <Input id="ingreso-vencimiento" type="date" {...register("vencimiento")} />
         </div>
       </div>
+      </section>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-muted/20 p-3">
         <Label htmlFor="ingreso-observacion">Observación</Label>
         <Input id="ingreso-observacion" placeholder="Opcional" {...register("observacion")} />
       </div>
