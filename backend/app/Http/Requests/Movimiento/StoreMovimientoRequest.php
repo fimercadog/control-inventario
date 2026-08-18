@@ -35,7 +35,7 @@ class StoreMovimientoRequest extends FormRequest
             'precio' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'proveedor_id' => ['sometimes', 'nullable', 'integer', 'exists:proveedores,id', 'prohibited_unless:tipo,entrada'],
             'documento' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'observacion' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'observacion' => ['required_if:tipo,ajuste', 'nullable', 'string', 'min:3', 'max:255'],
             'lote' => ['sometimes', 'nullable', 'string', 'max:255'],
             'vencimiento' => ['sometimes', 'nullable', 'date'],
         ];

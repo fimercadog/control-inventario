@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
-import { Eye, Loader2, MoreHorizontal, Pencil } from "lucide-react";
+import { Eye, Loader2, MoreHorizontal, Pencil, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,18 +16,23 @@ import type { StockItem } from "@/types/stock";
 interface BuildColumnsOptions {
   /** Gates Editar AND Habilitar — StockPolicy::update() covers both (stock.editar). */
   canEdit: boolean;
+  /** Requires movimientos.crear because an adjustment is a real ledger movement. */
+  canAdjust: boolean;
   /** Gates Deshabilitar only — StockPolicy::delete() (stock.gestionar), stricter. */
   canDisable: boolean;
   togglingId: number | null;
   onEdit: (item: StockItem) => void;
+  onAdjust: (item: StockItem) => void;
   onToggleEstado: (item: StockItem) => void;
 }
 
 export function buildStockColumns({
   canEdit,
+  canAdjust,
   canDisable,
   togglingId,
   onEdit,
+  onAdjust,
   onToggleEstado,
 }: BuildColumnsOptions): ColumnDef<StockItem, unknown>[] {
   const columns: ColumnDef<StockItem, unknown>[] = [
@@ -94,6 +99,12 @@ export function buildStockColumns({
               <DropdownMenuItem onClick={() => onEdit(item)}>
                 <Pencil className="size-4" />
                 Editar umbrales
+              </DropdownMenuItem>
+            ) : null}
+            {canAdjust ? (
+              <DropdownMenuItem onClick={() => onAdjust(item)}>
+                <SlidersHorizontal className="size-4" />
+                Ajustar stock
               </DropdownMenuItem>
             ) : null}
             {canToggleThisWay ? (

@@ -37,6 +37,10 @@ const movimientoFormSchema = z.object({
   observacion: z.string(),
   lote: z.string(),
   vencimiento: z.string(),
+}).superRefine((values, context) => {
+  if (values.tipo === "ajuste" && values.observacion.trim().length < 3) {
+    context.addIssue({ code: "custom", path: ["observacion"], message: "Indica el motivo del ajuste." });
+  }
 });
 
 type MovimientoFormValues = z.infer<typeof movimientoFormSchema>;
@@ -254,8 +258,9 @@ export function MovimientoForm({ onSuccess }: { onSuccess: (movimiento: Movimien
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="movimiento-observacion">Observación</Label>
-        <Input id="movimiento-observacion" placeholder="Opcional" {...register("observacion")} />
+        <Label htmlFor="movimiento-observacion">{tipo === "ajuste" ? "Motivo del ajuste" : "Observación"}</Label>
+        <Input id="movimiento-observacion" placeholder={tipo === "ajuste" ? "Obligatorio" : "Opcional"} {...register("observacion")} />
+        {errors.observacion ? <p className="text-sm text-destructive">{errors.observacion.message}</p> : null}
       </div>
 
       <Button type="submit" disabled={status === "submitting"} className="w-full">

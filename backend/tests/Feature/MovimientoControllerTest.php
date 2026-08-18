@@ -258,6 +258,18 @@ class MovimientoControllerTest extends TestCase
             ->assertJsonValidationErrors('direccion');
     }
 
+    public function test_ajuste_requires_a_reason_for_auditable_stock_correction(): void
+    {
+        $this->actingAs($this->userA, 'api')
+            ->postJson('/api/v1/movimientos', [
+                'producto_id' => $this->productoA->id,
+                'tipo' => 'ajuste',
+                'cantidad' => 5,
+                'direccion' => 'incremento',
+            ])
+            ->assertJsonValidationErrors('observacion');
+    }
+
     public function test_direccion_is_rejected_for_entrada_and_salida(): void
     {
         $this->actingAs($this->userA, 'api')

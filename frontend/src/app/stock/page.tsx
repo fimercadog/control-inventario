@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { DataTable } from "@/components/data-table/data-table";
 import { buildStockColumns } from "@/app/stock/columns";
 import { StockForm } from "@/components/forms/stock-form";
+import { AjustarStockForm } from "@/components/forms/ajustar-stock-form";
 import { usePermission } from "@/hooks/use-permission";
 import { useDebouncedSearch } from "@/hooks/use-debounced-search";
 import { fetchStock, habilitarStock, deshabilitarStock } from "@/lib/api/stock";
@@ -52,6 +53,7 @@ export default function StockPage() {
   // StockPolicy::update() (stock.editar) gates both Editar and Habilitar;
   // ::delete() (stock.gestionar) gates Deshabilitar only — same asymmetry as the rest of the ERP.
   const canEdit = usePermission("stock.editar");
+  const canAdjust = usePermission("movimientos.crear");
   const canDisable = usePermission("stock.gestionar");
 
   const { inputValue: searchInput, setInputValue: setSearchInput, searchTerm } = useDebouncedSearch();
@@ -75,6 +77,7 @@ export default function StockPage() {
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<StockItem | null>(null);
+  const [adjustingItem, setAdjustingItem] = useState<StockItem | null>(null);
 
   useEffect(() => {
     if (!canView) return;
@@ -126,11 +129,18 @@ export default function StockPage() {
     setRefetchNonce((n) => n + 1);
   }
 
+  function handleAdjusted() {
+    setAdjustingItem(null);
+    setRefetchNonce((n) => n + 1);
+  }
+
   const columns = buildStockColumns({
     canEdit,
+    canAdjust,
     canDisable,
     togglingId,
     onEdit: setEditingItem,
+    onAdjust: setAdjustingItem,
     onToggleEstado: handleToggleEstado,
   });
 
@@ -210,6 +220,16 @@ export default function StockPage() {
             <DialogDescription>El stock actual es de solo lectura; solo se editan los umbrales.</DialogDescription>
           </DialogHeader>
           {editingItem ? <StockForm item={editingItem} onSuccess={handleEdited} /> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={adjustingItem !== null} onOpenChange={(open) => !open && setAdjustingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajustar stock — {adjustingItem?.nombre}</DialogTitle>
+            <DialogDescription>Corrige el inventario según el conteo físico y deja el ajuste registrado.</DialogDescription>
+          </DialogHeader>
+          {adjustingItem ? <AjustarStockForm item={adjustingItem} onSuccess={handleAdjusted} /> : null}
         </DialogContent>
       </Dialog>
     </div>
