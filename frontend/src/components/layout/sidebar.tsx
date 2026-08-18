@@ -1,3 +1,4 @@
+import { CircleAlert } from "lucide-react";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { ContingenciaControls } from "@/components/layout/contingencia-controls";
 import { BetaNotice } from "@/components/layout/beta-notice";
@@ -8,8 +9,8 @@ export function Sidebar() {
       <div className="mb-7 flex items-center gap-3 px-2">
         <div className="grid size-9 place-items-center rounded-xl bg-indigo-500 text-sm font-bold text-white shadow-[0_5px_12px_rgb(99_102_241/0.35)]">F</div>
         <div>
-          <div className="flex items-center gap-2"><div className="text-lg font-bold tracking-tight text-white">FidelOS</div><span className="rounded-full border border-indigo-300/35 bg-indigo-400/12 px-1.5 py-0.5 text-[8px] font-bold tracking-[0.12em] text-indigo-200">BETA</span></div>
-          <div className="text-[10px] font-semibold tracking-[0.18em] text-indigo-300">INVENTARIO · VERSIÓN BETA</div>
+          <div className="flex items-center gap-2"><div className="text-lg font-bold tracking-tight text-white">FidelOS</div><span className="inline-flex items-center gap-1 rounded-md border border-amber-300/45 bg-amber-400 px-2 py-1 text-[9px] font-extrabold tracking-[0.1em] text-amber-950 shadow-[0_3px_10px_rgb(251_191_36/0.28)]"><CircleAlert className="size-3" />VERSIÓN BETA</span></div>
+          <div className="text-[10px] font-semibold tracking-[0.18em] text-indigo-300">INVENTARIO</div>
         </div>
       </div>
       <div className="mb-5"><ContingenciaControls /></div>
