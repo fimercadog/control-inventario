@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LogOut, Menu, Settings, UserCircle } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, Menu, PanelLeft, Settings, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -30,6 +30,7 @@ import { initialsFor } from "@/lib/utils/format";
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const user = useSessionUser();
 
@@ -39,6 +40,7 @@ export function Header() {
   }
 
   const initials = user?.name ? initialsFor(user.name) : "?";
+  const pageName = pathname === "/dashboard" ? "Dashboard" : pathname.split("/").filter(Boolean).at(-1)?.replaceAll("-", " ") ?? "";
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border/80 bg-card/85 px-4 backdrop-blur md:px-8">
@@ -57,8 +59,11 @@ export function Header() {
         </Sheet>
       </div>
 
-      <div className="flex-1 truncate text-sm text-muted-foreground">
-        {user?.name ? <span>Hola, {user.name.split(" ")[0]}</span> : null}
+      <div className="flex flex-1 items-center gap-3 truncate text-sm">
+        <PanelLeft className="hidden size-4 text-foreground md:block" />
+        <span className="hidden text-muted-foreground sm:inline">Fidel OS</span>
+        <span className="hidden text-muted-foreground sm:inline">/</span>
+        <span className="truncate font-medium text-foreground">{pageName}</span>
       </div>
 
       <DropdownMenu>
