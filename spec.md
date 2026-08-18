@@ -1,207 +1,264 @@
-# FidelOS — Especificación de producto y reconstrucción
+# FidelOS — Plan de construcción desde cero
 
-## 1. Propósito
+## 1. Punto de partida y objetivo
 
-FidelOS es una aplicación web de control de inventario para pequeñas y medianas empresas. Debe permitir mantener catálogos, registrar movimientos, consultar existencias y conservar una trazabilidad completa por empresa.
+Este documento asume que **backend y frontend comienzan en cero**: no hay API, base de datos, páginas, autenticación ni datos cargados. Es la guía ordenada para construir FidelOS hasta su primera versión beta funcional.
 
-La aplicación se construye en español, con una interfaz de administración clara, moderna y apta para escritorio y móvil. Todo dato mostrado al usuario debe ser realista: nunca se deben exponer nombres de pruebas, prefijos `E2E` ni identificadores técnicos como contenido de demostración.
+FidelOS será un sistema web multiempresa de control de inventario en español. Permitirá administrar catálogos y productos, registrar movimientos trazables, consultar stock, controlar usuarios/roles y preparar una futura captura de inventario por foto o audio.
 
-### Principios funcionales
+### Resultado de la beta
 
-- Cada usuario opera únicamente dentro de su empresa.
-- El stock no se edita directamente: siempre cambia por un movimiento auditable.
-- Un movimiento confirmado es inmutable; una corrección genera otro movimiento compensatorio.
-- El stock nunca puede ser negativo.
-- Un producto sin existencias se inhabilita automáticamente si fue agotado por el sistema; al recibir stock se reactiva automáticamente.
-- La deshabilitación manual prevalece sobre la reactivación automática.
+- Usuarios autenticados y aislados por empresa.
+- Inventario que no permite stock negativo y conserva sus movimientos.
+- Dashboard, catálogos, productos, stock, movimientos, terceros, usuarios, roles, auditoría y reportes básicos.
+- Temas claro y oscuro, interfaz consistente y aviso de versión beta.
+- Captura IA visible, pero bloqueada hasta contar con proveedor/API.
 
-## 2. Arquitectura técnica
+## 2. Decisiones técnicas iniciales
 
-### Frontend
+| Capa | Decisión |
+| --- | --- |
+| Backend | Laravel 12, PHP 8.2+, API REST bajo `/api/v1` |
+| Autorización | JWT/Sanctum según configuración, Spatie Permission y Policies |
+| Datos | SQLite en desarrollo; MySQL o PostgreSQL en producción |
+| Frontend | Next.js 16, React 19, TypeScript estricto |
+| Interfaz | Tailwind CSS, Base UI, iconos Lucide |
+| Formularios | React Hook Form + Zod |
+| Estado | Redux Toolkit para sesión/estado global; TanStack Query para consultas remotas |
+| Pruebas | PHPUnit/Pest para backend y Playwright para flujos críticos de frontend |
 
-- Next.js 16, React 19 y TypeScript estricto.
-- Tailwind CSS y componentes Base UI reutilizables.
-- Redux Toolkit para sesión y estado compartido.
-- React Hook Form y Zod para formularios y validación.
-- Axios para API y TanStack Query cuando se requiera caché o invalidación de consultas.
-- Playwright para pruebas de interfaz.
+Estructura objetivo:
+
+```text
+control-inventario/
+├── backend/                  # Laravel: API, migraciones, seeders y pruebas
+├── frontend/                 # Next.js: páginas, componentes y pruebas E2E
+├── spec.md                   # Este plan de construcción
+└── README.md                 # Arranque local y comandos habituales
+```
+
+Nunca versionar `.env`, secretos, tokens, archivos cargados ni bases SQLite con información local.
+
+## 3. Fase 0 — Preparar los dos proyectos vacíos
 
 ### Backend
 
-- Laravel 12 sobre PHP 8.2 o superior.
-- API REST bajo `/api/v1`.
-- Laravel Sanctum/JWT según la configuración vigente; tokens de acceso y actualización para sesión persistente.
-- Spatie Permission para roles y permisos.
-- SQLite para desarrollo local; base de datos relacional compatible con MySQL/PostgreSQL para producción.
-- PHPUnit/Pest para pruebas de dominio y endpoints.
+1. Crear proyecto Laravel en `backend/`.
+2. Configurar `.env` con SQLite local, correo de desarrollo y `FRONTEND_URL`.
+3. Instalar autenticación JWT/Sanctum y Spatie Permission.
+4. Crear prefijo de rutas `/api/v1` y respuestas JSON consistentes.
+5. Configurar CORS para el frontend local.
+6. Añadir pruebas base y una base de datos aislada para testing.
 
-### Estructura esperada
+### Frontend
 
-```text
-backend/       API Laravel, migraciones, seeders, pruebas y servicios de dominio
-frontend/      Aplicación Next.js, componentes, páginas, hooks y pruebas E2E
-spec.md        Este contrato funcional y técnico
-```
+1. Crear proyecto Next.js en `frontend/` con TypeScript, App Router y Tailwind.
+2. Definir `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api/v1` para desarrollo.
+3. Instalar cliente HTTP, Redux Toolkit, TanStack Query, React Hook Form, Zod, Base UI y Lucide.
+4. Crear la estructura `app/`, `components/`, `features/`, `hooks/`, `lib/` y `types/`.
+5. Crear un proveedor de sesión y un cliente API que maneje token, renovación y errores 401/403.
 
-No se versionan `.env`, claves, tokens, audios cargados ni `database.sqlite` con datos locales.
+### Criterio de cierre
 
-## 3. Inicio local desde cero
+La API responde a una ruta de salud y el frontend puede consultar dicha ruta. Ambos proyectos compilan sin errores.
 
-1. Crear `backend/.env` a partir de `.env.example` y configurar SQLite/local.
-2. Ejecutar en `backend`: `composer install`, `php artisan key:generate`, configurar el secreto de JWT si aplica y ejecutar `php artisan migrate --seed`.
-3. Iniciar la API con `php artisan serve --host=127.0.0.1 --port=8000`.
-4. Crear `frontend/.env.local` a partir del ejemplo, apuntando `NEXT_PUBLIC_API_URL` a `http://127.0.0.1:8000/api/v1`.
-5. Ejecutar en `frontend`: `npm install` y `npm run dev`.
+## 4. Fase 1 — Base de datos y aislamiento por empresa
 
-Las credenciales de desarrollo deben provenir del seeder documentado o de variables locales; nunca se incluyen secretos ni contraseñas reales en esta especificación.
+Crear migraciones, modelos, factorías, seeders y políticas para:
 
-## 4. Seguridad, sesión y aislamiento
+| Grupo | Entidades |
+| --- | --- |
+| Organización | empresas, usuarios, perfiles, invitaciones |
+| Acceso | roles, permisos, relación usuario–rol |
+| Catálogos | categorías, marcas, unidades de medida, proveedores, clientes |
+| Relaciones | marca_proveedor, producto_proveedor |
+| Inventario | productos, movimientos de inventario, lotes si se requieren |
+| Control | auditorías, trabajos/procesamientos de captura IA, cola de contingencia si se persiste en servidor |
 
-- Todas las consultas, políticas y escrituras se filtran por `empresa_id`.
-- La API exige autenticación en rutas privadas y autorización por permiso para cada acción sensible.
-- El inicio de sesión admite la opción **Recordar usuario**, que prolonga de manera segura la sesión mediante refresh token/cookie según la estrategia configurada.
-- El cierre de sesión revoca o invalida la sesión correspondiente.
-- Los errores de autenticación o permisos no deben revelar datos de otra empresa.
-- Auditoría registra quién hizo qué, sobre qué entidad, cuándo, desde dónde y con qué resultado.
+Reglas obligatorias desde el inicio:
 
-## 5. Modelo de dominio
+- Las entidades operativas tienen `empresa_id`.
+- Toda consulta y escritura se restringe a la empresa de la sesión.
+- Las migraciones son la fuente de verdad del esquema.
+- Cada nuevo campo requiere migración, validación, recurso API, prueba y actualización del cliente que lo consuma.
+- Seeders crean datos realistas y legibles; nunca exponen nombres `E2E`, cadenas aleatorias o datos de test al usuario.
 
-### Administración
+### Datos iniciales
 
-- Empresa
-- Usuario, perfil, invitación, rol y permiso
-- Auditoría
+Crear una empresa demo, un administrador de desarrollo documentado sólo en el README/local y catálogos coherentes: alimentos, bebidas, limpieza, unidades (unidad, kg, g, L, ml, caja, bolsa, docena), marcas y proveedores con relaciones plausibles.
 
-### Catálogos
+## 5. Fase 2 — Autenticación, perfiles y permisos
 
-- Categoría
-- Marca
-- Unidad de medida
-- Proveedor
-- Cliente
-- Relación marca–proveedor
-- Relación producto–proveedor, incluyendo proveedor principal cuando aplique
+### Backend
+
+Implementar:
+
+- `POST /auth/login`, incluyendo `remember`.
+- `POST /auth/refresh` y `POST /auth/logout`.
+- `GET /auth/me`.
+- Recuperación/actualización de perfil según el alcance de la beta.
+- Roles iniciales: Administrador, Bodeguero, Auxiliar y Consulta.
+- Permisos explícitos para ver, crear, editar, deshabilitar y ajustar inventario.
+
+### Frontend
+
+Implementar:
+
+- Página `/login`, validación, mensajes de error y casilla **Recordar usuario**.
+- Protección de rutas privadas y redirección segura.
+- Bootstrap de sesión al recargar la aplicación.
+- Cabecera con perfil, rol y cierre de sesión.
+
+### Criterio de cierre
+
+Un administrador puede iniciar/cerrar sesión, la sesión recordada persiste según su configuración y un usuario sin permiso no puede ejecutar acciones ni leer datos de otra empresa.
+
+## 6. Fase 3 — Catálogos y productos
+
+Construir API y páginas para Categorías, Marcas, Unidades de medida, Proveedores, Clientes y Productos.
 
 ### Producto
 
-Campos principales: nombre, código interno, código de barras, categoría, marca, unidad de medida, presentación, descripción, costo, precio, stock mínimo, stock máximo, estado y bandera de inhabilitación automática por agotamiento.
+Campos: nombre, código interno, código de barras, categoría, marca, unidad de medida, presentación, descripción, costo, precio, stock mínimo, stock máximo y estado.
 
-La presentación es complementaria a la unidad de medida, no un duplicado. Debe poder expresar, por ejemplo, “bolsa de 15 kg”, “caja de 24 unidades” o “botella de 1 L”, indicando cantidad y contenido/unidad cuando corresponda.
+La presentación complementa la unidad. Debe permitir expresar, por ejemplo, “bolsa de 15 kg”, “caja de 24 unidades” o “botella de 1 L”; el formulario debe separar cantidad por presentación y contenido/unidad cuando aporte claridad.
 
-### Movimiento de inventario
+### Relaciones
 
-Cada movimiento debe incluir producto, tipo, cantidad positiva, fecha, usuario y observación cuando sea necesaria. Los tipos base son:
+- Una marca puede tener varios proveedores.
+- Un producto puede tener varios proveedores y uno puede identificarse como principal.
+- La lista de marcas muestra sus proveedores de forma legible.
+- Los modales de creación/edición de catálogos mantienen el mismo patrón visual, con bordes, profundidad, secciones y espacio suficiente.
+
+### Endpoints orientativos
+
+```text
+GET|POST        /categorias, /marcas, /unidades-medida, /proveedores, /clientes
+GET|PUT|DELETE  /{recurso}/{id}
+GET|POST        /productos
+GET|PUT         /productos/{id}
+POST            /productos/{id}/habilitar
+POST            /productos/{id}/deshabilitar
+```
+
+## 7. Fase 4 — Núcleo de inventario y trazabilidad
+
+Crear un servicio de dominio, por ejemplo `InventoryService`, como **único** punto autorizado para alterar el stock. Los controladores no modifican cantidades directamente.
+
+### Movimientos
+
+Tipos base:
 
 - Ingreso
 - Salida
 - Ajuste por conteo físico
 - Ajuste por ingreso adicional
 
-El ingreso puede guardar proveedor, costo unitario, documento/factura, lote y vencimiento. Estos datos son opcionales salvo que una regla de negocio posterior establezca lo contrario.
+Todo movimiento conserva producto, cantidad positiva, tipo, fecha, usuario, empresa y observación cuando aplique. Los ingresos admiten proveedor, costo unitario, documento/factura, lote y vencimiento.
 
-## 6. Reglas de inventario y trazabilidad
+### Reglas obligatorias
 
-1. `InventoryService` es el único punto de dominio autorizado para cambiar existencias.
-2. Una salida o ajuste no puede dejar el stock por debajo de cero.
-3. El formulario de Stock permite dos acciones explícitas:
-   - **Conteo físico:** fija el stock contado y crea el ajuste diferencial.
-   - **Agregar stock:** suma una cantidad y crea un movimiento de ajuste.
-4. Los ajustes requieren observación de al menos tres caracteres.
-5. El stock actual en formularios de configuración es de solo lectura; allí únicamente se editan los umbrales mínimo y máximo.
-6. Al llegar a cero, el producto se marca agotado y se inhabilita solo si estaba activo y el sistema lo agotó.
-7. Al registrar un ingreso o ajuste positivo, se reactiva únicamente el producto inhabilitado automáticamente por agotamiento.
-8. Cuando el stock es menor o igual al mínimo configurado, el sistema muestra una advertencia de seguridad: **Mínimo alcanzado**. Si está por debajo, se identifica también como stock bajo.
-9. Productos agotados o inactivos siguen siendo visibles en Stock y Movimientos para conservar trazabilidad.
+1. No existe edición directa de `stock_actual`.
+2. Una salida o ajuste no puede dejar stock negativo.
+3. En Stock existen dos acciones manuales:
+   - **Conteo físico:** fija el total contado y crea el diferencial como ajuste.
+   - **Agregar stock:** suma unidades y crea un movimiento de ajuste.
+4. Un ajuste exige observación de al menos tres caracteres.
+5. El stock actual es de sólo lectura al editar producto; allí sólo se cambian umbrales.
+6. Stock igual a cero inhabilita automáticamente el producto si estaba activo y fue agotado por el sistema.
+7. Un ingreso o ajuste positivo reactiva sólo al producto inhabilitado automáticamente; una inhabilitación manual se respeta.
+8. Stock menor o igual al mínimo muestra **Mínimo alcanzado**; por debajo se identifica como stock bajo.
+9. Productos agotados e inactivos permanecen visibles en Stock y Movimientos para preservar trazabilidad.
+10. Los movimientos confirmados son inmutables; corregir significa crear un movimiento compensatorio.
 
-## 7. Módulos de la aplicación
+### Criterio de cierre
 
-### Dashboard
+Las existencias, dashboard, historial, auditoría y alertas reflejan exactamente los movimientos realizados. Se prueban ingreso, salida, ambos tipos de ajuste, stock cero, reactivación y rechazo de stock negativo.
 
-Muestra saludo, métricas de productos, valor/stock total, stock bajo, entradas y salidas del día; movimientos recientes; accesos a Captura IA, acciones rápidas y listado de productos con stock bajo.
+## 8. Fase 5 — Pantallas operativas
 
-### Inventario
+Crear estas rutas y sus acciones permitidas:
 
-- Productos: crear, editar, consultar y habilitar/deshabilitar según permisos.
-- Categorías, marcas, unidades de medida y proveedores: CRUD con relaciones coherentes.
-- Stock: consulta de existencias, filtros, umbrales y acceso a los dos ajustes manuales.
-- Movimientos: historial filtrable y registro de ingresos/salidas autorizados.
+| Área | Rutas/pantallas |
+| --- | --- |
+| Inicio | Dashboard con métricas, movimientos recientes, acciones rápidas y stock bajo |
+| Inventario | Productos, Categorías, Marcas, Unidades de medida, Stock y Movimientos |
+| Terceros | Proveedores y Clientes |
+| Administración | Usuarios, Roles y Auditoría |
+| Utilidad | Reportes, Perfil, Configuración y Contingencia |
 
-### Terceros y administración
+El dashboard debe mostrar: saludo, productos totales, stock/valor total según definición contable, stock bajo, entradas y salidas de hoy, movimientos recientes, acceso a Captura IA, acciones rápidas y productos con alerta.
 
-- Proveedores y clientes.
-- Usuarios, roles y permisos.
-- Auditoría paginada con fechas, usuario, acción, entidad, resultado y filtros.
-- Reportes de inventario y actividad conforme a permisos.
+Las tablas incluyen encabezados visualmente distintos, filtros, carga, vacío, errores, estados, acciones accesibles y paginación con rango, primer/último y salto a página.
 
-## 8. Captura IA
+## 9. Fase 6 — Diseño, temas y accesibilidad
 
-El objetivo final es procesar fotos y audios para crear una propuesta de movimientos de inventario. Un audio de 40 a 60 minutos puede contener múltiples productos; por ello el flujo definitivo debe ser asíncrono, tolerante a reintentos, idempotente y mostrar avance/errores al usuario.
+### Identidad
 
-El procesamiento deberá:
+- Tema claro: fondo `#F8F9FF`, superficies blancas y acción primaria índigo `#4F46E5`.
+- Tema oscuro: gris carbón/negro suave, no azul saturado; acentos índigo/violeta moderados.
+- Éxito `#10B981`, alerta `#F59E0B`, error/contingencia `#EF4444`.
+- Fuente sans-serif moderna y legible, como Hanken Grotesk.
 
-1. Guardar el archivo y crear un trabajo de procesamiento.
-2. Transcribir o extraer productos mediante el proveedor configurado.
-3. Normalizar unidades, cantidades, marcas y proveedores contra catálogos de la empresa.
-4. Exponer una revisión humana con nivel de confianza y conflictos.
-5. Confirmar todos los movimientos en una transacción atómica y auditable.
+### Componentes base
 
-### Estado actual: vista previa bloqueada
+Construir primero `Button`, `Input`, `Select`, `Textarea`, `Dialog`, `Table`, `Badge`, `Card`, `Tooltip`, estados vacíos y paginación. Los componentes deben definir foco, teclado, estados deshabilitados y contraste antes de construir cada módulo.
 
-Mientras no exista una API de IA configurada, Captura IA es una interfaz de solo visualización. Al entrar se muestra el modal **“Captura IA está en preparación”**. La persona puede cerrarlo para recorrer la pantalla, pero carga de archivos, selección de modos y análisis permanecen deshabilitados. No se debe simular procesamiento ni guardar movimientos desde esta sección hasta habilitar el proveedor y sus credenciales.
+La interfaz usa tarjetas con radio aproximado de 8 px, bordes sutiles, elevación moderada y espaciado consistente. El sidebar contiene identidad FidelOS, navegación por grupos, Modo Contingencia y aviso de versión beta sobrio; el encabezado ofrece el mismo aviso junto al perfil. Configuración permite alternar y persistir tema claro/oscuro.
 
-## 9. Modo contingencia
+No deben existir errores de hidratación, bucles por `useSyncExternalStore` ni componentes enlace tratados incorrectamente como botones nativos.
 
-El modo contingencia es distinto de la vista previa de IA. Permite trabajar temporalmente sin conectividad sólo en las operaciones expresamente soportadas, usando una cola local de pendientes.
+## 10. Fase 7 — Contingencia
 
-- Debe mostrar estado de conexión, cantidad de pendientes, explicación y sincronización manual.
-- Las operaciones se sincronizan una por una, en orden, con detección de conflictos.
-- Las acciones bloqueadas se comunican claramente y no aparentan haberse guardado.
-- La navegación general no puede quedar bloqueada por el estado de contingencia.
+Diseñar este modo independiente de Captura IA.
 
-## 10. Diseño e interacción
+- Indicar estado de conexión, pendientes, alcance y sincronización manual.
+- En beta permitir offline sólo acciones explícitamente soportadas; nunca aparentar que una acción bloqueada se guardó.
+- Procesar pendientes uno por uno y en orden, con idempotencia y resolución de conflictos.
+- La navegación debe continuar disponible aunque esté activo el modo contingencia.
 
-### Tema
+## 11. Fase 8 — Captura IA (preparación y futuro)
 
-- Tema claro: fondo blanco azulado sutil (`#F8F9FF`), superficies blancas, índigo como acción primaria (`#4F46E5`).
-- Tema oscuro: gris carbón/negro suave, no azul saturado; superficies con contraste suficiente y acentos índigo/violeta moderados.
-- Estados semánticos: éxito `#10B981`, alerta `#F59E0B`, error/contingencia `#EF4444`.
-- La preferencia de tema se persiste y puede alternarse desde Configuración.
+### Beta sin API
 
-### Lenguaje visual
+Construir la pantalla para conocer el flujo, pero dejarla en modo sólo visualización. Al entrar se abre el modal **“Captura IA está en preparación”**; al cerrarlo se puede recorrer la interfaz, pero carga, selección de modo, análisis y confirmación permanecen deshabilitados. No se simula procesamiento ni se guarda inventario.
 
-- Tipografía sans-serif moderna y legible, preferentemente Hanken Grotesk o equivalente.
-- Tarjetas con radio aproximado de 8 px, borde suave, elevación discreta y espaciado consistente.
-- Sidebar con identidad FidelOS, navegación por grupos, modo contingencia y aviso de versión beta visible pero sobrio.
-- El encabezado también ofrece acceso al aviso de versión beta junto al perfil.
-- Tablas con encabezados visualmente diferenciados, filtros, estados legibles, acciones accesibles y paginación con rango, primer/último y salto a página.
-- Modales reutilizan una misma superficie elevada, ancho apropiado, espacio lateral suficiente, títulos, descripciones y secciones claramente separadas.
-- Formularios agrupan campos relacionados en bloques; las etiquetas siempre se muestran y los selectores conservan la misma apariencia que los controles de categoría.
+### Cuando exista proveedor de IA
 
-## 11. Datos de demostración y migraciones
+La meta es aceptar fotos y audios de aproximadamente 40 a 60 minutos, con múltiples productos en un solo archivo.
 
-- Seeders deben crear una empresa de demostración, usuario administrador documentado localmente, catálogos y productos plausibles para un control de inventario.
-- Marcas, proveedores, unidades y productos deben tener nombres comerciales o genéricos legibles, no datos generados de pruebas.
-- Las relaciones marca–proveedor y producto–proveedor deben incluir ejemplos reales de uso.
-- Las migraciones son la fuente de verdad del esquema; los cambios de modelo incluyen migración, validación, recurso API, política, pruebas y actualización del frontend cuando aplique.
-- Las pruebas usan una base de datos aislada para no contaminar datos de demostración.
+1. Guardar archivo y crear trabajo asíncrono.
+2. Transcribir audio o extraer datos de imagen mediante el proveedor configurado.
+3. Normalizar productos, cantidades, unidades, marcas y proveedores contra los catálogos de la empresa.
+4. Mostrar propuesta revisable, nivel de confianza y conflictos.
+5. Confirmar todos los movimientos en una transacción atómica, idempotente y auditada.
+6. Informar progreso, reintentos y errores sin bloquear la interfaz.
 
-## 12. Calidad, accesibilidad y entrega
+La integración requiere variables de entorno, límites de archivo, almacenamiento, cola de trabajos, protección de costos y pruebas con archivos largos antes de habilitar botones al público.
 
-- No usar ramas de renderizado que causen discrepancias de hidratación entre servidor y cliente.
-- Las suscripciones con `useSyncExternalStore` deben devolver snapshots estables/cacheados.
-- Los componentes que se comportan como botones deben renderizar un `<button>` nativo o declarar correctamente `nativeButton={false}` si son enlaces.
-- Estados de carga, vacío, error, éxito y controles deshabilitados deben ser accesibles por teclado y lector de pantalla.
-- Antes de integrar cambios: ejecutar pruebas relevantes de Laravel, `npm run build` para frontend y corregir errores de consola.
-- Un cambio funcional se entrega en commits pequeños y temáticos; cada commit aprobado se sube a la rama remota correspondiente.
+## 12. Fase 9 — Auditoría, reportes y calidad
 
-## 13. Criterios de aceptación de la primera versión
+- Registrar en auditoría actor, empresa, acción, entidad, fecha, resultado y metadatos pertinentes.
+- Añadir filtros y paginación a auditoría, evitando exponer datos de prueba.
+- Crear reportes básicos de stock, movimientos y alertas con permisos.
+- Cubrir reglas de inventario y autorización con pruebas backend.
+- Cubrir login, creación de productos, movimiento, ajuste y bloqueo de IA con Playwright.
+- Antes de cada entrega ejecutar pruebas relevantes de Laravel, `npm run build` en frontend y revisar consola del navegador.
 
-- Un administrador puede iniciar sesión, recordar su sesión, navegar y cambiar tema.
-- Puede administrar catálogos, productos, marcas/proveedores y umbrales dentro de su empresa.
-- Puede registrar ingresos, salidas y ajustes sin generar stock negativo, dejando auditoría y trazabilidad.
-- Cero existencias inhabilita automáticamente el producto; una entrada posterior lo reactiva si la inhabilitación fue automática.
-- El dashboard, Stock, Movimientos y Reportes reflejan los cambios de inventario.
-- La aplicación avisa stock mínimo y permite identificar productos agotados.
-- Captura IA se visualiza pero no permite acciones hasta configurar la integración.
-- Modo contingencia comunica sus límites y nunca impide salir a otras secciones.
-- El diseño mantiene contraste, profundidad moderada y consistencia en temas claro y oscuro.
+## 13. Orden de commits y entregas
+
+Mantener commits pequeños, separando backend y frontend cuando sea razonable:
+
+1. `chore`: estructura, configuración y herramientas.
+2. `feat(auth)`: migraciones, API, sesión y pantallas de acceso.
+3. `feat(catalogos)`: una entidad o relación por entrega.
+4. `feat(inventario)`: servicio, migraciones, endpoints y pruebas antes de pantalla.
+5. `feat(ui)`: componentes y vistas operativas.
+6. `feat(contingencia)` y `feat(captura)`: funciones aisladas.
+7. `test` y `docs`: cobertura, manuales y especificación.
+
+Cada entrega se verifica, se confirma con mensaje descriptivo y se sube a la rama remota acordada.
+
+## 14. Definición de terminado de la beta
+
+La beta está lista cuando un administrador puede iniciar sesión, administrar datos de su empresa, registrar movimientos sin stock negativo, ajustar el inventario con trazabilidad, recibir alertas de mínimo/cero, consultar dashboard e historial, gestionar acceso por roles y usar una interfaz consistente en ambos temas. Captura IA queda explícitamente bloqueada hasta completar su integración real.
