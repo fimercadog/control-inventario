@@ -27,18 +27,46 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-container: var(--destructive-container);
+  --color-destructive-container-foreground: var(--destructive-container-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-secondary-container-foreground: var(--secondary-container-foreground);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-primary-container-foreground: var(--primary-container-foreground);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-foreground: var(--tertiary-foreground);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-tertiary-container-foreground: var(--tertiary-container-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-container: var(--success-container);
+  --color-success-container-foreground: var(--success-container-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-container: var(--warning-container);
+  --color-warning-container-foreground: var(--warning-container-foreground);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,75 +74,137 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-elevation-1: 0 1px 2px oklch(0.28 0.04 270 / 6%), 0 1px 3px oklch(0.28 0.04 270 / 8%);
+  --shadow-elevation-2: 0 2px 4px oklch(0.28 0.04 270 / 5%), 0 6px 14px oklch(0.28 0.04 270 / 8%);
+  --shadow-elevation-3: 0 4px 8px oklch(0.28 0.04 270 / 6%), 0 12px 28px oklch(0.28 0.04 270 / 10%);
+  --shadow-elevation-4: 0 8px 16px oklch(0.28 0.04 270 / 8%), 0 20px 40px oklch(0.28 0.04 270 / 12%);
 }
 
 :root {
-  --background: #f8f9ff;
-  --foreground: #1a1c2e;
+  /* Material 3 — light (experiencia principal, ver docs/design/material3-tokens.md) */
+  --background: #fafafd;
+  --foreground: #1b1b23;
   --card: #ffffff;
-  --card-foreground: #1a1c2e;
+  --card-foreground: #1b1b23;
   --popover: #ffffff;
-  --popover-foreground: #1a1c2e;
+  --popover-foreground: #1b1b23;
   --primary: #4f46e5;
   --primary-foreground: #ffffff;
-  --secondary: #eef0ff;
-  --secondary-foreground: #3730a3;
-  --muted: #f1f3fb;
-  --muted-foreground: #667085;
+  --primary-container: #e4e1ff;
+  --primary-container-foreground: #1b0c82;
+  --secondary: #5c5d72;
+  --secondary-foreground: #ffffff;
+  --secondary-container: #e1e0f9;
+  --secondary-container-foreground: #191a2e;
+  --tertiary: #8348a0;
+  --tertiary-foreground: #ffffff;
+  --tertiary-container: #f6daff;
+  --tertiary-container-foreground: #34004d;
+  --success: #1e7a34;
+  --success-foreground: #ffffff;
+  --success-container: #d3f5da;
+  --success-container-foreground: #072911;
+  --warning: #8a5300;
+  --warning-foreground: #ffffff;
+  --warning-container: #ffe0b3;
+  --warning-container-foreground: #2a1800;
+  --muted: #f0f0f7;
+  --muted-foreground: #5c5d6b;
   --accent: #e9eaff;
   --accent-foreground: #3730a3;
-  --destructive: #ef4444;
-  --border: #e1e4f0;
-  --input: #d6daea;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --destructive-container: #ffdad6;
+  --destructive-container-foreground: #410002;
+  --border: #e2e2ea;
+  --input: #d7d7e3;
   --ring: #4f46e5;
+  --outline: #7a7a88;
+  --outline-variant: #cac9d6;
+  --surface: #ffffff;
+  --surface-foreground: #1b1b23;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f6f6fb;
+  --surface-container: #f0f0f7;
+  --surface-container-high: #eaeaf2;
+  --surface-container-highest: #e4e4ed;
   --chart-1: #4f46e5;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #ef4444;
-  --chart-5: #8b5cf6;
-  --radius: 0.5rem;
-  --sidebar: #1a1c2e;
-  --sidebar-foreground: #f8f9ff;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a2d4a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #30334e;
-  --sidebar-ring: #4f46e5;
+  --chart-2: #1e7a34;
+  --chart-3: #8a5300;
+  --chart-4: #ba1a1a;
+  --chart-5: #8348a0;
+  --radius: 0.65rem;
+  --sidebar: #1d1b2e;
+  --sidebar-foreground: #e4e1f9;
+  --sidebar-primary: #8c7cff;
+  --sidebar-primary-foreground: #1d1b2e;
+  --sidebar-accent: #322d52;
+  --sidebar-accent-foreground: #ece9ff;
+  --sidebar-border: #322d52;
+  --sidebar-ring: #8c7cff;
 }
 
 .dark {
-  --background: #171717;
-  --foreground: #f5f5f5;
-  --card: #222222;
-  --card-foreground: #f5f5f5;
-  --popover: #262626;
-  --popover-foreground: #f5f5f5;
-  --primary: #7c6cff;
-  --primary-foreground: #ffffff;
-  --secondary: #2d2d2d;
-  --secondary-foreground: #f5f5f5;
-  --muted: #2a2a2a;
-  --muted-foreground: #b8b8b8;
-  --accent: #363636;
-  --accent-foreground: #f5f5f5;
-  --destructive: #ff6b7a;
-  --border: #3a3a3a;
-  --input: #303030;
-  --ring: #9a8cff;
-  --chart-1: #7c6cff;
-  --chart-2: #34d399;
-  --chart-3: #fbbf24;
-  --chart-4: #fb7185;
-  --chart-5: #60a5fa;
-  --sidebar: #111111;
-  --sidebar-foreground: #f5f5f5;
-  --sidebar-primary: #7c6cff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #303030;
-  --sidebar-ring: #9a8cff;
+  /* Material 3 — dark: superficies con tinte, nunca negro absoluto (§6) */
+  --background: #131318;
+  --foreground: #e5e2f0;
+  --card: #1d1b24;
+  --card-foreground: #e5e2f0;
+  --popover: #211f2b;
+  --popover-foreground: #e5e2f0;
+  --primary: #b8aeff;
+  --primary-foreground: #1e1049;
+  --primary-container: #362a70;
+  --primary-container-foreground: #e4e0ff;
+  --secondary: #c7c4dd;
+  --secondary-foreground: #2e3042;
+  --secondary-container: #434459;
+  --secondary-container-foreground: #e3e0f9;
+  --tertiary: #dda9ef;
+  --tertiary-foreground: #4b1c5e;
+  --tertiary-container: #63397a;
+  --tertiary-container-foreground: #fbd8ff;
+  --success: #8bd99c;
+  --success-foreground: #003914;
+  --success-container: #14532a;
+  --success-container-foreground: #c3f2cd;
+  --warning: #ffc373;
+  --warning-foreground: #472a00;
+  --warning-container: #6b4300;
+  --warning-container-foreground: #ffddac;
+  --muted: #2a2733;
+  --muted-foreground: #b0acc0;
+  --accent: #322d52;
+  --accent-foreground: #e4e1f9;
+  --destructive: #ffb4ab;
+  --destructive-foreground: #690005;
+  --destructive-container: #93000a;
+  --destructive-container-foreground: #ffdad6;
+  --border: #322f3f;
+  --input: #3a3648;
+  --ring: #b8aeff;
+  --outline: #948f9f;
+  --outline-variant: #48434f;
+  --surface: #1d1b24;
+  --surface-foreground: #e5e2f0;
+  --surface-container-lowest: #0d0d12;
+  --surface-container-low: #1a1822;
+  --surface-container: #1f1d28;
+  --surface-container-high: #2a2733;
+  --surface-container-highest: #35313f;
+  --chart-1: #b8aeff;
+  --chart-2: #8bd99c;
+  --chart-3: #ffc373;
+  --chart-4: #ffb4ab;
+  --chart-5: #dda9ef;
+  --sidebar: #131018;
+  --sidebar-foreground: #e4e1f9;
+  --sidebar-primary: #b8aeff;
+  --sidebar-primary-foreground: #1e1049;
+  --sidebar-accent: #2c2740;
+  --sidebar-accent-foreground: #ece9ff;
+  --sidebar-border: #2c2740;
+  --sidebar-ring: #b8aeff;
 }
 
 @layer base {
@@ -123,11 +213,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at top right, rgb(79 70 229 / 7%), transparent 28rem), radial-gradient(circle at 20% 25%, rgb(255 255 255 / 90%), transparent 32rem), linear-gradient(135deg, #fbfcff, #f8f9ff);
+    background-image: radial-gradient(circle at top right, rgb(79 70 229 / 6%), transparent 28rem), radial-gradient(circle at 20% 25%, rgb(255 255 255 / 90%), transparent 32rem), linear-gradient(135deg, #fdfdff, #fafafd);
     font-feature-settings: "ss01", "ss02", "cv02", "cv03";
   }
   .dark body {
-    background-image: radial-gradient(circle at 92% -5%, rgb(124 108 255 / 10%), transparent 30rem), linear-gradient(135deg, #171717, #1c1c1c);
+    background-image: radial-gradient(circle at 92% -5%, rgb(184 174 255 / 8%), transparent 30rem), linear-gradient(135deg, #131318, #16141f);
   }
   html {
     @apply font-sans;
@@ -135,13 +225,15 @@
 }
 
 @layer components {
+  /* Elevation tonal — nivel 1 (cards en reposo). Ver §7: superficies con
+     sombra sutil, nunca sombras gigantes ni glassmorphism. */
   [data-slot="card"] {
     border: 1px solid color-mix(in oklch, var(--border), transparent 12%);
-    box-shadow: 0 2px 4px oklch(0.28 0.04 270 / 3%), 0 12px 28px oklch(0.28 0.04 270 / 7%);
+    box-shadow: var(--shadow-elevation-1);
   }
 
   .dark [data-slot="card"] {
-    border-color: #3a3a3a;
-    box-shadow: 0 14px 32px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 4%);
+    border-color: var(--border);
+    box-shadow: var(--shadow-elevation-2), inset 0 1px 0 rgb(255 255 255 / 3%);
   }
 }
