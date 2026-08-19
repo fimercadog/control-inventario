@@ -47,10 +47,10 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={onNavigate}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-[background,color,transform] duration-200",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    ? "bg-sidebar-primary/16 text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--sidebar-primary)]"
+                    : "text-sidebar-foreground/70 hover:translate-x-0.5 hover:bg-sidebar-accent/65 hover:text-sidebar-accent-foreground"
                 )}
               >
                 <Icon className="size-4" />

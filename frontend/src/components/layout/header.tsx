@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { ContingenciaControls } from "@/components/layout/contingencia-controls";
 import { BetaNotice } from "@/components/layout/beta-notice";
+import { ThemeMenu } from "@/components/layout/theme-menu";
 import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
@@ -44,7 +45,7 @@ export function Header() {
   const pageName = pathname === "/dashboard" ? "Dashboard" : pathname.split("/").filter(Boolean).at(-1)?.replaceAll("-", " ") ?? "";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-surface-container-low px-4 md:px-8">
+    <header className="flex h-16 items-center justify-between border-b border-border/80 bg-surface-container-low/95 px-4 shadow-[0_1px_0_rgb(255_255_255/0.55)] backdrop-blur-sm md:px-8 dark:shadow-[0_1px_0_rgb(255_255_255/0.03)]">
       <div className="flex items-center gap-2 md:hidden">
         <Sheet>
           <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menú" />}>
@@ -102,6 +103,8 @@ export function Header() {
             <Settings className="size-4" />
             Configuración
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <ThemeMenu />
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="size-4" />

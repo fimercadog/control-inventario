@@ -4,6 +4,7 @@ import "./globals.css";
 import { StoreProvider } from "@/store/provider";
 import { SessionBootstrap } from "@/components/layout/session-bootstrap";
 import { ThemeSync } from "@/components/layout/theme-sync";
+import { ThemeBootstrap } from "@/components/layout/theme-bootstrap";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="es"
       className={`${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head><ThemeBootstrap /></head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <StoreProvider>
           <SessionBootstrap />
