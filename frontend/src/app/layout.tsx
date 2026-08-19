@@ -26,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="es"
       className={`${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head><ThemeBootstrap /></head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
