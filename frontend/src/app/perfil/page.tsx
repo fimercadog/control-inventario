@@ -9,12 +9,17 @@ import { PerfilAvatarForm } from "@/components/forms/perfil-avatar-form";
 import { PerfilDatosForm } from "@/components/forms/perfil-datos-form";
 import { CambiarPasswordForm } from "@/components/forms/cambiar-password-form";
 import type { AuthenticatedUser } from "@/types/auth";
+import { applyThemePreference, isThemePreference, persistThemePreference } from "@/lib/theme";
 
 export default function PerfilPage() {
   const user = useSessionUser();
   const dispatch = useAppDispatch();
 
   function handleUpdated(updated: AuthenticatedUser) {
+    if (isThemePreference(updated.theme)) {
+      applyThemePreference(updated.theme);
+      persistThemePreference(updated.theme);
+    }
     dispatch(sessionActions.updateUser(updated));
   }
 

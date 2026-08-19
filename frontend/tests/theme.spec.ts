@@ -11,6 +11,13 @@ test("theme selector changes immediately and persists after reload", async ({ pa
   await expect(page.getByText("Oscuro", { exact: true })).toBeVisible();
   await expect(page.getByText("Sistema", { exact: true })).toBeVisible();
 
+  await page.getByText("Claro", { exact: true }).click();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+  await expect(page.locator("html")).toHaveCSS("--primary", "#3f51b5");
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+  await page.locator('[data-slot="dropdown-menu-trigger"]').click();
   await page.getByText("Oscuro", { exact: true }).click();
   await expect(page.locator("html")).toHaveClass(/dark/);
   await page.reload();

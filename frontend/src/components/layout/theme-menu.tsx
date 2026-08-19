@@ -11,8 +11,9 @@ import { actualizarPerfil } from "@/lib/api/perfil";
 import { useSessionUser } from "@/hooks/use-permission";
 import { useAppDispatch } from "@/store/hooks";
 import { sessionActions } from "@/store/slices/session-slice";
+import { applyThemePreference, isThemePreference, persistThemePreference, type ThemePreference } from "@/lib/theme";
 
-type Theme = "light" | "dark" | "system";
+type Theme = ThemePreference;
 
 const options: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -24,18 +25,21 @@ const options: { value: Theme; label: string; icon: typeof Sun }[] = [
 export function ThemeMenu() {
   const dispatch = useAppDispatch();
   const user = useSessionUser();
-  const current = (user?.theme as Theme | undefined) ?? "system";
+  const current: Theme = isThemePreference(user?.theme) ? user.theme : "system";
 
   async function selectTheme(theme: Theme) {
     if (!user || theme === current) return;
     const previous = user;
-    window.localStorage.setItem("fidelos-theme", theme);
+    applyThemePreference(theme);
+    persistThemePreference(theme);
     dispatch(sessionActions.updateUser({ ...user, theme }));
 
     try {
       dispatch(sessionActions.updateUser(await actualizarPerfil({ theme })));
     } catch {
-      window.localStorage.setItem("fidelos-theme", previous.theme ?? "system");
+      const previousTheme = isThemePreference(previous.theme) ? previous.theme : "system";
+      applyThemePreference(previousTheme);
+      persistThemePreference(previousTheme);
       dispatch(sessionActions.updateUser(previous));
     }
   }

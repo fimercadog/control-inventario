@@ -11,6 +11,7 @@ import { useAppDispatch } from "@/store/hooks";
 import { sessionActions } from "@/store/slices/session-slice";
 import { actualizarPerfil } from "@/lib/api/perfil";
 import { extractApiErrorMessage } from "@/lib/api/errors";
+import { applyThemePreference, isThemePreference, persistThemePreference, type ThemePreference } from "@/lib/theme";
 
 /**
  * No existe EmpresaController ni ConfiguracionController en el backend real (confirmado —
@@ -34,15 +35,26 @@ export default function ConfiguracionPage() {
 
   if (!user) return null;
 
-  const darkThemeEnabled = user.theme === "dark";
+  const authenticatedUser = user;
+  const darkThemeEnabled = authenticatedUser.theme === "dark";
 
   async function toggleDarkTheme() {
+    const nextTheme: ThemePreference = darkThemeEnabled ? "light" : "dark";
+    const previous = authenticatedUser;
     setSavingTheme(true);
     setThemeError(null);
+    applyThemePreference(nextTheme);
+    persistThemePreference(nextTheme);
+    dispatch(sessionActions.updateUser({ ...authenticatedUser, theme: nextTheme }));
+
     try {
-      const updated = await actualizarPerfil({ theme: darkThemeEnabled ? "light" : "dark" });
+      const updated = await actualizarPerfil({ theme: nextTheme });
       dispatch(sessionActions.updateUser(updated));
     } catch (error) {
+      const previousTheme = isThemePreference(previous.theme) ? previous.theme : "system";
+      applyThemePreference(previousTheme);
+      persistThemePreference(previousTheme);
+      dispatch(sessionActions.updateUser(previous));
       setThemeError(extractApiErrorMessage(error, "No se pudo actualizar el tema."));
     } finally {
       setSavingTheme(false);
@@ -82,7 +94,7 @@ export default function ConfiguracionPage() {
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-medium text-foreground">Modo oscuro</p>
-              <p className="text-sm text-muted-foreground">Usa una interfaz gris carbón con acentos violeta para una visualización más cómoda.</p>
+              <p className="text-sm text-muted-foreground">Usa una interfaz gris carbón con acentos índigo y fucsia para una visualización más cómoda.</p>
             </div>
             <Button variant="outline" onClick={toggleDarkTheme} disabled={savingTheme} className="w-fit">
               {savingTheme ? <Loader2 className="size-4 animate-spin" /> : darkThemeEnabled ? <Sun className="size-4" /> : <Moon className="size-4" />}
