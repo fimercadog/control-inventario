@@ -61,6 +61,7 @@ export type CrmModuleAction = {
 interface CrmModulePageProps {
   title: string;
   singularTitle: string;
+  createLabel?: string;
   description: string;
   endpoint: string;
   fields: CrmModuleField[];
@@ -96,6 +97,7 @@ function toPayload(fields: CrmModuleField[], form: HTMLFormElement): Record<stri
 export function CrmModulePage({
   title,
   singularTitle,
+  createLabel = `Nuevo ${singularTitle}`,
   description,
   endpoint,
   fields,
@@ -254,7 +256,7 @@ export function CrmModulePage({
         <div className="flex flex-wrap gap-2">
           {quickLink ? <Link href={quickLink.href} className="inline-flex h-8 items-center rounded-lg border border-border bg-background px-2.5 text-sm font-medium shadow-sm hover:bg-muted">{quickLink.label}</Link> : null}
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger render={<Button />}><Plus className="size-4" />Nuevo {singularTitle}</DialogTrigger>
+            <DialogTrigger render={<Button />}><Plus className="size-4" />{createLabel}</DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Nuevo {singularTitle}</DialogTitle><DialogDescription>Completa los datos disponibles para este registro.</DialogDescription></DialogHeader>
               <ModuleForm fields={fields} submitting={submitting} submitLabel={`Crear ${singularTitle.toLowerCase()}`} onSubmit={submitForm} />
