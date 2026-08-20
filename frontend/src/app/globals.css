@@ -304,6 +304,10 @@
     color: #f8fafc;
   }
 
+  /* The landing root carries Tailwind's text-slate-900 utility. Override it
+     directly in dark mode so inherited section headings retain contrast. */
+  .dark .marketing.text-slate-900 { color: #f8fafc !important; }
+
   .dark .hero-stage { background: radial-gradient(circle at 50% 25%, rgb(63 81 181 / 25%), transparent 32rem); }
   .dark .hero-grid { background-image: linear-gradient(rgb(197 202 233 / 9%) 1px, transparent 1px), linear-gradient(90deg, rgb(197 202 233 / 9%) 1px, transparent 1px); }
   .dark .hero-glow-indigo { background: #303f9f; }
