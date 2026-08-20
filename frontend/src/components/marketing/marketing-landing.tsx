@@ -105,6 +105,16 @@ const howItWorks = [
 
 const audiences = ["Comercios", "Distribuidores", "Pequeñas y medianas empresas", "Bodegas", "Negocios con inventario", "Equipos comerciales"] as const;
 
+// Placeholder pricing — FidelOS doesn't have official rates yet. Kept clearly
+// labeled as reference-only in the copy below; do not present as final.
+const pricingPlans = [
+  { name: "Starter", tagline: "Para empezar a organizar tu operación", price: "$149.000", seats: "Hasta 3 usuarios", highlight: false },
+  { name: "Pro", tagline: "Para equipos comerciales en crecimiento", price: "$299.000", seats: "Hasta 10 usuarios", highlight: true },
+  { name: "Elite", tagline: "Para empresas con varios equipos", price: "$549.000", seats: "Usuarios ilimitados", highlight: false },
+] as const;
+
+const pricingFeatures = ["Inventario y CRM completos", "Automatizaciones y reportes", "Roles y permisos por usuario", "Auditoría y trazabilidad"] as const;
+
 const pulseEvents = [
   [RefreshCw, "Movimiento de stock registrado"],
   [BriefcaseBusiness, "Oportunidad avanzó de etapa"],
@@ -597,6 +607,56 @@ export function MarketingLanding() {
               ))}
             </div>
             <DemoPanel active={tab} />
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-white px-5 py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="text-center">
+            <p className="eyebrow">PRECIOS DE REFERENCIA</p>
+            <h2 className="mkt-display section-title mx-auto max-w-2xl">Un plan para cada tamaño de equipo.</h2>
+            <p className="section-copy mx-auto max-w-2xl">FidelOS todavía no tiene tarifas oficiales — estos montos son de ejemplo mientras cerramos el pricing definitivo. Escríbenos y preparamos una propuesta ajustada a tu operación.</p>
+          </Reveal>
+          <Reveal delay={100} className="mt-12 grid gap-6 lg:grid-cols-3">
+            {pricingPlans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`relative flex flex-col rounded-[1.75rem] border p-7 ${
+                  plan.highlight ? "border-[#7c3aed] bg-white shadow-2xl shadow-indigo-200 lg:-translate-y-3" : "border-slate-200 bg-slate-50/60"
+                }`}
+              >
+                {plan.highlight ? (
+                  <span className="absolute -top-3 left-7 inline-flex items-center gap-1 rounded-full bg-[#3949AB] px-3 py-1 text-[11px] font-bold tracking-wide text-white uppercase">
+                    <Sparkles className="size-3" /> Más elegido
+                  </span>
+                ) : null}
+                <p className="mkt-display text-xl font-bold text-[#3949AB]">{plan.name}</p>
+                <p className="mt-1 text-sm text-[#334155]">{plan.tagline}</p>
+                <p className="mt-6 text-4xl font-bold text-[#0f172a]">{plan.price}</p>
+                <p className="text-sm text-slate-500">por mes · {plan.seats}</p>
+                <ul className="mt-6 flex-1 space-y-3">
+                  {pricingFeatures.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm text-[#334155]">
+                      <Check className="mt-0.5 size-4 shrink-0 text-[#43A047]" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  nativeButton={false}
+                  variant={plan.highlight ? "default" : "outline"}
+                  className={
+                    plan.highlight
+                      ? "mt-8 h-11 w-full justify-center rounded-xl bg-[#3949AB] text-white hover:bg-[#303f9f]"
+                      : "mt-8 h-11 w-full justify-center rounded-xl border-slate-300"
+                  }
+                  render={<a href="#demo" />}
+                >
+                  Elegir {plan.name} <ArrowRight className="size-4" />
+                </Button>
+              </div>
+            ))}
           </Reveal>
         </div>
       </section>

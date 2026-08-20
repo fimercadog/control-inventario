@@ -90,6 +90,19 @@ test("comparison, process and audience sections communicate the real product", a
   await expect(page.getByRole("heading", { name: /Construido para equipos que necesitan controlar/i })).toBeVisible();
 });
 
+test("pricing section shows all three plans as reference pricing, not final rates", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Un plan para cada tamaño de equipo." })).toBeVisible();
+  await expect(page.getByText(/todavía no tiene tarifas oficiales/i)).toBeVisible();
+
+  for (const plan of ["Starter", "Pro", "Elite"]) {
+    await expect(page.getByText(plan, { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: `Elegir ${plan}` })).toHaveAttribute("href", "#demo");
+  }
+  await expect(page.getByText("Más elegido")).toBeVisible();
+});
+
 test("marketing page renders correctly on a tablet viewport", async ({ page }) => {
   await page.setViewportSize({ width: 834, height: 1194 });
   await page.goto("/");
