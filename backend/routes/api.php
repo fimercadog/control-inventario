@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BodegaController;
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Auth\PasswordResetController;
 use App\Http\Controllers\Api\CapturaIAController;
+use App\Http\Controllers\Api\CapturaCrmIAController;
 use App\Http\Controllers\Api\CategoriaController;
 use App\Http\Controllers\Api\ContingenciaProductoController;
 use App\Http\Controllers\Api\ContingenciaActividadController;
@@ -68,6 +69,8 @@ Route::prefix('v1/dashboard')->name('dashboard.')->middleware(['auth:api', 'empr
 // empresa_id lo hace `FiltersByEmpresa` explícito en cada Controller
 // (ADR-019 — sin Global Scope automático).
 Route::prefix('v1/captura-ia')->name('captura-ia.')->middleware(['auth:api', 'empresa'])->group(function () {
+    Route::get('crm', [CapturaCrmIAController::class, 'index'])->name('crm.index');
+    Route::post('crm', [CapturaCrmIAController::class, 'store'])->name('crm.store');
     Route::post('foto', [CapturaIAController::class, 'foto'])->name('foto');
     Route::post('voz', [CapturaIAController::class, 'voz'])->name('voz');
     Route::post('foto-voz', [CapturaIAController::class, 'fotoVoz'])->name('foto-voz');

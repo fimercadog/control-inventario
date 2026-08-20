@@ -1,6 +1,18 @@
 export type TipoCapturaIA = "foto" | "voz" | "foto_voz";
 export type EstadoCapturaIA = "procesando" | "pendiente_revision" | "aplicado" | "parcial" | "descartado";
 export type EstadoDetalleIA = "pendiente_revision" | "aplicado" | "corregido" | "descartado";
+export type EntidadCapturaCrm = "contacto" | "oportunidad" | "actividad";
+
+export interface CapturaCrmIAEntry {
+  id: string;
+  entidad: EntidadCapturaCrm;
+  contenido_original: string;
+  propuesta: Record<string, string | number | null>;
+  proveedor: string;
+  confianza: number;
+  estado: "pendiente_revision" | "confirmada" | "descartada";
+  created_at: string;
+}
 
 /** Matches CapturaIADetalleResource — one detected "product" line item. Same vocabulary as
  * the AI provider contract (name/brand/presentation/category/quantity/unit/confidence). */

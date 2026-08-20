@@ -1,6 +1,11 @@
 import { apiClient } from "@/lib/api/client";
 import type { ApiSuccessResponse, PaginatedData } from "@/types/api";
-import type { CapturaIAEntry, CapturaIADetalle, CorregirDetallePayload } from "@/types/captura-ia";
+import type { CapturaCrmIAEntry, CapturaIAEntry, CapturaIADetalle, CorregirDetallePayload, EntidadCapturaCrm } from "@/types/captura-ia";
+
+export async function capturarCrm(entidad: EntidadCapturaCrm, contenido: string): Promise<CapturaCrmIAEntry> {
+  const { data } = await apiClient.post<ApiSuccessResponse<CapturaCrmIAEntry>>("/captura-ia/crm", { entidad, contenido });
+  return data.data;
+}
 
 export async function fetchCapturasIA(page: number = 1): Promise<PaginatedData<CapturaIAEntry>> {
   const { data } = await apiClient.get<ApiSuccessResponse<PaginatedData<CapturaIAEntry>>>("/captura-ia", {

@@ -10,10 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePermission } from "@/hooks/use-permission";
-import { capturarPorFoto, capturarPorVoz, capturarPorFotoVoz, fetchCapturasIA } from "@/lib/api/captura-ia";
+import { capturarCrm, capturarPorFoto, capturarPorVoz, capturarPorFotoVoz, fetchCapturasIA } from "@/lib/api/captura-ia";
 import { extractApiErrorMessage } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/utils/format";
-import type { CapturaIAEntry } from "@/types/captura-ia";
+import type { CapturaCrmIAEntry, CapturaIAEntry, EntidadCapturaCrm } from "@/types/captura-ia";
 
 type Modo = "foto" | "voz" | "foto_voz";
 
@@ -41,9 +41,9 @@ const ESTADO_LABEL: Record<string, string> = {
 export default function CapturaIAPage() {
   const router = useRouter();
   const canUsar = usePermission("captura-ia.usar");
-  const canViewContacts = usePermission("contactos.ver");
-  const canViewOpportunities = usePermission("oportunidades.ver");
-  const canViewActivities = usePermission("actividades.ver");
+  const canCreateContacts = usePermission("contactos.crear");
+  const canCreateOpportunities = usePermission("oportunidades.crear");
+  const canCreateActivities = usePermission("actividades.crear");
 
   const [modo, setModo] = useState<Modo>("foto");
   const [imagen, setImagen] = useState<File | null>(null);
@@ -52,6 +52,10 @@ export default function CapturaIAPage() {
   const [mostrarAvisoPreparacion, setMostrarAvisoPreparacion] = useState(CAPTURA_IA_EN_PREPARACION);
   const [error, setError] = useState<string | null>(null);
   const [recientes, setRecientes] = useState<CapturaIAEntry[] | null>(null);
+  const [entidadCrm, setEntidadCrm] = useState<EntidadCapturaCrm>("contacto");
+  const [contenidoCrm, setContenidoCrm] = useState("");
+  const [propuestaCrm, setPropuestaCrm] = useState<CapturaCrmIAEntry | null>(null);
+  const [analizandoCrm, setAnalizandoCrm] = useState(false);
   const imagenInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,6 +115,14 @@ export default function CapturaIAPage() {
     }
   }
 
+  async function handleAnalizarCrm() {
+    if (contenidoCrm.trim().length < 3) { setError("Describe la información comercial que quieres capturar."); return; }
+    setAnalizandoCrm(true); setError(null);
+    try { setPropuestaCrm(await capturarCrm(entidadCrm, contenidoCrm.trim())); }
+    catch (submitError) { setError(extractApiErrorMessage(submitError, "No pudimos preparar la propuesta CRM.")); }
+    finally { setAnalizandoCrm(false); }
+  }
+
   const puedeAnalizar =
     status === "idle" &&
     ((modo === "foto" && imagen !== null) ||
@@ -166,18 +178,14 @@ export default function CapturaIAPage() {
         </p>
       </div>
 
-      {(canViewContacts || canViewOpportunities || canViewActivities) ? (
+      {(canCreateContacts || canCreateOpportunities || canCreateActivities) ? (
         <section>
           <div className="mb-3">
             <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">CRM comercial</p>
             <h2 className="mt-1 text-xl font-bold text-foreground">Gestiona tu información comercial</h2>
-            <p className="mt-1 text-sm text-muted-foreground">La carga con foto o voz es exclusiva de inventario. Para registrar información comercial, utiliza los módulos CRM.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Describe un contacto, oportunidad o seguimiento. La IA extrae una propuesta y conserva la evidencia para revisión.</p>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {canViewContacts ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><ContactRound className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Contactos</h3><p className="mt-1 text-sm text-muted-foreground">Registra y consulta personas vinculadas a tus clientes.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/contactos" />}>Ir a contactos</Button></CardContent></Card> : null}
-            {canViewOpportunities ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><BriefcaseBusiness className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Oportunidades</h3><p className="mt-1 text-sm text-muted-foreground">Crea y da seguimiento a tu pipeline comercial.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/oportunidades" />}>Ir a oportunidades</Button></CardContent></Card> : null}
-            {canViewActivities ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><CheckSquare className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Actividades</h3><p className="mt-1 text-sm text-muted-foreground">Programa llamadas, correos y seguimientos comerciales.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/actividades" />}>Ir a actividades</Button></CardContent></Card> : null}
-          </div>
+          <Card className="border-secondary/25 py-0"><CardContent className="p-4"><div className="mb-3 flex flex-wrap gap-2">{canCreateContacts ? <Button size="sm" variant={entidadCrm === "contacto" ? "default" : "outline"} onClick={() => setEntidadCrm("contacto")}><ContactRound className="size-4" />Contacto</Button> : null}{canCreateOpportunities ? <Button size="sm" variant={entidadCrm === "oportunidad" ? "default" : "outline"} onClick={() => setEntidadCrm("oportunidad")}><BriefcaseBusiness className="size-4" />Oportunidad</Button> : null}{canCreateActivities ? <Button size="sm" variant={entidadCrm === "actividad" ? "default" : "outline"} onClick={() => setEntidadCrm("actividad")}><CheckSquare className="size-4" />Actividad</Button> : null}</div><textarea value={contenidoCrm} onChange={(event) => setContenidoCrm(event.target.value)} className="min-h-24 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-secondary" placeholder="Ej.: María López, compras de Acme, correo maria@acme.com, solicitó una propuesta para el viernes." /><Button className="mt-3" disabled={analizandoCrm} onClick={handleAnalizarCrm}>{analizandoCrm ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}Analizar información CRM</Button>{propuestaCrm ? <div className="mt-4 rounded-xl bg-secondary-container p-3 text-sm text-secondary-container-foreground"><p className="font-semibold">Propuesta CRM guardada para revisión</p><pre className="mt-2 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify(propuestaCrm.propuesta, null, 2)}</pre><p className="mt-2 text-xs">Evidencia: texto original, propuesta IA, confianza, fecha y usuario.</p></div> : null}</CardContent></Card>
         </section>
       ) : null}
 
