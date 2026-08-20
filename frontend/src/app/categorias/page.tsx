@@ -294,6 +294,7 @@ export default function CategoriasPage() {
 
       <DataTable
         columns={columns}
+        showExports={false}
         data={result.categorias}
         isLoading={isLoading}
         isError={isError}

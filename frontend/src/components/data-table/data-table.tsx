@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { flexRender } from "@tanstack/react-table";
 import { useLegacyTable as useReactTable, type LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import type { RowData } from "@tanstack/table-core";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, FileText, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
+import { downloadTableCsv, downloadTablePdf } from "@/lib/utils/table-export";
 import {
   Select,
   SelectContent,
@@ -42,6 +43,9 @@ interface DataTableProps<TData extends RowData> {
   onPageSizeChange: (pageSize: number) => void;
   /** Renders numbered rows (§15): visual only, never sent to the backend. */
   withRowNumber?: boolean;
+  /** Exports the visible table rows. Modules with server-side exports opt out. */
+  showExports?: boolean;
+  exportTitle?: string;
 }
 
 export function DataTable<TData extends RowData>({
@@ -58,6 +62,8 @@ export function DataTable<TData extends RowData>({
   onPageChange,
   onPageSizeChange,
   withRowNumber = true,
+  showExports = true,
+  exportTitle = "Tabla",
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -72,6 +78,7 @@ export function DataTable<TData extends RowData>({
   const safeTotalPages = Math.max(totalPages, 1);
   const [pageInput, setPageInput] = useState(String(page));
   const [syncedPage, setSyncedPage] = useState(page);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   // Reset the editable page input whenever `page` changes externally (prev/next,
   // filters resetting to page 1, etc). Adjusting state during render — not in an
@@ -92,8 +99,18 @@ export function DataTable<TData extends RowData>({
 
   return (
     <div className="flex flex-col gap-4">
+      {showExports ? (
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" disabled={isLoading || rows.length === 0} onClick={() => tableRef.current && downloadTableCsv(tableRef.current, exportTitle)}>
+            <Download className="size-4" /> CSV
+          </Button>
+          <Button size="sm" variant="outline" disabled={isLoading || rows.length === 0} onClick={() => tableRef.current && downloadTablePdf(tableRef.current, exportTitle)}>
+            <FileText className="size-4" /> PDF
+          </Button>
+        </div>
+      ) : null}
       <div className="overflow-x-auto rounded-lg border border-border">
-        <Table>
+        <Table ref={tableRef}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

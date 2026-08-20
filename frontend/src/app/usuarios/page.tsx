@@ -329,6 +329,7 @@ export default function UsuariosPage() {
 
       <DataTable
         columns={columns}
+        showExports={false}
         data={result.usuarios}
         isLoading={isLoading}
         isError={isError}

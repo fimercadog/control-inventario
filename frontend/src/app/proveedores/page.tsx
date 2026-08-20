@@ -293,6 +293,7 @@ export default function ProveedoresPage() {
 
       <DataTable
         columns={columns}
+        showExports={false}
         data={result.proveedores}
         isLoading={isLoading}
         isError={isError}

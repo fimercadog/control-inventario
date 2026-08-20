@@ -290,6 +290,7 @@ export default function RolesPage() {
 
       <DataTable
         columns={columns}
+        showExports={false}
         data={result.roles}
         isLoading={isLoading}
         isError={isError}
