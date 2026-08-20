@@ -50,6 +50,7 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
             <p className="mt-1 text-muted-foreground">Cuéntanos errores, críticas, felicitaciones, inquietudes o ideas para mejorar FidelOS.</p>
             <Button
               className="mt-3"
+              nativeButton={false}
               size="sm"
               variant="outline"
               render={<a href={FEEDBACK_FORM_URL} rel="noreferrer" target="_blank" />}
