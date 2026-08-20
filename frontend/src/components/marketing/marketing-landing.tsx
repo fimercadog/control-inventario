@@ -151,7 +151,7 @@ function CTA({ href, children, secondary = false }: { href: string; children: Re
       variant={secondary ? "outline" : "default"}
       className={
         secondary
-          ? "group relative h-11 overflow-hidden rounded-xl border-slate-300 bg-white/70 px-5 text-slate-800 hover:bg-white"
+          ? "group relative h-11 overflow-hidden rounded-xl border-slate-300 bg-white/70 px-5 text-[#1e293b] hover:bg-white"
           : "group relative h-11 overflow-hidden rounded-xl bg-[#3949AB] px-5 text-white shadow-lg shadow-indigo-200 hover:bg-[#303f9f]"
       }
       render={<a href={href} />}
@@ -172,7 +172,7 @@ export function MarketingLanding() {
   const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <main className="marketing min-h-screen overflow-x-hidden bg-[#fbfcff] text-slate-900">
+    <main className="marketing min-h-screen overflow-x-hidden bg-[#fbfcff] text-[#0f172a]">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&display=swap');
         .mkt-display { font-family: "Unbounded", ui-sans-serif, system-ui, sans-serif; }
@@ -220,7 +220,7 @@ export function MarketingLanding() {
         {menu ? (
           <nav className="border-t border-slate-200 bg-white px-5 py-4 md:hidden" aria-label="Navegación móvil">
             {nav.map(([label, href]) => (
-              <a key={href} href={href} onClick={() => setMenu(false)} className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-indigo-50">
+              <a key={href} href={href} onClick={() => setMenu(false)} className="block rounded-lg px-3 py-2.5 text-sm font-medium text-[#334155] hover:bg-indigo-50">
                 {label}
               </a>
             ))}
@@ -243,7 +243,7 @@ export function MarketingLanding() {
             <span className="hero-eyebrow inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/75 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-[#3949AB] shadow-sm">
               <Sparkles className="size-3.5" /> Inventario + CRM en una sola plataforma
             </span>
-            <h1 className="mkt-display mt-6 text-4xl leading-[1.06] font-bold tracking-[-.02em] text-slate-950 sm:text-6xl lg:text-[4.4rem]">
+            <h1 className="mkt-display mt-6 text-4xl leading-[1.06] font-bold tracking-[-.02em] text-[#020617] sm:text-6xl lg:text-[4.4rem]">
               Más control para tu operación. <span className="hero-gradient-text">Mejor seguimiento</span> para tus ventas.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600">
@@ -261,7 +261,7 @@ export function MarketingLanding() {
               {heroStats.map(([Icon, value, label]) => (
                 <span key={label} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
                   <Icon className="size-3.5 text-[#3949AB]" />
-                  <span className="font-mono font-bold text-slate-900">{value}</span> {label}
+                  <span className="font-mono font-bold text-[#0f172a]">{value}</span> {label}
                 </span>
               ))}
             </div>
@@ -298,7 +298,7 @@ export function MarketingLanding() {
               <p className="text-xs font-bold uppercase tracking-[.12em] text-[#3949AB]">Con FidelOS</p>
               <ul className="mt-4 space-y-3">
                 {afterList.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm font-medium text-slate-800">
+                  <li key={item} className="flex items-start gap-2.5 text-sm font-medium text-[#1e293b]">
                     <Check className="mt-0.5 size-4 shrink-0 text-[#43A047]" />
                     {item}
                   </li>
@@ -344,7 +344,7 @@ export function MarketingLanding() {
               <p className="section-copy">Organiza el catálogo y consulta stock, movimientos y proveedores desde un entorno diseñado para la operación diaria.</p>
               <ul className="mt-7 grid gap-3 sm:grid-cols-2">
                 {["Productos y catálogo", "Categorías, marcas y unidades", "Stock y alertas de mínimo", "Entradas, salidas y ajustes", "Proveedores y productos asociados", "Reportes de inventario"].map((item) => (
-                  <li key={item} className="flex gap-2 text-sm font-medium text-slate-700">
+                  <li key={item} className="flex gap-2 text-sm font-medium text-[#334155]">
                     <Check className="mt-0.5 size-4 shrink-0 text-[#43A047]" />
                     {item}
                   </li>
@@ -404,7 +404,7 @@ export function MarketingLanding() {
           </div>
           <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6">
             <div className="mkt-drift absolute -right-12 -top-12 -z-0 size-52 rounded-full bg-teal-400/15 blur-3xl" />
-            <div className="relative rounded-2xl bg-white p-5 text-slate-900">
+            <div className="relative rounded-2xl bg-white p-5 text-[#0f172a]">
               <div className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-xl bg-indigo-50 text-[#3949AB]">
                   <Sparkles className="size-5" />
@@ -559,7 +559,7 @@ export function MarketingLanding() {
             <h2 className="mkt-display section-title mx-auto max-w-2xl">Construido para equipos que necesitan controlar operación y ventas.</h2>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
               {audiences.map((label) => (
-                <span key={label} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm">
+                <span key={label} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-[#334155] shadow-sm">
                   {label}
                 </span>
               ))}
@@ -712,7 +712,7 @@ function HeroVisual() {
         <span className="grid size-9 place-items-center rounded-xl bg-indigo-50 text-[#3949AB]">
           <RefreshCw className="size-4" />
         </span>
-        <p className="mt-3 text-sm font-bold text-slate-900">Stock trazable</p>
+        <p className="mt-3 text-sm font-bold text-[#0f172a]">Stock trazable</p>
         <p className="mt-1 text-xs leading-5 text-slate-500">Entradas, salidas y ajustes con respaldo.</p>
         <div className="mt-3 flex gap-1">
           <i className="h-1.5 flex-1 rounded-full bg-[#43A047]" />

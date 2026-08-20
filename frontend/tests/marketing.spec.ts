@@ -1,5 +1,32 @@
 import { test, expect } from "@playwright/test";
 
+// Regression guard for a real bug: headings that inherit their color from
+// <main> (rather than setting their own) were rendering near-white on the
+// marketing page's always-light background whenever the visitor's OS/browser
+// preferred dark mode, because `<main>` carried the literal Tailwind class
+// `text-slate-900`, which a `.dark .marketing .text-slate-900` rule in
+// globals.css forces to `#f8fafc`. Fixed by giving `<main>` (and every other
+// element that used to carry a bare text-slate-900/950/800/700 class) an
+// equivalent `text-[#hex]` value instead, which that selector can't match.
+test.describe("marketing page stays legible when the OS prefers dark mode", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("headings render dark text on the light marketing background", async ({ page }) => {
+    await page.goto("/");
+
+    const heading = page.getByRole("heading", { name: /Más control para tu operación/i });
+    await expect(heading).toBeVisible();
+    // The hero H1 sets its own near-black shade; other headings inherit
+    // <main>'s color. Both must stay dark instead of washing out to the
+    // broken #f8fafc the bug produced.
+    await expect(heading).toHaveCSS("color", "rgb(2, 6, 23)");
+
+    await page.locator("#preguntas").scrollIntoViewIfNeeded();
+    const faqHeading = page.getByRole("heading", { name: "Lo esencial, claro." });
+    await expect(faqHeading).toHaveCSS("color", "rgb(15, 23, 42)");
+  });
+});
+
 test("public marketing page loads and primary navigation works", async ({ page }) => {
   await page.goto("/");
 
