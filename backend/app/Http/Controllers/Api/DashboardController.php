@@ -9,6 +9,8 @@ use App\Http\Resources\Producto\ProductoResource;
 use App\Http\Support\ApiResponse;
 use App\Repositories\ReporteRepository;
 use App\Models\Actividad;
+use App\Models\Automatizacion;
+use App\Models\EjecucionAutomatizacion;
 use App\Models\Oportunidad;
 use App\Models\Contacto;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +44,15 @@ class DashboardController extends Controller
         $actividadesVencidas = (clone $actividades)
             ->where('estado', 'pendiente')
             ->where('programada_para', '<', now());
+        $contactos = $this->paraEmpresaActual(Contacto::query());
+        $automatizaciones = $this->paraEmpresaActual(Automatizacion::query());
+        $sinGestionDesde = now()->subDays(14);
+        $emailsDuplicados = (clone $contactos)
+            ->select('email')
+            ->whereNotNull('email')
+            ->groupBy('email')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('email');
 
         return ApiResponse::success([
             'total_productos' => $inventario['total_productos'],
@@ -52,8 +63,8 @@ class DashboardController extends Controller
             'movimientos_recientes' => MovimientoResource::collection($this->reportes->movimientosRecientes(6))->resolve(),
             'productos_con_stock_bajo' => ProductoResource::collection($this->reportes->productosConStockBajo())->resolve(),
             'crm' => [
-                'contactos' => $this->paraEmpresaActual(Contacto::query())->count(),
-                'prospectos' => $this->paraEmpresaActual(Contacto::query())->where('estado', 'prospecto')->count(),
+                'contactos' => (clone $contactos)->count(),
+                'prospectos' => (clone $contactos)->where('estado', 'prospecto')->count(),
                 'oportunidades_abiertas' => (clone $oportunidadesAbiertas)->count(),
                 'valor_pipeline' => (float) (clone $oportunidadesAbiertas)->sum('monto'),
                 'actividades_pendientes' => (clone $actividades)->where('estado', 'pendiente')->count(),
@@ -100,6 +111,32 @@ class DashboardController extends Controller
                         'oportunidad' => $actividad->oportunidad?->nombre,
                         'responsable' => $actividad->responsable?->name,
                     ])->values(),
+                'alertas' => [
+                    'contactos_sin_responsable' => (clone $contactos)->whereNull('responsable_id')->count(),
+                    'contactos_sin_gestion' => (clone $contactos)
+                        ->where('created_at', '<=', $sinGestionDesde)
+                        ->whereDoesntHave('actividades', fn ($query) => $query->where('created_at', '>=', $sinGestionDesde))
+                        ->count(),
+                    'contactos_duplicados' => (clone $contactos)->whereIn('email', $emailsDuplicados)->count(),
+                    'oportunidades_cierre_vencido' => (clone $oportunidadesAbiertas)
+                        ->whereDate('fecha_cierre_estimada', '<', today())
+                        ->count(),
+                    'oportunidades_estancadas' => (clone $oportunidadesAbiertas)
+                        ->where('created_at', '<=', $sinGestionDesde)
+                        ->whereDoesntHave('actividades', fn ($query) => $query->where('created_at', '>=', $sinGestionDesde))
+                        ->count(),
+                    'oportunidades_sin_responsable' => (clone $oportunidadesAbiertas)->whereNull('responsable_id')->count(),
+                    'actividades_para_hoy' => (clone $actividades)->where('estado', 'pendiente')->whereDate('programada_para', today())->count(),
+                    'actividades_sin_responsable' => (clone $actividades)->where('estado', 'pendiente')->whereNull('responsable_id')->count(),
+                    'actividades_sin_fecha' => (clone $actividades)->where('estado', 'pendiente')->whereNull('programada_para')->count(),
+                    'automatizaciones_con_error' => $this->paraEmpresaActual(EjecucionAutomatizacion::query())->where('estado', 'error')->count(),
+                    'automatizaciones_sin_ejecucion' => (clone $automatizaciones)
+                        ->where('activa', true)
+                        ->where('created_at', '<=', $sinGestionDesde)
+                        ->whereDoesntHave('ejecuciones')
+                        ->count(),
+                    'automatizaciones_desactivadas' => (clone $automatizaciones)->where('activa', false)->count(),
+                ],
             ],
         ]);
     }

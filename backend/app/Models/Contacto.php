@@ -16,4 +16,5 @@ class Contacto extends Model
     public function cliente(): BelongsTo { return $this->belongsTo(Cliente::class); }
     public function responsable(): BelongsTo { return $this->belongsTo(User::class, 'responsable_id'); }
     public function oportunidades(): HasMany { return $this->hasMany(Oportunidad::class); }
+    public function actividades(): HasMany { return $this->hasMany(Actividad::class); }
 }

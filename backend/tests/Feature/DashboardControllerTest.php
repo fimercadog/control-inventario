@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Empresa;
 use App\Models\Actividad;
+use App\Models\Automatizacion;
+use App\Models\Contacto;
 use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\User;
@@ -127,6 +129,26 @@ class DashboardControllerTest extends TestCase
         $response->assertJsonPath('data.crm.actividades_vencidas', 1);
         $response->assertJsonPath('data.crm.actividades_vencidas_destacadas.0.asunto', 'Llamar a Cliente prioritario');
         $this->assertCount(1, $response->json('data.crm.actividades_vencidas_destacadas'));
+    }
+
+    public function test_crm_module_alerts_reflect_only_the_current_company(): void
+    {
+        $contactoA = Contacto::create(['empresa_id' => $this->empresaA->id, 'nombre' => 'Contacto sin gestión', 'email' => 'duplicado@example.test']);
+        $contactoA->forceFill(['created_at' => now()->subDays(15)])->save();
+        Contacto::create(['empresa_id' => $this->empresaA->id, 'nombre' => 'Contacto duplicado', 'email' => 'duplicado@example.test']);
+        Contacto::create(['empresa_id' => $this->empresaB->id, 'nombre' => 'Contacto ajeno', 'email' => 'duplicado@example.test']);
+        Automatizacion::create(['empresa_id' => $this->empresaA->id, 'nombre' => 'Regla sin ejecutar', 'evento' => 'oportunidad.creada', 'acciones' => []])
+            ->forceFill(['created_at' => now()->subDays(15)])->save();
+        Automatizacion::create(['empresa_id' => $this->empresaB->id, 'nombre' => 'Regla ajena', 'evento' => 'oportunidad.creada', 'acciones' => [], 'activa' => false]);
+
+        $response = $this->actingAs($this->userA, 'api')->getJson('/api/v1/dashboard');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.crm.alertas.contactos_sin_responsable', 2);
+        $response->assertJsonPath('data.crm.alertas.contactos_sin_gestion', 1);
+        $response->assertJsonPath('data.crm.alertas.contactos_duplicados', 2);
+        $response->assertJsonPath('data.crm.alertas.automatizaciones_sin_ejecucion', 1);
+        $response->assertJsonPath('data.crm.alertas.automatizaciones_desactivadas', 0);
     }
 
     public function test_recent_movements_are_ordered_by_most_recent_first_and_limited_to_six(): void

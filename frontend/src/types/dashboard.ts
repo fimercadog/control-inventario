@@ -18,6 +18,20 @@ export interface DashboardSummary {
     actividades_pendientes: number;
     actividades_vencidas: number;
     actividades_vencidas_destacadas: Array<{ id: number; asunto: string; programada_para: string; cliente: string | null; oportunidad: string | null }>;
+    alertas: {
+      contactos_sin_responsable: number;
+      contactos_sin_gestion: number;
+      contactos_duplicados: number;
+      oportunidades_cierre_vencido: number;
+      oportunidades_estancadas: number;
+      oportunidades_sin_responsable: number;
+      actividades_para_hoy: number;
+      actividades_sin_responsable: number;
+      actividades_sin_fecha: number;
+      automatizaciones_con_error: number;
+      automatizaciones_sin_ejecucion: number;
+      automatizaciones_desactivadas: number;
+    };
     oportunidades_destacadas: Array<{ id: number; nombre: string; monto: number; fecha_cierre_estimada: string | null; cliente: string | null; etapa: string | null; responsable: string | null }>;
     proximas_actividades: Array<{ id: number; asunto: string; tipo: string; programada_para: string; cliente: string | null; oportunidad: string | null; responsable: string | null }>;
   };
