@@ -153,7 +153,7 @@ export default function CapturaIAPage() {
             <DialogTitle>{CAPTURA_IA_EN_PREPARACION ? "Captura IA está en preparación" : "Estamos trabajando en tu captura"}</DialogTitle>
             <DialogDescription className="max-w-xs text-center leading-6">
               {CAPTURA_IA_EN_PREPARACION
-                ? "Puedes recorrer y conocer esta interfaz, pero la carga de archivos y el análisis estarán disponibles cuando configuremos la conexión con IA."
+                ? "Puedes recorrer y conocer esta interfaz, pero la carga de archivos y el análisis estarán disponibles cuando terminemos este módulo."
                 : "Analizamos los archivos y preparamos el movimiento de inventario. No cierres esta ventana ni recargues la página."}
             </DialogDescription>
           </DialogHeader>
