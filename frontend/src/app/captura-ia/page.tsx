@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Camera, Loader2, Mic, Sparkles, Upload, Video } from "lucide-react";
+import { BriefcaseBusiness, Camera, CheckSquare, ContactRound, Loader2, Mic, Sparkles, Upload, Video } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -41,6 +41,9 @@ const ESTADO_LABEL: Record<string, string> = {
 export default function CapturaIAPage() {
   const router = useRouter();
   const canUsar = usePermission("captura-ia.usar");
+  const canViewContacts = usePermission("contactos.ver");
+  const canViewOpportunities = usePermission("oportunidades.ver");
+  const canViewActivities = usePermission("actividades.ver");
 
   const [modo, setModo] = useState<Modo>("foto");
   const [imagen, setImagen] = useState<File | null>(null);
@@ -162,6 +165,21 @@ export default function CapturaIAPage() {
           Da de alta inventario mostrando una foto o hablando — la IA propone, tú confirmas.
         </p>
       </div>
+
+      {(canViewContacts || canViewOpportunities || canViewActivities) ? (
+        <section>
+          <div className="mb-3">
+            <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">CRM comercial</p>
+            <h2 className="mt-1 text-xl font-bold text-foreground">Gestiona tu información comercial</h2>
+            <p className="mt-1 text-sm text-muted-foreground">La carga con foto o voz es exclusiva de inventario. Para registrar información comercial, utiliza los módulos CRM.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            {canViewContacts ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><ContactRound className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Contactos</h3><p className="mt-1 text-sm text-muted-foreground">Registra y consulta personas vinculadas a tus clientes.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/contactos" />}>Ir a contactos</Button></CardContent></Card> : null}
+            {canViewOpportunities ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><BriefcaseBusiness className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Oportunidades</h3><p className="mt-1 text-sm text-muted-foreground">Crea y da seguimiento a tu pipeline comercial.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/oportunidades" />}>Ir a oportunidades</Button></CardContent></Card> : null}
+            {canViewActivities ? <Card className="border-secondary/25 py-0"><CardContent className="p-4"><CheckSquare className="mb-3 size-5 text-secondary" /><h3 className="font-semibold text-foreground">Actividades</h3><p className="mt-1 text-sm text-muted-foreground">Programa llamadas, correos y seguimientos comerciales.</p><Button variant="outline" className="mt-4 w-full border-secondary/30 text-secondary hover:bg-secondary-container" nativeButton={false} render={<Link href="/actividades" />}>Ir a actividades</Button></CardContent></Card> : null}
+          </div>
+        </section>
+      ) : null}
 
       <div className="flex w-fit rounded-xl border border-border bg-card p-1 shadow-sm">
         <Button disabled={CAPTURA_IA_EN_PREPARACION} className="rounded-lg" variant={modo === "foto" ? "default" : "ghost"} onClick={() => setModo("foto")}>
