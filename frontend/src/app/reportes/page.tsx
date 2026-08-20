@@ -106,25 +106,11 @@ export default function ReportesPage() {
             <div className="flex items-center justify-center py-10">
               <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Cargando" />
             </div>
-          ) : historial.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Todavía no se ha generado ningún reporte.</p>
           ) : (
-            <ul className="flex flex-col gap-2">
-              {historial.map((entry) => (
-                <li key={entry.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {catalogo?.find((c) => c.clave === entry.tipo_reporte)?.nombre ?? entry.tipo_reporte}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDateTime(entry.created_at)}
-                      {entry.usuario ? ` · ${entry.usuario.email}` : ""} · {entry.formato.toUpperCase()} ·{" "}
-                      {entry.total_filas} filas
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <HistorialGrupo title="Historial general" entries={historial.filter((entry) => !entry.tipo_reporte.startsWith("crm-"))} catalogo={catalogo ?? []} emptyMessage="Todavía no se ha generado ningún reporte general." />
+              <HistorialGrupo title="Historial CRM" entries={historial.filter((entry) => entry.tipo_reporte.startsWith("crm-"))} catalogo={catalogo ?? []} emptyMessage="Aún no hay reportes CRM generados. Abre uno para crear su primera ejecución." crm />
+            </div>
           )}
         </TabsContent>
 
@@ -140,6 +126,10 @@ export default function ReportesPage() {
       </Tabs>
     </div>
   );
+}
+
+function HistorialGrupo({ title, entries, catalogo, emptyMessage, crm = false }: { title: string; entries: ReporteHistorialEntry[]; catalogo: ReporteCatalogoItem[]; emptyMessage: string; crm?: boolean }) {
+  return <Card className={crm ? "border-secondary/30" : undefined}><CardHeader><CardTitle className="text-base">{title}</CardTitle></CardHeader><CardContent>{entries.length === 0 ? <div className="flex flex-col gap-3"><p className="text-sm text-muted-foreground">{emptyMessage}</p>{crm ? <div className="flex flex-wrap gap-2">{catalogo.filter((item) => item.clave.startsWith("crm-")).map((item) => <Button key={item.clave} size="sm" variant="outline" nativeButton={false} render={<Link href={`/reportes/${item.clave}`} />}>{item.nombre.replace("CRM: ", "")}</Button>)}</div> : null}</div> : <ul className="flex flex-col gap-2">{entries.map((entry) => <li key={entry.id} className="rounded-lg border border-border px-3 py-2"><p className="text-sm font-medium text-foreground">{catalogo.find((item) => item.clave === entry.tipo_reporte)?.nombre ?? entry.tipo_reporte}</p><p className="text-xs text-muted-foreground">{formatDateTime(entry.created_at)}{entry.usuario ? ` · ${entry.usuario.email}` : ""} · {entry.formato.toUpperCase()} · {entry.total_filas} filas</p></li>)}</ul>}</CardContent></Card>;
 }
 
 function ResumenCard({ title, data }: { title: string; data: Record<string, unknown> }) {
