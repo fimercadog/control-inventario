@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, PanelLeft, Settings, UserCircle } from "lucide-react";
+import { LogOut, Menu, MessageSquarePlus, PanelLeft, Settings, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -29,6 +29,8 @@ import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
 import { initialsFor } from "@/lib/utils/format";
+
+const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeqvt1vfLT58IEtY87LuDVv2forZnFUM02tx4ZjRGwfbchmLw/viewform";
 
 export function Header() {
   const router = useRouter();
@@ -69,6 +71,15 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-1">
+      <Button
+        aria-label="Enviar comentarios para mejorar FidelOS"
+        nativeButton={false}
+        render={<a href={FEEDBACK_FORM_URL} rel="noreferrer" target="_blank" title="Enviar comentarios" />}
+        size="icon"
+        variant="ghost"
+      >
+        <MessageSquarePlus className="size-4" />
+      </Button>
       <BetaNotice iconOnly />
       <DropdownMenu>
         <DropdownMenuTrigger
