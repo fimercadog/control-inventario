@@ -113,16 +113,17 @@ In order, top to bottom:
 11. **New** — "Para quién es" (audience chips: comercios, distribuidores,
     pymes, bodegas, negocios con inventario, equipos comerciales).
 12. Explora FidelOS — interactive tabs (Inventario/CRM/Reportes/Seguridad).
-13. FAQ (`#preguntas`) — same 6 questions, smoother accordion.
-14. CTA final (`#demo`) — lead form, local-only, Beta notice preserved.
-15. Footer.
+13. **New** — Pricing (Starter/Pro/Elite), added after the fact at the
+    user's explicit request — see "Pricing" below for how it stays honest
+    about not being official yet.
+14. FAQ (`#preguntas`) — same 6 questions, smoother accordion.
+15. CTA final (`#demo`) — lead form, local-only, Beta notice preserved.
+16. Footer.
 
-Testimonios and Pricing were deliberately **not** added as dedicated
-sections: there are no verifiable customer quotes to show, and no published
-pricing to state. Inventing either would fail the "no fabricar" rule, so
-those roles are absorbed into "Para quién es" (audience fit, in place of
-testimonials) and the existing "Solicitar una demo" CTA (in place of a
-pricing table).
+Testimonios were deliberately **not** added as a dedicated section: there
+are no verifiable customer quotes to show, and inventing them would fail
+the "no fabricar" rule. That role is absorbed into "Para quién es"
+(audience fit, in place of testimonials).
 
 ## Inventory Story
 
@@ -166,6 +167,33 @@ lecture.
 Four categories shown (Inventario, Movimientos, Relaciones, Auditoría)
 instead of an exhaustive list of every report the manual documents — chosen
 for commercial legibility, not completeness for its own sake.
+
+## Pricing
+
+Added after the initial launch, at the user's explicit request, once they
+saw a WordPress pricing-table reference and asked for something similar.
+The original build deliberately shipped without a pricing section (see the
+"Sections Created" note above) because FidelOS has no official rates yet
+and the governing instructions for this task said not to invent them. Asked
+directly how to reconcile that with "make one like this screenshot," the
+user chose: same 3-tier card layout as the reference, with **example**
+prices rather than either a bare "talk to us" CTA or real figures.
+
+To keep that honest, the section:
+
+- Opens with an explicit eyebrow ("Precios de referencia") and a sentence
+  stating FidelOS doesn't have official rates yet.
+- Differentiates Starter/Pro/Elite only along a commercial-packaging axis
+  that isn't a product-capability claim (seats included: 3 / 10 /
+  unlimited) — every tier lists the same real feature set, so the copy
+  never implies the product gates automations, reports, or roles behind a
+  paywall it doesn't actually have.
+- Every "Elegir <plan>" button routes to the same `#demo` lead form as the
+  rest of the page (not a fake checkout/"Add to Cart," which the reference
+  screenshot used but FidelOS has no purchase flow to back up).
+- Prices use COP formatting (`$149.000`, matching the currency convention
+  already visible in the app's own seeded demo data) rather than the
+  reference's USD figures.
 
 ## SEO
 
