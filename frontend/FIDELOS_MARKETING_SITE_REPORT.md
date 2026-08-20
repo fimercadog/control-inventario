@@ -236,6 +236,33 @@ result).
   cambies nada más" scope for this task; flagging here so it isn't mistaken
   for a regression this work introduced.
 
+### Post-launch fix — dark-mode text contrast
+
+After the first push, a real bug was reported (and confirmed by forcing
+`colorScheme: "dark"` in Playwright): every heading that inherits its color
+from `<main>` — rather than setting its own — rendered nearly invisible
+(`#f8fafc`, near-white) on the marketing page's always-light background
+whenever the visitor's OS/browser preferred dark mode.
+
+Root cause: `<main>` carries the literal Tailwind class `text-slate-900`.
+An existing rule in `globals.css` (out of scope to edit — `.dark .marketing
+.text-slate-900, .text-slate-950, .text-slate-800, .text-slate-700 { color:
+#f8fafc !important; }`) was written under the assumption — true for an
+earlier version of this file — that the marketing page's background would
+also go dark in dark mode. A later block in the same file deliberately kept
+the marketing background always-light instead, but never updated this text
+rule to match, leaving light-on-light for anything that used those four
+bare slate classes without its own override.
+
+Fixed by replacing every bare `text-slate-900/950/800/700` in this
+component with its exact hex equivalent via Tailwind's arbitrary-value
+syntax (`text-[#0f172a]`, `text-[#020617]`, `text-[#1e293b]`,
+`text-[#334155]`) — same rendered color, but a class name the `globals.css`
+selector can no longer match. No CSS file touched. Added a dedicated
+Playwright test (`marketing page stays legible when the OS prefers dark
+mode`) using `test.use({ colorScheme: "dark" })` so this can't silently
+regress again.
+
 ## Files Modified
 
 - `frontend/src/components/marketing/marketing-landing.tsx` (rewritten)
