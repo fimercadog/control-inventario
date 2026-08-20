@@ -397,7 +397,10 @@
     background-clip: text;
   }
 
-  .marketing .bg-\[\#3949AB\] { background-color: #7c3aed !important; }
+  .marketing .bg-\[\#3949AB\] {
+    background-color: #7c3aed !important;
+    color: #ffffff !important;
+  }
   .marketing .text-\[\#3949AB\] { color: #7c3aed !important; }
   .marketing .bg-\[\#303f9f\] { background-color: #5b21b6 !important; }
   .marketing .text-\[\#00897B\] { color: #0891b2 !important; }
