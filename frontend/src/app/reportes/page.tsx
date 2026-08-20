@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { ProgramadosTab } from "@/app/reportes/programados-tab";
 import { usePermission } from "@/hooks/use-permission";
 import { fetchResumenReportes, fetchCatalogoReportes, fetchHistorialReportes } from "@/lib/api/reportes";
 import { extractApiErrorMessage } from "@/lib/api/errors";
@@ -16,7 +15,6 @@ import type { ReporteCatalogoItem, ReporteHistorialEntry, ReporteResumen } from 
 
 export default function ReportesPage() {
   const canView = usePermission("reportes.ver");
-  const canManage = usePermission("reportes.gestionar");
 
   const [resumen, setResumen] = useState<ReporteResumen | null>(null);
   const [catalogo, setCatalogo] = useState<ReporteCatalogoItem[] | null>(null);
@@ -58,7 +56,6 @@ export default function ReportesPage() {
           <TabsTrigger value="resumen">Resumen</TabsTrigger>
           <TabsTrigger value="catalogo">Catálogo</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
-          <TabsTrigger value="programados">Programados</TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumen" className="pt-4">
@@ -114,15 +111,6 @@ export default function ReportesPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="programados" className="pt-4">
-          {catalogo === null ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Cargando" />
-            </div>
-          ) : (
-            <ProgramadosTab catalogo={catalogo} canManage={canManage} />
-          )}
-        </TabsContent>
       </Tabs>
     </div>
   );
