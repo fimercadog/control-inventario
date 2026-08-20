@@ -21,7 +21,7 @@ class CapturaCrmIAController extends Controller
     {
         $this->autorizarEntidad($request->string('entidad')->toString(), $request);
         $propuesta = $this->extractor->extract($request->string('entidad')->toString(), $request->string('contenido')->toString());
-        $captura = CapturaCrmIA::create(['empresa_id' => $request->user()->empresa_id, 'usuario_id' => $request->user()->id, 'entidad' => $request->string('entidad')->toString(), 'contenido_original' => $request->string('contenido')->toString(), 'propuesta_ia' => $propuesta, 'confianza' => $propuesta['confianza'] ?? 0]);
+        $captura = CapturaCrmIA::create(['empresa_id' => $request->user()->empresa_id, 'usuario_id' => $request->user()->id, 'entidad' => $request->string('entidad')->toString(), 'contenido_original' => $request->string('contenido')->toString(), 'propuesta_ia' => $propuesta, 'proveedor_ia' => 'mock-demo', 'confianza' => $propuesta['confianza'] ?? 0]);
         return ApiResponse::success(new CapturaCrmIAResource($captura), 'Propuesta CRM creada; revísala antes de registrar la información.', 201);
     }
 
