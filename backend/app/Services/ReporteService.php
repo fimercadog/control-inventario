@@ -66,7 +66,7 @@ class ReporteService
     ) {}
 
     /**
-     * @return array{rango: array{desde: string, hasta: string}, inventario: array, movimientos: array, clientes: array, proveedores: array}
+     * @return array{rango: array{desde: string, hasta: string}, inventario: array, movimientos: array, clientes: array, proveedores: array, crm: array}
      */
     public function generarResumen(?string $desde, ?string $hasta): array
     {
@@ -82,6 +82,7 @@ class ReporteService
             'movimientos' => $this->reportes->resumenMovimientos($desdeResuelta->toDateString(), $hastaResuelta->toDateString()),
             'clientes' => $this->reportes->resumenClientes(),
             'proveedores' => $this->reportes->resumenProveedores(),
+            'crm' => $this->reportes->resumenCrm(),
         ];
     }
 

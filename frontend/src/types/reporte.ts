@@ -40,6 +40,7 @@ export interface ReporteResumen {
   movimientos: Record<string, unknown>;
   clientes: Record<string, unknown>;
   proveedores: Record<string, unknown>;
+  crm: Record<string, unknown>;
 }
 
 /** Matches ReporteHistorial's raw column set (index() returns $registros->items() directly,

@@ -4,6 +4,10 @@ namespace App\Repositories;
 
 use App\Http\Controllers\Concerns\FiltersByEmpresa;
 use App\Models\Cliente;
+use App\Models\Contacto;
+use App\Models\Oportunidad;
+use App\Models\Actividad;
+use App\Models\Automatizacion;
 use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\ProductoProveedor;
@@ -158,6 +162,22 @@ class ReporteRepository
                 ->orderByDesc('total_productos')
                 ->limit(10)
                 ->get(),
+        ];
+    }
+
+    public function resumenCrm(): array
+    {
+        $oportunidadesAbiertas = $this->paraEmpresaActual(Oportunidad::query())
+            ->whereNull('ganada_at')
+            ->whereNull('perdida_at');
+
+        return [
+            'contactos' => $this->paraEmpresaActual(Contacto::query())->count(),
+            'oportunidades_abiertas' => (clone $oportunidadesAbiertas)->count(),
+            'valor_pipeline' => round((float) (clone $oportunidadesAbiertas)->sum('monto'), 2),
+            'seguimientos_pendientes' => $this->paraEmpresaActual(Actividad::query())->where('estado', 'pendiente')->count(),
+            'seguimientos_vencidos' => $this->paraEmpresaActual(Actividad::query())->where('estado', 'pendiente')->where('programada_para', '<', now())->count(),
+            'automatizaciones_activas' => $this->paraEmpresaActual(Automatizacion::query())->where('activa', true)->count(),
         ];
     }
 

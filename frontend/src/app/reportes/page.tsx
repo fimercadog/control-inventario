@@ -67,11 +67,12 @@ export default function ReportesPage() {
               <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Cargando" />
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <ResumenCard title="Inventario" data={resumen.inventario} />
               <ResumenCard title={`Movimientos (${resumen.rango.desde} — ${resumen.rango.hasta})`} data={resumen.movimientos} />
               <ResumenCard title="Clientes" data={resumen.clientes} />
               <ResumenCard title="Proveedores" data={resumen.proveedores} />
+              <ResumenCard title="CRM comercial" data={resumen.crm} />
             </div>
           )}
         </TabsContent>

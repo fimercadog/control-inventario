@@ -85,6 +85,7 @@ class ReporteControllerTest extends TestCase
         $this->assertArrayHasKey('movimientos', $response->json('data'));
         $this->assertArrayHasKey('clientes', $response->json('data'));
         $this->assertArrayHasKey('proveedores', $response->json('data'));
+        $this->assertArrayHasKey('crm', $response->json('data'));
     }
 
     public function test_inventario_summary_reflects_real_product_data(): void
