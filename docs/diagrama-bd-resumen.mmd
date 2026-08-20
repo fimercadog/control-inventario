@@ -1,0 +1,32 @@
+flowchart TB
+    Empresa["Empresa<br/>Alcance organizacional y de permisos"]
+    Usuario["Usuarios"]
+    Acceso["Roles y permisos<br/>model_has_roles / model_has_permissions"]
+    Seguridad["Invitaciones · auth_sessions<br/>security_logs · audit_logs"]
+    Catalogos["Categorías · Marcas<br/>Unidades de medida"]
+    Productos["Productos"]
+    Proveedores["Proveedores<br/>producto_proveedor · marca_proveedor"]
+    Bodegas["Bodegas"]
+    StockBodega["producto_bodega"]
+    Movimientos["Movimientos"]
+    Capturas["capturas_ia<br/>capturas_ia_detalle<br/>contingencia_sync_log"]
+    Clientes["Clientes"]
+    Contactos["Contactos"]
+    Etapas["Etapas de oportunidad"]
+    Oportunidades["Oportunidades"]
+    Actividades["Actividades<br/>contingencia_actividades_sync_log"]
+    Automatizacion["Automatizaciones<br/>ejecuciones_automatizacion"]
+    Notificaciones["notificaciones_crm"]
+    Reportes["reportes_programados<br/>reporte_historial"]
+
+    Empresa --> Usuario & Catalogos & Productos & Proveedores & Bodegas & Clientes & Etapas & Automatizacion & Reportes
+    Usuario --> Acceso & Seguridad & Movimientos & Capturas & Contactos & Oportunidades & Actividades & Notificaciones
+    Catalogos --> Productos
+    Proveedores --> Productos
+    Productos --> Movimientos & StockBodega & Capturas
+    Bodegas --> StockBodega & Movimientos
+    Movimientos --> Capturas
+    Clientes --> Contactos & Oportunidades
+    Contactos --> Oportunidades
+    Etapas --> Oportunidades
+    Oportunidades --> Actividades
