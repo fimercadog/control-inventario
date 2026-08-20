@@ -250,6 +250,66 @@
 }
 
 @layer components {
+  .marketing {
+    background-image: radial-gradient(circle at 90% 0%, rgb(197 202 233 / 48%), transparent 28rem), linear-gradient(135deg, #ffffff 0%, #fbfcff 55%, #f5fbfa 100%);
+  }
+
+  .dark .marketing {
+    background: linear-gradient(135deg, #171923, #202333 55%, #152421);
+    color: #f8fafc;
+  }
+
+  .dark .marketing .bg-white,
+  .dark .marketing .bg-white\/80,
+  .dark .marketing .bg-white\/75 {
+    background-color: #252938;
+  }
+
+  .dark .marketing .text-slate-900,
+  .dark .marketing .text-slate-950,
+  .dark .marketing .text-slate-800,
+  .dark .marketing .text-slate-700 {
+    color: #f8fafc !important;
+  }
+
+  .dark .marketing .text-slate-600,
+  .dark .marketing .text-slate-500,
+  .dark .marketing .text-slate-400 {
+    color: #cbd5e1 !important;
+  }
+
+  .dark .marketing .bg-slate-50 { background-color: #1d2230 !important; }
+  .dark .marketing .border-slate-200,
+  .dark .marketing .border-slate-100 { border-color: rgb(148 163 184 / 28%) !important; }
+
+  .dark .marketing header { background-color: rgb(23 25 35 / 90%) !important; }
+
+  .eyebrow {
+    color: #3949ab;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+  }
+
+  .section-title {
+    margin-top: .55rem;
+    max-width: 45rem;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1.04;
+  }
+
+  .section-copy {
+    margin-top: 1.25rem;
+    max-width: 40rem;
+    color: #475569;
+    font-size: 1.05rem;
+    line-height: 1.8;
+  }
+
+  .dark .section-copy { color: #cbd5e1; }
+
   /* Elevation tonal — nivel 1 (cards en reposo). Ver §7: superficies con
      sombra sutil, nunca sombras gigantes ni glassmorphism. */
   [data-slot="card"] {
