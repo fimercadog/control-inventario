@@ -12,9 +12,12 @@ export interface DashboardSummary {
   productos_con_stock_bajo: Producto[];
   crm: {
     contactos: number;
+    prospectos: number;
     oportunidades_abiertas: number;
     valor_pipeline: number;
     actividades_pendientes: number;
     actividades_vencidas: number;
+    oportunidades_destacadas: Array<{ id: number; nombre: string; monto: number; fecha_cierre_estimada: string | null; cliente: string | null; etapa: string | null; responsable: string | null }>;
+    proximas_actividades: Array<{ id: number; asunto: string; tipo: string; programada_para: string; cliente: string | null; oportunidad: string | null; responsable: string | null }>;
   };
 }

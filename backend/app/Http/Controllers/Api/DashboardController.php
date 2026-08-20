@@ -38,6 +38,7 @@ class DashboardController extends Controller
         $movimientosHoy = $this->reportes->resumenMovimientos($hoy, $hoy);
         $actividades = $this->paraEmpresaActual(Actividad::query());
         $oportunidades = $this->paraEmpresaActual(Oportunidad::query());
+        $oportunidadesAbiertas = (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at');
 
         return ApiResponse::success([
             'total_productos' => $inventario['total_productos'],
@@ -49,10 +50,41 @@ class DashboardController extends Controller
             'productos_con_stock_bajo' => ProductoResource::collection($this->reportes->productosConStockBajo())->resolve(),
             'crm' => [
                 'contactos' => $this->paraEmpresaActual(Contacto::query())->count(),
-                'oportunidades_abiertas' => (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at')->count(),
-                'valor_pipeline' => (float) (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at')->sum('monto'),
+                'prospectos' => $this->paraEmpresaActual(Contacto::query())->where('estado', 'prospecto')->count(),
+                'oportunidades_abiertas' => (clone $oportunidadesAbiertas)->count(),
+                'valor_pipeline' => (float) (clone $oportunidadesAbiertas)->sum('monto'),
                 'actividades_pendientes' => (clone $actividades)->where('estado', 'pendiente')->count(),
                 'actividades_vencidas' => (clone $actividades)->where('estado', 'pendiente')->where('programada_para', '<', now())->count(),
+                'oportunidades_destacadas' => (clone $oportunidadesAbiertas)
+                    ->with(['cliente:id,nombre', 'etapa:id,nombre,tipo', 'responsable:id,name'])
+                    ->orderByDesc('monto')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn (Oportunidad $oportunidad) => [
+                        'id' => $oportunidad->id,
+                        'nombre' => $oportunidad->nombre,
+                        'monto' => (float) $oportunidad->monto,
+                        'fecha_cierre_estimada' => $oportunidad->fecha_cierre_estimada?->toDateString(),
+                        'cliente' => $oportunidad->cliente?->nombre,
+                        'etapa' => $oportunidad->etapa?->nombre,
+                        'responsable' => $oportunidad->responsable?->name,
+                    ])->values(),
+                'proximas_actividades' => (clone $actividades)
+                    ->where('estado', 'pendiente')
+                    ->whereNotNull('programada_para')
+                    ->with(['oportunidad:id,nombre,cliente_id', 'oportunidad.cliente:id,nombre', 'cliente:id,nombre', 'responsable:id,name'])
+                    ->orderBy('programada_para')
+                    ->limit(5)
+                    ->get()
+                    ->map(fn (Actividad $actividad) => [
+                        'id' => $actividad->id,
+                        'asunto' => $actividad->asunto,
+                        'tipo' => $actividad->tipo,
+                        'programada_para' => $actividad->programada_para?->toIso8601String(),
+                        'cliente' => $actividad->cliente?->nombre ?? $actividad->oportunidad?->cliente?->nombre,
+                        'oportunidad' => $actividad->oportunidad?->nombre,
+                        'responsable' => $actividad->responsable?->name,
+                    ])->values(),
             ],
         ]);
     }
