@@ -4,6 +4,8 @@ import { ChevronDown, CircleAlert, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeqvt1vfLT58IEtY87LuDVv2forZnFUM02tx4ZjRGwfbchmLw/viewform";
+
 /** A persistent, app-wide explanation of the product's beta status. */
 export function BetaNotice({ compact = false, iconOnly = false }: { compact?: boolean; iconOnly?: boolean }) {
   return (
@@ -43,7 +45,18 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
         </DialogHeader>
         <div className="flex flex-col gap-3 px-5 text-sm">
           <div className="rounded-xl border border-border/80 bg-muted/45 p-3"><p className="font-medium text-foreground">Antes de confirmar</p><p className="mt-1 text-muted-foreground">Revisa cantidades, productos y movimientos para mantener el inventario preciso.</p></div>
-          <div className="rounded-xl border border-border/80 bg-muted/45 p-3"><p className="font-medium text-foreground">Tus comentarios ayudan</p><p className="mt-1 text-muted-foreground">Si encuentras algo inesperado, repórtalo para poder mejorarlo en la siguiente actualización.</p></div>
+          <div className="rounded-xl border border-border/80 bg-muted/45 p-3">
+            <p className="font-medium text-foreground">Tus comentarios ayudan</p>
+            <p className="mt-1 text-muted-foreground">Cuéntanos errores, críticas, felicitaciones, inquietudes o ideas para mejorar FidelOS.</p>
+            <Button
+              className="mt-3"
+              size="sm"
+              variant="outline"
+              render={<a href={FEEDBACK_FORM_URL} rel="noreferrer" target="_blank" />}
+            >
+              Enviar comentario
+            </Button>
+          </div>
         </div>
         <div className="flex items-center justify-between border-t border-border/80 px-5 py-4">
           <span className="text-xs text-muted-foreground">Beta · Actualizaciones activas</span>
