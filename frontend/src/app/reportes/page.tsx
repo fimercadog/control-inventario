@@ -148,15 +148,19 @@ function ResumenCard({ title, data }: { title: string; data: Record<string, unkn
         <CardTitle className="text-sm">{title}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-1">
-        {Object.entries(data).map(([k, v]) => (
-          <div key={k} className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{k.replace(/_/g, " ")}</span>
-            <span className="font-medium text-foreground">
-              {typeof v === "object" && v !== null ? JSON.stringify(v) : String(v)}
-            </span>
-          </div>
-        ))}
+        {Object.entries(data).map(([k, v]) => <ResumenValor key={k} label={k.replace(/_/g, " ")} value={v} />)}
       </CardContent>
     </Card>
   );
+}
+
+function ResumenValor({ label, value }: { label: string; value: unknown }) {
+  if (Array.isArray(value)) {
+    return <div className="pt-2"><p className="mb-1 text-xs font-medium capitalize text-muted-foreground">{label}</p><ul className="flex flex-col gap-1">{value.slice(0, 4).map((item, index) => { const row = item as Record<string, unknown>; const name = String(row.categoria ?? row.proveedor ?? row.producto ?? row.fecha ?? "Registro"); const total = row.total ?? row.total_productos ?? row.total_movimientos ?? ""; return <li key={`${name}-${index}`} className="flex justify-between gap-2 text-xs"><span className="truncate text-foreground">{name}</span><span className="shrink-0 text-muted-foreground">{String(total)}</span></li>; })}</ul>{value.length > 4 ? <p className="mt-1 text-xs text-muted-foreground">+{value.length - 4} más</p> : null}</div>;
+  }
+  if (typeof value === "object" && value !== null) {
+    return <div className="rounded-lg bg-muted/40 p-2"><p className="mb-1 text-xs font-medium capitalize text-muted-foreground">{label}</p>{Object.entries(value as Record<string, unknown>).map(([key, nested]) => <ResumenValor key={key} label={key.replace(/_/g, " ")} value={nested} />)}</div>;
+  }
+  const formatted = typeof value === "number" ? new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 }).format(value) : String(value ?? "—");
+  return <div className="flex items-center justify-between gap-3 text-sm"><span className="capitalize text-muted-foreground">{label}</span><span className="text-right font-medium text-foreground">{formatted}</span></div>;
 }
