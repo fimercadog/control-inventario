@@ -31,7 +31,7 @@ export function AuthLayout({
           }}
         />
         <div className="relative flex items-center gap-3">
-          <FidelOSMark className="size-11 text-white" />
+          <FidelOSMark className="size-11 text-[#303f9f] shadow-[0_8px_20px_rgb(0_0_0/0.16)]" />
           <div>
             <div className="text-lg font-bold tracking-tight">FidelOS</div>
             <div className="text-[11px] font-semibold tracking-[0.18em] text-primary-foreground/70">CRM + INVENTARIO</div>
