@@ -70,6 +70,8 @@ interface CrmModulePageProps {
   editEndpoint?: (item: RecordItem) => string;
   quickLink?: { href: string; label: string };
   stateOptions?: Array<{ value: string; label: string }>;
+  stateValue?: (item: RecordItem) => string | boolean | null | undefined;
+  matchesSearch?: (item: RecordItem, term: string) => boolean;
   searchPlaceholder: string;
   emptyMessage: string;
 }
@@ -103,6 +105,8 @@ export function CrmModulePage({
   editEndpoint,
   quickLink,
   stateOptions,
+  stateValue = (item) => String(item.estado ?? ""),
+  matchesSearch,
   searchPlaceholder,
   emptyMessage,
 }: CrmModulePageProps) {
@@ -166,7 +170,8 @@ export function CrmModulePage({
     };
   }, [endpoint, page, pageSize, queryKey, refreshNonce, searchTerm, title]);
 
-  const filteredItems = state === "todos" ? items : items.filter((item) => item.estado === state);
+  const searchedItems = searchTerm && matchesSearch ? items.filter((item) => matchesSearch(item, searchTerm)) : items;
+  const filteredItems = state === "todos" ? searchedItems : searchedItems.filter((item) => String(stateValue(item)) === state);
   const visibleItems = meta ? filteredItems : filteredItems.slice((page - 1) * pageSize, page * pageSize);
   const localTotal = filteredItems.length;
   const totalRows = meta?.total ?? localTotal;
