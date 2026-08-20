@@ -17,6 +17,7 @@ export interface DashboardSummary {
     valor_pipeline: number;
     actividades_pendientes: number;
     actividades_vencidas: number;
+    actividades_vencidas_destacadas: Array<{ id: number; asunto: string; programada_para: string; cliente: string | null; oportunidad: string | null }>;
     oportunidades_destacadas: Array<{ id: number; nombre: string; monto: number; fecha_cierre_estimada: string | null; cliente: string | null; etapa: string | null; responsable: string | null }>;
     proximas_actividades: Array<{ id: number; asunto: string; tipo: string; programada_para: string; cliente: string | null; oportunidad: string | null; responsable: string | null }>;
   };

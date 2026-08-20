@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Empresa;
+use App\Models\Actividad;
 use App\Models\Movimiento;
 use App\Models\Producto;
 use App\Models\User;
@@ -103,6 +104,29 @@ class DashboardControllerTest extends TestCase
         $response->assertJsonPath('data.entradas_hoy', 1);
         $response->assertJsonPath('data.salidas_hoy', 0); // la salida quedó fuera de "hoy"
         $response->assertJsonPath('data.productos_con_stock_bajo.0.nombre', 'Bajo Stock');
+    }
+
+    public function test_crm_overdue_activities_are_exposed_as_dashboard_alerts(): void
+    {
+        Actividad::create([
+            'empresa_id' => $this->empresaA->id,
+            'asunto' => 'Llamar a Cliente prioritario',
+            'estado' => 'pendiente',
+            'programada_para' => now()->subDay(),
+        ]);
+        Actividad::create([
+            'empresa_id' => $this->empresaB->id,
+            'asunto' => 'No debe aparecer',
+            'estado' => 'pendiente',
+            'programada_para' => now()->subDay(),
+        ]);
+
+        $response = $this->actingAs($this->userA, 'api')->getJson('/api/v1/dashboard');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.crm.actividades_vencidas', 1);
+        $response->assertJsonPath('data.crm.actividades_vencidas_destacadas.0.asunto', 'Llamar a Cliente prioritario');
+        $this->assertCount(1, $response->json('data.crm.actividades_vencidas_destacadas'));
     }
 
     public function test_recent_movements_are_ordered_by_most_recent_first_and_limited_to_six(): void

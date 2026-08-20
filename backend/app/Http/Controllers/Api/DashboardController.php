@@ -39,6 +39,9 @@ class DashboardController extends Controller
         $actividades = $this->paraEmpresaActual(Actividad::query());
         $oportunidades = $this->paraEmpresaActual(Oportunidad::query());
         $oportunidadesAbiertas = (clone $oportunidades)->whereNull('ganada_at')->whereNull('perdida_at');
+        $actividadesVencidas = (clone $actividades)
+            ->where('estado', 'pendiente')
+            ->where('programada_para', '<', now());
 
         return ApiResponse::success([
             'total_productos' => $inventario['total_productos'],
@@ -54,7 +57,19 @@ class DashboardController extends Controller
                 'oportunidades_abiertas' => (clone $oportunidadesAbiertas)->count(),
                 'valor_pipeline' => (float) (clone $oportunidadesAbiertas)->sum('monto'),
                 'actividades_pendientes' => (clone $actividades)->where('estado', 'pendiente')->count(),
-                'actividades_vencidas' => (clone $actividades)->where('estado', 'pendiente')->where('programada_para', '<', now())->count(),
+                'actividades_vencidas' => (clone $actividadesVencidas)->count(),
+                'actividades_vencidas_destacadas' => (clone $actividadesVencidas)
+                    ->with(['oportunidad:id,nombre,cliente_id', 'oportunidad.cliente:id,nombre', 'cliente:id,nombre'])
+                    ->orderBy('programada_para')
+                    ->limit(4)
+                    ->get()
+                    ->map(fn (Actividad $actividad) => [
+                        'id' => $actividad->id,
+                        'asunto' => $actividad->asunto,
+                        'programada_para' => $actividad->programada_para?->toIso8601String(),
+                        'cliente' => $actividad->cliente?->nombre ?? $actividad->oportunidad?->cliente?->nombre,
+                        'oportunidad' => $actividad->oportunidad?->nombre,
+                    ])->values(),
                 'oportunidades_destacadas' => (clone $oportunidadesAbiertas)
                     ->with(['cliente:id,nombre', 'etapa:id,nombre,tipo', 'responsable:id,name'])
                     ->orderByDesc('monto')
