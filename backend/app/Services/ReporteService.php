@@ -12,6 +12,10 @@ use App\Reports\InventarioPorMarcaReporte;
 use App\Reports\InventarioPorProveedorReporte;
 use App\Reports\InventarioResumenReporte;
 use App\Reports\KardexProductoReporte;
+use App\Reports\CrmActividadesReporte;
+use App\Reports\CrmAutomatizacionesReporte;
+use App\Reports\CrmContactosReporte;
+use App\Reports\CrmOportunidadesReporte;
 use App\Reports\MovimientosInventarioReporte;
 use App\Reports\ProductosSinMovimientoReporte;
 use App\Reports\ReporteAuditoria;
@@ -51,6 +55,10 @@ class ReporteService
         'clientes' => ReporteClientes::class,
         'actividad-usuarios' => ActividadUsuariosReporte::class,
         'auditoria' => ReporteAuditoria::class,
+        'crm-contactos' => CrmContactosReporte::class,
+        'crm-oportunidades' => CrmOportunidadesReporte::class,
+        'crm-actividades' => CrmActividadesReporte::class,
+        'crm-automatizaciones' => CrmAutomatizacionesReporte::class,
     ];
 
     public function __construct(

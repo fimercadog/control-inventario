@@ -75,19 +75,20 @@ class ReporteCatalogoPreviewTest extends TestCase
         return $producto->fresh();
     }
 
-    public function test_catalog_lists_all_13_reports_with_their_metadata(): void
+    public function test_catalog_lists_all_17_reports_with_their_metadata(): void
     {
         $response = $this->actingAs($this->userA, 'api')->getJson('/api/v1/reportes/catalogo');
 
         $response->assertOk();
         $claves = collect($response->json('data'))->pluck('clave');
 
-        $this->assertCount(13, $claves);
+        $this->assertCount(17, $claves);
         $this->assertEqualsCanonicalizing([
             'inventario-resumen', 'stock-actual', 'stock-bajo', 'inventario-por-categoria',
             'inventario-por-marca', 'inventario-por-proveedor', 'movimientos-inventario',
             'kardex-producto', 'productos-sin-movimiento', 'proveedores', 'clientes',
-            'actividad-usuarios', 'auditoria',
+            'actividad-usuarios', 'auditoria', 'crm-contactos', 'crm-oportunidades',
+            'crm-actividades', 'crm-automatizaciones',
         ], $claves->all());
 
         $response->assertJsonStructure(['data' => [['clave', 'nombre', 'descripcion', 'filtros_disponibles']]]);
