@@ -9,7 +9,7 @@ import { PerfilAvatarForm } from "@/components/forms/perfil-avatar-form";
 import { PerfilDatosForm } from "@/components/forms/perfil-datos-form";
 import { CambiarPasswordForm } from "@/components/forms/cambiar-password-form";
 import type { AuthenticatedUser } from "@/types/auth";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 const isThemePreference = (value: unknown): value is "light" | "dark" | "system" =>
   value === "light" || value === "dark" || value === "system";

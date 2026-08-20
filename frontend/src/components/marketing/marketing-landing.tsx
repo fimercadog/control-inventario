@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { Activity, ArrowDown, ArrowRight, ArrowUp, BadgeCheck, BarChart3, BellRing, Box, BriefcaseBusiness, Check, ChevronDown, ClipboardCheck, Database, FileCheck2, FileText, Globe2, ImageUp, LockKeyhole, Menu, Mic, Moon, Package, Play, RefreshCw, ScanLine, ShieldCheck, SlidersHorizontal, Sparkles, Sun, UsersRound, X, Zap } from "lucide-react";
 import { FidelOSMark } from "@/components/brand/fidelos-mark";
 import { Button } from "@/components/ui/button";

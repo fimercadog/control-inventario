@@ -13,7 +13,7 @@ test("theme selector changes immediately and persists after reload", async ({ pa
 
   await page.getByText("Claro", { exact: true }).click();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await expect(page.locator("html")).toHaveCSS("--primary", "#3f51b5");
+  await expect(page.locator("html")).toHaveCSS("--primary", "#3949ab");
   await page.reload();
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 

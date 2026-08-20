@@ -11,7 +11,7 @@ import { actualizarPerfil } from "@/lib/api/perfil";
 import { useSessionUser } from "@/hooks/use-permission";
 import { useAppDispatch } from "@/store/hooks";
 import { sessionActions } from "@/store/slices/session-slice";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 
 type Theme = "light" | "dark" | "system";
 

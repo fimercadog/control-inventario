@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { useSessionUser } from "@/hooks/use-permission";
 
 const isThemePreference = (value: unknown): value is "light" | "dark" | "system" =>
