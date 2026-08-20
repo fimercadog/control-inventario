@@ -190,12 +190,30 @@ export function MarketingLanding() {
         .mkt-reveal-in { opacity: 1; transform: translateY(0); }
         .mkt-drift { animation: mkt-drift 14s ease-in-out infinite; }
         @keyframes mkt-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(14px, -12px) scale(1.06); } }
+        .mkt-orbit { animation: mkt-orbit 18s linear infinite; transform-origin: center; }
+        @keyframes mkt-orbit { from { transform: rotate(0deg) translateX(11px) rotate(0deg); } to { transform: rotate(360deg) translateX(11px) rotate(-360deg); } }
+        .mkt-hero-stat { animation: mkt-stat-in .55s both cubic-bezier(.16, 1, .3, 1); }
+        .mkt-hero-stat:nth-child(2) { animation-delay: .08s; }
+        .mkt-hero-stat:nth-child(3) { animation-delay: .16s; }
+        @keyframes mkt-stat-in { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mkt-product-frame { transition: transform .7s cubic-bezier(.16, 1, .3, 1), box-shadow .7s ease; }
+        .mkt-product-frame:hover { transform: perspective(1500px) rotateX(1.5deg) rotateY(-1.5deg) translateY(-5px); box-shadow: 0 38px 80px -24px rgba(49,46,129,.34); }
+        .mkt-product-image { transition: transform .8s cubic-bezier(.16, 1, .3, 1); }
+        .mkt-product-frame:hover .mkt-product-image { transform: scale(1.018); }
+        .mkt-panel-swap { animation: mkt-panel-swap .42s cubic-bezier(.16, 1, .3, 1) both; }
+        @keyframes mkt-panel-swap { from { opacity: 0; transform: translateY(10px) scale(.992); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .mkt-panel-card { animation: mkt-card-in .5s both cubic-bezier(.16, 1, .3, 1); }
+        .mkt-panel-card:nth-child(1) { animation-delay: .04s; } .mkt-panel-card:nth-child(2) { animation-delay: .1s; }
+        .mkt-panel-card:nth-child(3) { animation-delay: .16s; } .mkt-panel-card:nth-child(4) { animation-delay: .22s; }
+        @keyframes mkt-card-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
         .mkt-ticker { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); }
         .mkt-ticker-track { display: flex; width: max-content; animation: mkt-scroll 34s linear infinite; }
+        .mkt-ticker:hover .mkt-ticker-track { animation-play-state: paused; }
         @keyframes mkt-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @media (prefers-reduced-motion: reduce) {
           .mkt-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-          .mkt-ticker-track, .mkt-drift { animation: none !important; }
+          .mkt-ticker-track, .mkt-drift, .mkt-orbit, .mkt-hero-stat, .mkt-panel-swap, .mkt-panel-card { animation: none !important; }
+          .mkt-product-frame, .mkt-product-image { transition: none !important; }
         }
       `}</style>
 
@@ -251,7 +269,7 @@ export function MarketingLanding() {
         <div className="mx-auto max-w-7xl">
           <Reveal className="mx-auto max-w-3xl text-center">
             <span className="hero-eyebrow inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/75 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[.1em] text-[#3949AB] shadow-sm">
-              <Sparkles className="size-3.5" /> Inventario + CRM en una sola plataforma
+              <Sparkles className="mkt-orbit size-3.5" /> Inventario + CRM en una sola plataforma
             </span>
             <h1 className="mkt-display mt-6 text-4xl leading-[1.06] font-bold tracking-[-.02em] text-[#020617] sm:text-6xl lg:text-[4.4rem]">
               Más control para tu operación. <span className="hero-gradient-text">Mejor seguimiento</span> para tus ventas.
@@ -269,7 +287,7 @@ export function MarketingLanding() {
             </div>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5">
               {heroStats.map(([Icon, value, label]) => (
-                <span key={label} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
+                <span key={label} className="mkt-hero-stat inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm">
                   <Icon className="size-3.5 text-[#3949AB]" />
                   <span className="font-mono font-bold text-[#0f172a]">{value}</span> {label}
                 </span>
@@ -815,7 +833,7 @@ function HeroVisual() {
 
 function ProductMockup() {
   return (
-    <div className="hero-product mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white/60 p-2 shadow-[0_30px_70px_-20px_rgba(49,46,129,.25)]">
+    <div className="mkt-product-frame hero-product mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white/60 p-2 shadow-[0_30px_70px_-20px_rgba(49,46,129,.25)]">
       <div className="overflow-hidden rounded-[1.5rem]">
         <Image
           src="/images/marketing/fidelos-hero-product.png"
@@ -824,7 +842,7 @@ function ProductMockup() {
           height={992}
           priority
           sizes="(min-width: 1280px) 1152px, 100vw"
-          className="h-auto w-full"
+          className="mkt-product-image h-auto w-full"
         />
       </div>
     </div>
@@ -914,7 +932,7 @@ function DemoPanel({ active }: { active: string }) {
   };
   const [Icon, title, text, labels, teal] = items[active];
   return (
-    <div role="tabpanel" className="mt-3 grid gap-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[.8fr_1.2fr] lg:p-8">
+    <div key={active} role="tabpanel" className="mkt-panel-swap mt-3 grid gap-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:grid-cols-[.8fr_1.2fr] lg:p-8">
       <div>
         <span className={`grid size-11 place-items-center rounded-2xl ${teal ? "bg-teal-50 text-[#00897B]" : "bg-indigo-50 text-[#3949AB]"}`}>
           <Icon className="size-5" />
@@ -924,7 +942,7 @@ function DemoPanel({ active }: { active: string }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {labels.map((label, index) => (
-          <div key={label} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div key={label} className="mkt-panel-card rounded-2xl border border-slate-100 bg-slate-50 p-4">
             <div className={`h-2 w-1/2 rounded ${teal ? "bg-teal-200" : "bg-indigo-200"}`} />
             <p className="mt-8 text-sm font-semibold">{label}</p>
             <p className="mt-1 text-xs text-slate-500">Vista disponible en FidelOS</p>
