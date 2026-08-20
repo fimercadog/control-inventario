@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FidelOSMark } from "@/components/brand/fidelos-mark";
 
 /**
  * Shared shell for Login/Olvide-password/Restablecer-password (§25: "el Login
@@ -30,7 +31,7 @@ export function AuthLayout({
           }}
         />
         <div className="relative flex items-center gap-3">
-          <div className="grid size-10 place-items-center rounded-xl bg-white/15 text-lg font-bold shadow-inner">F</div>
+          <FidelOSMark className="size-11 text-white" />
           <div>
             <div className="text-lg font-bold tracking-tight">FidelOS</div>
             <div className="text-[11px] font-semibold tracking-[0.18em] text-primary-foreground/70">CRM + INVENTARIO</div>
@@ -48,7 +49,7 @@ export function AuthLayout({
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-1 text-center md:hidden">
-            <div className="mb-2 grid size-10 place-items-center rounded-xl bg-primary text-sm font-bold text-primary-foreground">F</div>
+            <FidelOSMark className="mb-2 size-12 text-primary" />
             <span className="text-2xl font-semibold tracking-tight text-foreground">FidelOS</span>
           </div>
           <div className="rounded-2xl border border-border bg-surface-container-lowest p-8 shadow-[var(--shadow-elevation-2)]">
