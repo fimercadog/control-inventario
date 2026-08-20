@@ -365,6 +365,84 @@
 
   .dark .section-copy { color: #cbd5e1; }
 
+  /* Marketing uses an editorial palette of its own. It deliberately does not
+     inherit the operational app's Material indigo/teal or its dark theme. */
+  .marketing,
+  .dark .marketing {
+    color-scheme: light;
+    background: radial-gradient(circle at 85% 4%, rgb(196 181 253 / 42%), transparent 28rem), radial-gradient(circle at 8% 38%, rgb(165 243 252 / 28%), transparent 30rem), #fbfaff;
+    color: #1d1633;
+  }
+
+  .marketing [aria-label="Cambiar tema"] { display: none; }
+
+  .marketing .hero-stage,
+  .dark .marketing .hero-stage {
+    background: radial-gradient(circle at 50% 22%, rgb(255 255 255 / 94%), transparent 28rem), linear-gradient(145deg, #fdfcff 0%, #f5f0ff 56%, #eafaff 100%);
+  }
+
+  .marketing .hero-grid,
+  .dark .marketing .hero-grid {
+    background-image: linear-gradient(rgb(124 58 237 / 7%) 1px, transparent 1px), linear-gradient(90deg, rgb(124 58 237 / 7%) 1px, transparent 1px);
+  }
+
+  .marketing .hero-glow-indigo,
+  .dark .marketing .hero-glow-indigo { background: #c4b5fd; }
+  .marketing .hero-glow-teal,
+  .dark .marketing .hero-glow-teal { background: #a5f3fc; }
+
+  .marketing .hero-gradient-text {
+    background: linear-gradient(110deg, #7c3aed 10%, #a855f7 48%, #0891b2 105%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .marketing .bg-\[\#3949AB\] { background-color: #7c3aed !important; }
+  .marketing .text-\[\#3949AB\] { color: #7c3aed !important; }
+  .marketing .bg-\[\#303f9f\] { background-color: #5b21b6 !important; }
+  .marketing .text-\[\#00897B\] { color: #0891b2 !important; }
+  .marketing .bg-\[\#101936\] { background-color: #1d1633 !important; }
+
+  .marketing .hero-product {
+    border-color: #ddd6fe;
+    box-shadow: 0 38px 90px -32px rgb(76 29 149 / 42%);
+  }
+
+  .marketing .hero-float-left {
+    border-color: #ede9fe;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 22px 48px -20px rgb(124 58 237 / 38%);
+  }
+
+  .marketing .hero-float-right {
+    border-color: rgb(196 181 253 / 55%);
+    background: linear-gradient(145deg, #38216d, #172554);
+    box-shadow: 0 22px 48px -20px rgb(8 145 178 / 45%);
+  }
+
+  .dark .marketing .hero-float-left .text-slate-900 { color: #1d1633 !important; }
+  .dark .marketing .hero-float-left .text-slate-500 { color: #6b6480 !important; }
+
+  .dark .marketing .bg-white,
+  .dark .marketing .bg-white\/80,
+  .dark .marketing .bg-white\/75 { background-color: #ffffff !important; }
+
+  .dark .marketing .bg-slate-50 { background-color: #f7f5ff !important; }
+  .dark .marketing .text-slate-900,
+  .dark .marketing .text-slate-950,
+  .dark .marketing .text-slate-800,
+  .dark .marketing .text-slate-700 { color: #1d1633 !important; }
+  .dark .marketing .text-slate-600,
+  .dark .marketing .text-slate-500,
+  .dark .marketing .text-slate-400 { color: #625b76 !important; }
+  .dark .marketing .border-slate-200,
+  .dark .marketing .border-slate-100 { border-color: #e9e3f7 !important; }
+  .dark .marketing header { background-color: rgb(255 255 255 / 88%) !important; }
+  .dark .marketing header a:first-child { color: #1d1633; }
+  .dark .marketing .section-copy { color: #625b76; }
+
+  .marketing .bg-gradient-to-br { background-image: linear-gradient(135deg, #6d28d9, #1e1b4b 58%, #0e7490) !important; }
+
   /* Elevation tonal — nivel 1 (cards en reposo). Ver §7: superficies con
      sombra sutil, nunca sombras gigantes ni glassmorphism. */
   [data-slot="card"] {
