@@ -1,35 +1,20 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
+import { useTheme } from "next-themes";
 import { useSessionUser } from "@/hooks/use-permission";
-import {
-  applyThemePreference,
-  isThemePreference,
-  persistThemePreference,
-  storedThemePreference,
-} from "@/lib/theme";
+
+const isThemePreference = (value: unknown): value is "light" | "dark" | "system" =>
+  value === "light" || value === "dark" || value === "system";
 
 /** Applies the signed-in user's persisted theme preference to the application shell. */
 export function ThemeSync() {
   const userTheme = useSessionUser()?.theme;
+  const { setTheme } = useTheme();
 
-  useLayoutEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const theme = isThemePreference(userTheme) ? userTheme : storedThemePreference();
-
-    if (isThemePreference(userTheme)) {
-      persistThemePreference(userTheme);
-    }
-
-    function applyTheme() {
-      applyThemePreference(theme);
-    }
-
-    applyTheme();
-    media.addEventListener("change", applyTheme);
-
-    return () => media.removeEventListener("change", applyTheme);
-  }, [userTheme]);
+  useEffect(() => {
+    if (isThemePreference(userTheme)) setTheme(userTheme);
+  }, [setTheme, userTheme]);
 
   return null;
 }

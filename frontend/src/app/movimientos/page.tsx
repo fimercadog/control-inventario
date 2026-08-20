@@ -208,10 +208,11 @@ export default function MovimientosPage() {
         <ol className="flex flex-col gap-3 border-l-2 border-border pl-4">
           {result.movimientos.map((m) => (
             <li key={m.id}>
-              <button
+              <Button
                 type="button"
                 onClick={() => setSelected(m)}
-                className="flex w-full flex-col gap-1 rounded-lg border border-border px-4 py-3 text-left transition-colors hover:bg-muted"
+                variant="outline"
+                className="h-auto w-full flex-col items-stretch gap-1 rounded-lg px-4 py-3 text-left font-normal"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -234,7 +235,7 @@ export default function MovimientosPage() {
                   </span>
                   {m.documento ? <span>{m.documento}</span> : null}
                 </div>
-              </button>
+              </Button>
             </li>
           ))}
         </ol>

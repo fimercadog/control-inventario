@@ -56,7 +56,7 @@ export function buildClienteColumns({
         row.original.estado === "activo" ? (
           <Badge variant="success">Activo</Badge>
         ) : (
-          <Badge variant="outline">Inactivo</Badge>
+          <Badge variant="destructive">Inactivo</Badge>
         ),
     },
   ];

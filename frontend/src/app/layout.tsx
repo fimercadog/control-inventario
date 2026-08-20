@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/store/provider";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionBootstrap } from "@/components/layout/session-bootstrap";
 import { ThemeSync } from "@/components/layout/theme-sync";
-import { ThemeBootstrap } from "@/components/layout/theme-bootstrap";
 
 const hankenGrotesk = Hanken_Grotesk({
   variable: "--font-hanken-grotesk",
@@ -28,16 +29,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head><ThemeBootstrap /></head>
       <body
         className="min-h-full flex flex-col bg-background text-foreground"
         suppressHydrationWarning
       >
-        <StoreProvider>
-          <SessionBootstrap />
-          <ThemeSync />
-          {children}
-        </StoreProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange storageKey="fidelos-theme">
+          <TooltipProvider>
+            <StoreProvider>
+              <SessionBootstrap />
+              <ThemeSync />
+              {children}
+            </StoreProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

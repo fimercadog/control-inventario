@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { ContingenciaBanner } from "@/components/layout/contingencia-banner";
 import { useAppSelector } from "@/store/hooks";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 /**
  * Reads session status only — does not itself trigger bootstrapSession(). The root
@@ -33,12 +34,12 @@ export function AuthenticatedShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <SidebarProvider>
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <SidebarInset>
         <Header />
         <main className="flex-1 overflow-y-auto p-5 md:p-8"><ContingenciaBanner />{children}</main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

@@ -8,19 +8,19 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-[0_5px_12px_rgb(79_70_229/0.25)] hover:bg-primary/90 hover:shadow-[0_8px_18px_rgb(79_70_229/0.32)] dark:shadow-[0_5px_14px_rgb(0_0_0/0.3)]",
+        default: "bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
-          "border-border bg-background shadow-sm hover:bg-muted hover:text-foreground hover:shadow-md aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] hover:shadow-md aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
           "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
         destructive:
-          "bg-destructive/10 text-destructive shadow-sm hover:bg-destructive/20 hover:shadow-md focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         success:
-          "bg-success-container text-success-container-foreground shadow-sm hover:bg-success-container/80 hover:shadow-md",
+          "bg-success-container text-success-container-foreground hover:bg-success-container/80",
         warning:
-          "bg-warning-container text-warning-container-foreground shadow-sm hover:bg-warning-container/80 hover:shadow-md",
+          "bg-warning-container text-warning-container-foreground hover:bg-warning-container/80",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/store/hooks";
 import { can } from "@/lib/permissions/can";
 import { navItems } from "@/components/layout/nav-items";
+import {
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -29,36 +36,25 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <nav className="flex flex-col gap-4" aria-label="Navegación principal">
+    <nav aria-label="Navegación principal">
       {sections.map((section, index) => (
-        <div key={section.group ?? `ungrouped-${index}`} className="flex flex-col gap-1">
+        <SidebarGroup key={section.group ?? `ungrouped-${index}`} className="p-0">
           {section.group ? (
-            <span className="px-3 text-xs font-semibold uppercase tracking-wide text-sidebar-foreground/50">
-              {section.group}
-            </span>
+            <SidebarGroupLabel>{section.group}</SidebarGroupLabel>
           ) : null}
-          {section.items.map((item) => {
+          <SidebarGroupContent><SidebarMenu>{section.items.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
-                className={cn(
-                  "relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-[background,color,transform] duration-200",
-                  isActive
-                    ? "bg-sidebar-primary/16 text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--sidebar-primary)]"
-                    : "text-sidebar-foreground/70 hover:translate-x-0.5 hover:bg-sidebar-accent/65 hover:text-sidebar-accent-foreground"
-                )}
-              >
-                <Icon className="size-4" />
-                {item.label}
-              </Link>
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton render={<Link href={item.href} />} onClick={onNavigate} isActive={isActive} tooltip={item.label}>
+                  <Icon />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             );
-          })}
-        </div>
+          })}</SidebarMenu></SidebarGroupContent>
+        </SidebarGroup>
       ))}
     </nav>
   );

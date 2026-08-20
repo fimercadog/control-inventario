@@ -2,15 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, MessageSquarePlus, PanelLeft, Settings, UserCircle } from "lucide-react";
+import { LogOut, MessageSquarePlus, Settings, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,14 +14,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { SidebarNav } from "@/components/layout/sidebar-nav";
-import { ContingenciaControls } from "@/components/layout/contingencia-controls";
 import { BetaNotice } from "@/components/layout/beta-notice";
 import { ThemeMenu } from "@/components/layout/theme-menu";
 import { useAppDispatch } from "@/store/hooks";
 import { useSessionUser } from "@/hooks/use-permission";
 import { logout } from "@/store/slices/session-slice";
 import { initialsFor } from "@/lib/utils/format";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const FEEDBACK_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeqvt1vfLT58IEtY87LuDVv2forZnFUM02tx4ZjRGwfbchmLw/viewform";
 
@@ -48,23 +40,8 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border/80 bg-surface-container-low/95 px-4 shadow-[0_1px_0_rgb(255_255_255/0.55)] backdrop-blur-sm md:px-8 dark:shadow-[0_1px_0_rgb(255_255_255/0.03)]">
-      <div className="flex items-center gap-2 md:hidden">
-        <Sheet>
-          <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Abrir menú" />}>
-            <Menu className="size-5" />
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 border-sidebar-border bg-sidebar p-4 text-sidebar-foreground">
-            <SheetHeader className="p-0 pb-4">
-              <SheetTitle className="text-sidebar-foreground">FidelOS</SheetTitle>
-            </SheetHeader>
-            <div className="mb-5"><ContingenciaControls /></div>
-            <SidebarNav />
-          </SheetContent>
-        </Sheet>
-      </div>
-
       <div className="flex flex-1 items-center gap-3 truncate text-sm">
-        <PanelLeft className="hidden size-4 text-foreground md:block" />
+        <SidebarTrigger aria-label="Abrir o cerrar menú" />
         <span className="hidden text-muted-foreground sm:inline">Fidel OS</span>
         <span className="hidden text-muted-foreground sm:inline">/</span>
         <span className="truncate font-medium text-foreground">{pageName}</span>
@@ -84,9 +61,9 @@ export function Header() {
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted"
+            <Button
+              variant="ghost"
+              className="h-auto gap-2 px-2 py-1.5 text-sm"
             />
           }
         >

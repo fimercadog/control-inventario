@@ -12,8 +12,8 @@ export function BetaNotice({ compact = false, iconOnly = false }: { compact?: bo
     <Dialog>
       <DialogTrigger
         render={
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             className={iconOnly
               ? "flex h-8 items-center gap-0.5 rounded-full px-1.5 text-warning transition-colors hover:bg-warning-container/60 hover:text-warning-container-foreground"
               : compact

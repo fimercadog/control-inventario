@@ -11,9 +11,12 @@ import { actualizarPerfil } from "@/lib/api/perfil";
 import { useSessionUser } from "@/hooks/use-permission";
 import { useAppDispatch } from "@/store/hooks";
 import { sessionActions } from "@/store/slices/session-slice";
-import { applyThemePreference, isThemePreference, persistThemePreference, type ThemePreference } from "@/lib/theme";
+import { useTheme } from "next-themes";
 
-type Theme = ThemePreference;
+type Theme = "light" | "dark" | "system";
+
+const isThemePreference = (value: unknown): value is Theme =>
+  value === "light" || value === "dark" || value === "system";
 
 const options: { value: Theme; label: string; icon: typeof Sun }[] = [
   { value: "light", label: "Claro", icon: Sun },
@@ -25,21 +28,19 @@ const options: { value: Theme; label: string; icon: typeof Sun }[] = [
 export function ThemeMenu() {
   const dispatch = useAppDispatch();
   const user = useSessionUser();
-  const current: Theme = isThemePreference(user?.theme) ? user.theme : "system";
+  const { theme, setTheme } = useTheme();
+  const current: Theme = isThemePreference(theme) ? theme : "system";
 
   async function selectTheme(theme: Theme) {
     if (!user || theme === current) return;
     const previous = user;
-    applyThemePreference(theme);
-    persistThemePreference(theme);
+    setTheme(theme);
     dispatch(sessionActions.updateUser({ ...user, theme }));
 
     try {
       dispatch(sessionActions.updateUser(await actualizarPerfil({ theme })));
     } catch {
-      const previousTheme = isThemePreference(previous.theme) ? previous.theme : "system";
-      applyThemePreference(previousTheme);
-      persistThemePreference(previousTheme);
+      setTheme(isThemePreference(previous.theme) ? previous.theme : "system");
       dispatch(sessionActions.updateUser(previous));
     }
   }

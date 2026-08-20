@@ -84,6 +84,7 @@ export default function ClientesPage() {
 
   const [result, setResult] = useState<ClientesResult>(EMPTY_RESULT);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [toggleSuccess, setToggleSuccess] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [viewingClienteId, setViewingClienteId] = useState<number | null>(null);
@@ -124,12 +125,16 @@ export default function ClientesPage() {
   async function handleToggleEstado(cliente: Cliente) {
     setTogglingId(cliente.id);
     setToggleError(null);
+    setToggleSuccess(null);
     try {
-      if (cliente.estado === "activo") {
+      const disabling = cliente.estado === "activo";
+      if (disabling) {
         await deshabilitarCliente(cliente.id);
       } else {
         await habilitarCliente(cliente.id);
       }
+      setToggleSuccess(disabling ? "Cliente deshabilitado correctamente." : "Cliente habilitado correctamente.");
+      if (viewingClienteId === cliente.id) setViewingClienteId(null);
       setRefetchNonce((n) => n + 1);
     } catch (error) {
       setToggleError(extractApiErrorMessage(error, "No se pudo actualizar el estado del cliente."));
@@ -224,6 +229,11 @@ export default function ClientesPage() {
       {toggleError ? (
         <Alert variant="destructive" role="alert">
           <AlertDescription>{toggleError}</AlertDescription>
+        </Alert>
+      ) : null}
+      {toggleSuccess ? (
+        <Alert role="status">
+          <AlertDescription>{toggleSuccess}</AlertDescription>
         </Alert>
       ) : null}
 

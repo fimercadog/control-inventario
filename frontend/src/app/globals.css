@@ -84,9 +84,9 @@
   --shadow-elevation-3: 0 4px 8px oklch(0.28 0.04 270 / 6%), 0 12px 28px oklch(0.28 0.04 270 / 10%);
   --shadow-elevation-4: 0 8px 16px oklch(0.28 0.04 270 / 8%), 0 20px 40px oklch(0.28 0.04 270 / 12%);
   --color-indigo-50: #c5cae9;
-  --color-indigo-600: #3f51b5;
+  --color-indigo-600: #3949ab;
   --color-indigo-700: #303f9f;
-  --color-fuchsia-500: #e040fb;
+  --color-teal-600: #00897b;
   --color-green-600: #43a047;
   --color-amber-700: #ffa000;
   --color-red-600: #e53935;
@@ -100,22 +100,22 @@
   --card-foreground: #1b1b23;
   --popover: #ffffff;
   --popover-foreground: #1b1b23;
-  --primary: #3f51b5;
+  --primary: #3949ab;
   --primary-foreground: #ffffff;
   --primary-container: #c5cae9;
   --primary-container-foreground: #303f9f;
-  --secondary: #3f51b5;
+  --secondary: #00897b;
   --secondary-foreground: #ffffff;
-  --secondary-container: #c5cae9;
-  --secondary-container-foreground: #303f9f;
-  --crm: #e040fb;
+  --secondary-container: #d6f0ed;
+  --secondary-container-foreground: #004d45;
+  --crm: #00897b;
   --crm-foreground: #ffffff;
-  --crm-container: #f7d9fc;
-  --crm-container-foreground: #6f007d;
-  --tertiary: #e040fb;
+  --crm-container: #d6f0ed;
+  --crm-container-foreground: #004d45;
+  --tertiary: #00897b;
   --tertiary-foreground: #ffffff;
-  --tertiary-container: #f7d9fc;
-  --tertiary-container-foreground: #6f007d;
+  --tertiary-container: #d6f0ed;
+  --tertiary-container-foreground: #004d45;
   --success: #43a047;
   --success-foreground: #ffffff;
   --success-container: #d3f5da;
@@ -144,8 +144,8 @@
   --surface-container: #f0f0f7;
   --surface-container-high: #eaeaf2;
   --surface-container-highest: #e4e4ed;
-  --chart-1: #3f51b5;
-  --chart-2: #e040fb;
+  --chart-1: #3949ab;
+  --chart-2: #00897b;
   --chart-3: #43a047;
   --chart-4: #e53935;
   --chart-5: #303f9f;
@@ -154,10 +154,10 @@
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #c5cae9;
   --sidebar-primary-foreground: #303f9f;
-  --sidebar-accent: #3f51b5;
+  --sidebar-accent: #3949ab;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3f51b5;
-  --sidebar-ring: #e040fb;
+  --sidebar-border: #3949ab;
+  --sidebar-ring: #00897b;
   /* Fijo (igual en :root y .dark, a propósito): el sidebar/drawer siempre
      es oscuro sin importar el tema de la app, así que sus acentos
      semánticos no pueden depender de --warning/--success (que sí cambian
@@ -176,18 +176,18 @@
   --primary-foreground: #303f9f;
   --primary-container: #303f9f;
   --primary-container-foreground: #ffffff;
-  --secondary: #c5cae9;
-  --secondary-foreground: #303f9f;
-  --secondary-container: #303f9f;
-  --secondary-container-foreground: #ffffff;
-  --crm: #e040fb;
-  --crm-foreground: #212121;
-  --crm-container: #6f007d;
-  --crm-container-foreground: #ffffff;
-  --tertiary: #e040fb;
-  --tertiary-foreground: #212121;
-  --tertiary-container: #6f007d;
-  --tertiary-container-foreground: #ffffff;
+  --secondary: #6bd3c8;
+  --secondary-foreground: #003f39;
+  --secondary-container: #005f56;
+  --secondary-container-foreground: #c7fff7;
+  --crm: #6bd3c8;
+  --crm-foreground: #003f39;
+  --crm-container: #005f56;
+  --crm-container-foreground: #c7fff7;
+  --tertiary: #6bd3c8;
+  --tertiary-foreground: #003f39;
+  --tertiary-container: #005f56;
+  --tertiary-container-foreground: #c7fff7;
   --success: #8bd99c;
   --success-foreground: #003914;
   --success-container: #14532a;
@@ -217,7 +217,7 @@
   --surface-container-high: #424242;
   --surface-container-highest: #4a4a4a;
   --chart-1: #c5cae9;
-  --chart-2: #e040fb;
+  --chart-2: #6bd3c8;
   --chart-3: #ffc373;
   --chart-4: #ffb4ab;
   --chart-5: #c5cae9;
@@ -227,8 +227,8 @@
   --sidebar-primary-foreground: #303f9f;
   --sidebar-accent: #303f9f;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #3f51b5;
-  --sidebar-ring: #e040fb;
+  --sidebar-border: #3949ab;
+  --sidebar-ring: #6bd3c8;
   --sidebar-warning: #ffb74d;
 }
 

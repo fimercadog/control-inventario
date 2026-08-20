@@ -9,16 +9,19 @@ import { PerfilAvatarForm } from "@/components/forms/perfil-avatar-form";
 import { PerfilDatosForm } from "@/components/forms/perfil-datos-form";
 import { CambiarPasswordForm } from "@/components/forms/cambiar-password-form";
 import type { AuthenticatedUser } from "@/types/auth";
-import { applyThemePreference, isThemePreference, persistThemePreference } from "@/lib/theme";
+import { useTheme } from "next-themes";
+
+const isThemePreference = (value: unknown): value is "light" | "dark" | "system" =>
+  value === "light" || value === "dark" || value === "system";
 
 export default function PerfilPage() {
   const user = useSessionUser();
   const dispatch = useAppDispatch();
+  const { setTheme } = useTheme();
 
   function handleUpdated(updated: AuthenticatedUser) {
     if (isThemePreference(updated.theme)) {
-      applyThemePreference(updated.theme);
-      persistThemePreference(updated.theme);
+      setTheme(updated.theme);
     }
     dispatch(sessionActions.updateUser(updated));
   }

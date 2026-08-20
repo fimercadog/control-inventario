@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -121,9 +122,9 @@ export default function AuditoriaPage() {
       accessorKey: "created_at",
       header: "Fecha",
       cell: ({ row }) => (
-        <button type="button" onClick={() => setSelected(row.original)} className="text-left hover:underline">
+        <Button variant="link" className="h-auto justify-start p-0 text-left font-normal" onClick={() => setSelected(row.original)}>
           {formatDateTime(row.original.created_at)}
-        </button>
+        </Button>
       ),
     },
     { accessorKey: "modulo", header: "Módulo" },

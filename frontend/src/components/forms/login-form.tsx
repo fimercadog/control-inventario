@@ -90,15 +90,17 @@ export function LoginForm() {
             className="pr-10"
             {...register("password")}
           />
-          <button
+          <Button
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+            variant="ghost"
+            size="icon"
+            className="absolute inset-y-0 right-0 h-full w-10 text-muted-foreground hover:text-foreground"
             aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
             aria-pressed={showPassword}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-          </button>
+          </Button>
         </div>
         {errors.password ? (
           <p id="password-error" className="text-sm text-destructive">
