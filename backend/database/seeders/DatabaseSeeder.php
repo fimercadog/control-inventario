@@ -44,6 +44,8 @@ class DatabaseSeeder extends Seeder
         $empresaPrincipal = Empresa::firstOrCreate(['nombre' => 'Fidel OS Demo']);
         $empresaSecundaria = Empresa::factory()->create(['nombre' => 'Distribuidora Andina S.A.S.']);
 
+        $this->call(CrmRoleSeeder::class);
+
         $this->poblarEmpresa($empresaPrincipal, escala: 1.0, esPrincipal: true);
         $this->poblarEmpresa($empresaSecundaria, escala: 0.15, esPrincipal: false);
     }
